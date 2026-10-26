@@ -8,6 +8,7 @@ import {
   CurrencySchema,
   EventTypeSchema,
   IsoDateSchema,
+  VibeSchema,
   textField,
 } from "./common";
 import { LIMITS } from "./eventInput";
@@ -137,6 +138,8 @@ export const PlanSchema = z.strictObject({
   dateFlexible: z.boolean(),
   location: textField(LIMITS.locationMax, "Location").min(1),
   guestCount: z.int().min(LIMITS.guestsMin).max(LIMITS.guestsMax),
+  /** Styles chosen in the wizard; refine and "More like this" use them. */
+  vibes: z.array(VibeSchema).max(LIMITS.vibesMax),
   currency: CurrencySchema,
   totalBudget: MoneySchema,
   budget: z.array(BudgetItemSchema).min(1).max(15),

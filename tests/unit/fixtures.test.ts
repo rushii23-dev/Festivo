@@ -136,7 +136,7 @@ describe("personalisation", () => {
       new Set(first.map((s) => s.key)),
     );
     expect(more.some((s) => first.includes(s))).toBe(false);
-    expect(more.length).toBe(1);
+    expect(more.length).toBe(3);
   });
 
   it("has at least three ideas per category in every fixture", () => {

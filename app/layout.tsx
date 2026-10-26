@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Mukta, Shrikhand } from "next/font/google";
+import { headers } from "next/headers";
 import { AnnouncerProvider } from "@/components/a11y/LiveRegion";
 import { RouteFocus } from "@/components/a11y/RouteFocus";
 import { SkipLink } from "@/components/a11y/SkipLink";
@@ -42,7 +43,9 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Per-request CSP nonce from proxy.ts; Next.js applies it to its own scripts.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     // theme-init.js sets data-theme/data-motion before hydration, so React must
     // not warn about those attributes differing from the server HTML.
@@ -53,9 +56,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <head>
         {/* Must run synchronously before first paint to prevent a theme flash.
-            It is a 600-byte same-origin file, allowed by a strict `script-src 'self'`. */}
+            It is a 600-byte same-origin file, allowed by this response's CSP nonce. */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script src="/theme-init.js" />
+        <script src="/theme-init.js" nonce={nonce} />
       </head>
       <body className="flex min-h-dvh flex-col antialiased">
         <AnnouncerProvider>

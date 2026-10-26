@@ -138,6 +138,92 @@ export const communityFixture: FixtureContent = {
       costTier: 1,
       vibes: ["cultural", "boho", "minimal"],
     },
+    {
+      key: "harvest-festival",
+      category: "theme",
+      title: "Harvest festival",
+      description:
+        "Local produce stalls, folk music and a shared meal celebrating the season.",
+      costTier: 2,
+      vibes: ["traditional", "rustic", "cultural"],
+    },
+    {
+      key: "night-market",
+      category: "theme",
+      title: "Twilight night market",
+      description:
+        "An evening of fairy lights, food stalls and acoustic music after work hours.",
+      costTier: 2,
+      vibes: ["modern", "boho", "playful"],
+    },
+    {
+      key: "chalk-murals",
+      category: "decor",
+      title: "Community chalk murals",
+      description: "Residents draw on a section of pavement; washable and free.",
+      costTier: 1,
+      vibes: ["playful", "kid-friendly", "eco-friendly"],
+    },
+    {
+      key: "fabric-shade",
+      category: "decor",
+      title: "Saree canopy shade",
+      description:
+        "Donated old sarees stitched into colourful shade canopies over seating.",
+      costTier: 1,
+      vibes: ["eco-friendly", "cultural", "boho"],
+    },
+    {
+      key: "millet-stalls",
+      category: "food",
+      title: "Millet snack stalls",
+      description:
+        "Partner with local self-help groups selling millet snacks and drinks.",
+      costTier: 1,
+      vibes: ["eco-friendly", "traditional", "cultural"],
+    },
+    {
+      key: "community-kitchen",
+      category: "food",
+      title: "Shared community kitchen",
+      description:
+        "Volunteers cook one big meal on site; everyone eats together at long tables.",
+      costTier: 2,
+      vibes: ["traditional", "cultural", "rustic"],
+    },
+    {
+      key: "skill-swap",
+      category: "activities",
+      title: "Skill-swap tables",
+      description:
+        "Residents teach each other a skill in 15 minutes: mending, coding, rangoli, first aid.",
+      costTier: 1,
+      vibes: ["modern", "minimal", "eco-friendly"],
+    },
+    {
+      key: "repair-cafe",
+      category: "activities",
+      title: "Repair café",
+      description: "Volunteers fix bikes, clothes and small electronics for free.",
+      costTier: 1,
+      vibes: ["eco-friendly", "rustic", "minimal"],
+    },
+    {
+      key: "badge-maker",
+      category: "favors",
+      title: "Make-your-own badge",
+      description: "A badge machine where people design a pin about their neighbourhood.",
+      costTier: 2,
+      vibes: ["playful", "kid-friendly", "modern"],
+    },
+    {
+      key: "recipe-cards",
+      category: "favors",
+      title: "Neighbourhood recipe cards",
+      description: "Printed cards of dishes from the potluck, collected on the day.",
+      costTier: 1,
+      vibes: ["cultural", "traditional", "minimal"],
+    },
   ],
   summary: ({ title, location, guestCount, budgetText, dateText, vibes }) =>
     `${title} in ${location}, expecting around ${guestCount} people on ${dateText}, with a budget of ${budgetText}. ` +

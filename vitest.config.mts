@@ -7,7 +7,11 @@ const root = fileURLToPath(new URL("./", import.meta.url));
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: { "@": root },
+    alias: {
+      "@": root,
+      // `server-only` throws outside React Server Components; tests run server code directly.
+      "server-only": fileURLToPath(new URL("./tests/setup/empty.ts", import.meta.url)),
+    },
   },
   test: {
     // Unit tests run in Node (fast, no DOM); component tests get jsdom.
@@ -18,6 +22,15 @@ export default defineConfig({
           name: "unit",
           environment: "node",
           include: ["tests/unit/**/*.test.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "api",
+          environment: "node",
+          include: ["tests/api/**/*.test.ts"],
+          setupFiles: ["tests/setup/api.ts"],
         },
       },
       {

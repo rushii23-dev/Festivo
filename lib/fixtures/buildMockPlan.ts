@@ -146,6 +146,7 @@ export function buildMockPlan(
     dateFlexible: flexible,
     location: input.location,
     guestCount: input.guestCount,
+    vibes: input.vibes,
     currency: input.budget.currency,
     totalBudget: total,
     budget,
