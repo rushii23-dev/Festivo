@@ -1,0 +1,282 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/*
+ * Festivo design tokens.
+ *
+ * Every color token is written once as light-dark(<light>, <dark>), so both themes
+ * live side by side and tests/unit/design-tokens.test.ts can verify contrast for
+ * each pair. The active theme is chosen through `color-scheme`:
+ *   - no preference (or no JS): follows the OS via `color-scheme: light dark`
+ *   - user choice: <html data-theme="light|dark"> set by public/theme-init.js
+ */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Motion variants honour both the OS setting and the in-site "Reduce motion" toggle. */
+@custom-variant motion-ok {
+  @media (prefers-reduced-motion: no-preference) {
+    &:where(:root:not([data-motion="reduce"]) *) {
+      @slot;
+    }
+  }
+}
+
+:root {
+  color-scheme: light dark;
+
+  /* Base palette */
+  --background: light-dark(#fff4dc, #160f33);
+  --foreground: light-dark(#1d1442, #fff4dc);
+  --card: light-dark(#fffbf0, #221a4a);
+  --card-foreground: light-dark(#1d1442, #fff4dc);
+  --popover: light-dark(#fffbf0, #221a4a);
+  --popover-foreground: light-dark(#1d1442, #fff4dc);
+  --muted: light-dark(#f7e7c1, #2b2259);
+  --muted-foreground: light-dark(#544a7a, #c9bfea);
+
+  /* Brand roles */
+  --primary: light-dark(#5b2ee8, #a78bff);
+  --primary-foreground: light-dark(#ffffff, #160f33);
+  --secondary: light-dark(#ffb627, #ffb627);
+  --secondary-foreground: light-dark(#1d1442, #160f33);
+  --accent: light-dark(#f2667a, #ff7a8a);
+  --accent-foreground: light-dark(#1d1442, #160f33);
+
+  /* Status (always paired with an icon and text, never color alone) */
+  --destructive: light-dark(#b3203f, #ff8fa0);
+  --destructive-foreground: light-dark(#ffffff, #160f33);
+  --success: light-dark(#1b6e3a, #7ee2a8);
+  --success-foreground: light-dark(#ffffff, #160f33);
+  --warning: light-dark(#8a5200, #ffc85c);
+  --warning-foreground: light-dark(#ffffff, #160f33);
+
+  /* Lines, inputs, focus */
+  --border: light-dark(#1d1442, #c9bfea);
+  --hairline: light-dark(#e6d3a6, #3a3070);
+  --input: light-dark(#6a5f93, #8f84b8);
+  --ring: light-dark(#5b2ee8, #ffb627);
+  /* Dark mode uses a violet offset so stickers still read against the night background */
+  --shadow-ink: light-dark(#1d1442, #5b2ee8);
+
+  /* Charts: segments are outlined with --border, so fills only need to differ in hue */
+  --chart-1: light-dark(#5b2ee8, #a78bff);
+  --chart-2: light-dark(#ffb627, #ffb627);
+  --chart-3: light-dark(#f2667a, #ff7a8a);
+  --chart-4: light-dark(#0f7c73, #4fd1c5);
+  --chart-5: light-dark(#c2185b, #ff6f91);
+
+  /* Event accents default to the birthday palette until an event type is chosen */
+  --event: var(--primary);
+  --event-foreground: var(--primary-foreground);
+  --event-2: var(--secondary);
+  --event-2-foreground: var(--secondary-foreground);
+
+  /* Shape */
+  --radius: 1rem;
+  --radius-pill: 999px;
+  --sticker-offset: 4px;
+
+  /* Sidebar tokens are required by shadcn primitives we may add later */
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--card-foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--muted);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--hairline);
+  --sidebar-ring: var(--ring);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Per-event accent themes: wedding (rose + gold), birthday (violet + marigold),
+   community (teal + coral). Applied with data-event on any container. */
+[data-event="wedding"] {
+  --event: light-dark(#c2185b, #ff6f91);
+  --event-foreground: light-dark(#ffffff, #160f33);
+  --event-2: light-dark(#e9b949, #e9b949);
+  --event-2-foreground: light-dark(#1d1442, #160f33);
+}
+
+[data-event="birthday"] {
+  --event: light-dark(#5b2ee8, #a78bff);
+  --event-foreground: light-dark(#ffffff, #160f33);
+  --event-2: light-dark(#ffb627, #ffb627);
+  --event-2-foreground: light-dark(#1d1442, #160f33);
+}
+
+[data-event="community"] {
+  --event: light-dark(#0f7c73, #4fd1c5);
+  --event-foreground: light-dark(#ffffff, #160f33);
+  --event-2: light-dark(#f2667a, #ff7a8a);
+  --event-2-foreground: light-dark(#1d1442, #160f33);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-hairline: var(--hairline);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-shadow-ink: var(--shadow-ink);
+  --color-event: var(--event);
+  --color-event-foreground: var(--event-foreground);
+  --color-event-2: var(--event-2);
+  --color-event-2-foreground: var(--event-2-foreground);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-heading: var(--font-body);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 1.75);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-sticker: var(--sticker-offset) var(--sticker-offset) 0 0 var(--shadow-ink);
+  --shadow-sticker-sm: 2px 2px 0 0 var(--shadow-ink);
+
+  /* Fluid display sizes: comfortable from 320px phones up to wide desktops */
+  --text-display: clamp(2.75rem, 1.6rem + 5.6vw, 7rem);
+  --text-display--line-height: 0.95;
+  --text-display--letter-spacing: -0.015em;
+  --text-title: clamp(1.75rem, 1.35rem + 1.8vw, 2.75rem);
+  --text-title--line-height: 1.1;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  /* Sticker card: chunky ink outline with a solid offset shadow. */
+  .sticker {
+    @apply rounded-xl border-2 border-border bg-card text-card-foreground shadow-sticker;
+  }
+}
+
+/*
+ * Focus ring. Deliberately unlayered so no utility (e.g. `outline-none` in a
+ * third-party component) can remove it. --ring passes 3:1 against both backgrounds.
+ */
+:focus-visible {
+  outline: 3px solid var(--ring) !important;
+  outline-offset: 3px !important;
+  box-shadow: none;
+}
+
+/* <main> receives focus programmatically after navigation; it is not a control. */
+#main:focus {
+  outline: none !important;
+}
+
+/* Skip link is visible only while focused. */
+.skip-link {
+  position: fixed;
+  inset-inline-start: 1rem;
+  top: 0.75rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border-radius: var(--radius-pill);
+  background: var(--foreground);
+  color: var(--background);
+  padding: 0.75rem 1.25rem;
+  font-weight: 700;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* Reduced motion: the OS setting and the in-site toggle both switch animation off. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
