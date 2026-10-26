@@ -298,3 +298,13 @@ describe("security headers", () => {
     );
   });
 });
+
+describe("rateLimitPerMinute", () => {
+  it("reads a sane value from env, defaulting to 8", async () => {
+    const { rateLimitPerMinute } = await import("@/lib/http/api");
+    expect(rateLimitPerMinute({})).toBe(8);
+    expect(rateLimitPerMinute({ API_RATE_LIMIT_PER_MINUTE: "30" })).toBe(30);
+    expect(rateLimitPerMinute({ API_RATE_LIMIT_PER_MINUTE: "0" })).toBe(8);
+    expect(rateLimitPerMinute({ API_RATE_LIMIT_PER_MINUTE: "lots" })).toBe(8);
+  });
+});

@@ -20,6 +20,13 @@ const eslintConfig = defineConfig([
     files: ["**/*.{ts,tsx}"],
     rules: {
       ...a11yStrictRules,
+      // Form controls are labelled with <label htmlFor> in shared components, which this
+      // static rule cannot follow. Their labels are verified by axe (e2e) and by
+      // getByRole(..., { name }) queries in component tests instead.
+      "jsx-a11y/control-has-associated-label": [
+        "error",
+        { ignoreElements: ["input", "select", "textarea"], depth: 4 },
+      ],
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-unused-vars": [

@@ -237,18 +237,29 @@
   box-shadow: none;
 }
 
+/* Chips and cards hide their native input; show its focus ring on the visible box. */
+.choice:has(input:focus-visible),
+.choice-card:has(input:focus-visible) {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+
 /* <main> receives focus programmatically after navigation; it is not a control. */
 #main:focus {
   outline: none !important;
 }
 
-/* Skip link is visible only while focused. */
+/* Skip link: visually hidden (but focusable) until it receives keyboard focus. */
 .skip-link {
   position: fixed;
   inset-inline-start: 1rem;
   top: 0.75rem;
   z-index: 100;
-  transform: translateY(-200%);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
   border-radius: var(--radius-pill);
   background: var(--foreground);
   color: var(--background);
@@ -256,8 +267,11 @@
   font-weight: 700;
 }
 
-.skip-link:focus-visible {
-  transform: translateY(0);
+.skip-link:focus {
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
 }
 
 /* Reduced motion: the OS setting and the in-site toggle both switch animation off. */

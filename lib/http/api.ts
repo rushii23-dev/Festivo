@@ -9,8 +9,19 @@ import { clientKey, createRateLimiter } from "@/lib/security/rateLimit";
 
 export const NO_STORE = { "Cache-Control": "no-store" } as const;
 
-/** 8 AI requests per minute per client, refilling continuously. */
-export const apiLimiter = createRateLimiter({ capacity: 8, refillPerSecond: 8 / 60 });
+/** AI requests allowed per client per minute (burst size), refilling continuously. */
+export function rateLimitPerMinute(
+  env: Record<string, string | undefined> = process.env,
+): number {
+  const value = Number(env.API_RATE_LIMIT_PER_MINUTE);
+  return Number.isInteger(value) && value >= 1 && value <= 1000 ? value : 8;
+}
+
+const perMinute = rateLimitPerMinute();
+export const apiLimiter = createRateLimiter({
+  capacity: perMinute,
+  refillPerSecond: perMinute / 60,
+});
 
 export interface ApiErrorBody {
   error: { code: string; message: string; fields?: { path: string; message: string }[] };

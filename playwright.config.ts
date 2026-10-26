@@ -6,6 +6,10 @@ const baseURL = `http://localhost:${PORT}`;
 export default defineConfig({
   testDir: "tests/e2e",
   fullyParallel: true,
+  // Every page is server-rendered per request (nonce CSP), so cap parallelism to keep
+  // the single test server responsive.
+  workers: process.env.CI ? 2 : 4,
+  timeout: 60_000,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
@@ -23,6 +27,11 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 240_000,
-    env: { AI_PROVIDER: "mock" },
+    // Every test shares one IP, so lift the per-IP limit for the suite only.
+    env: {
+      AI_PROVIDER: "mock",
+      MOCK_STREAM_DELAY_MS: "400",
+      API_RATE_LIMIT_PER_MINUTE: "200",
+    },
   },
 });
