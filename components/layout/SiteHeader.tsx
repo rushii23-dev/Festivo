@@ -5,9 +5,9 @@ import { Wordmark } from "./Wordmark";
 
 export function SiteHeader() {
   return (
-    <header className="border-b-2 border-border bg-background">
+    <header className="border-b border-hairline bg-background print:hidden">
       {/* flex-wrap lets the nav drop below the wordmark at 320px or 200% text size */}
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-2 gap-y-2 px-3 py-3 min-[360px]:px-4 sm:gap-x-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-[90rem] flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 sm:px-8">
         <Wordmark />
         <nav aria-label="Main" className="flex items-center gap-2 sm:gap-3">
           <Button asChild size="sm">
