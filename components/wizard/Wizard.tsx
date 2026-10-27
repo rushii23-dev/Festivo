@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useAnnounce } from "@/components/a11y/LiveRegion";
+import { Photo } from "@/components/landing/Photo";
+import { PHOTOS, type SitePhoto } from "@/components/landing/photos";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHydratedStore } from "@/hooks/use-hydrated-store";
 import { usePlanGeneration } from "@/hooks/use-plan-generation";
+import type { EventType } from "@/lib/schemas/common";
 import type { Plan } from "@/lib/schemas/plan";
 import { usePlanStore } from "@/lib/store/planStore";
 import { todayIso } from "@/lib/timeline/dates";
@@ -30,6 +33,34 @@ import { GenerationProgress, ReviewSummary } from "./StepReview";
 import { StepVibes } from "./StepVibes";
 import { WizardProgress } from "./WizardProgress";
 import type { StepProps } from "./types";
+
+/** The side photograph follows the celebration being planned. */
+const SIDE_PHOTOS: { key: EventType | "none"; photo: SitePhoto }[] = [
+  { key: "none", photo: PHOTOS.marigoldGarlands },
+  { key: "wedding", photo: PHOTOS.bride },
+  { key: "birthday", photo: PHOTOS.birthdayCake },
+  { key: "community", photo: PHOTOS.holi },
+];
+
+function SidePhoto({ eventType }: { eventType: EventType | "" }) {
+  const active = eventType || "none";
+  return (
+    <div aria-hidden="true" className="relative hidden lg:block">
+      <div className="sticky top-8 aspect-[4/5] overflow-hidden bg-[#292622]">
+        {SIDE_PHOTOS.map(({ key, photo }) => (
+          <div
+            key={key}
+            className={`absolute inset-0 motion-ok:transition-opacity motion-ok:duration-700 ${
+              key === active ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <Photo src={photo.src} alt="" sizes="35vw" className="absolute inset-0" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const STEP_COMPONENTS = [
   StepEventType,
@@ -177,64 +208,70 @@ export function Wizard() {
   const stepProps: StepProps = { draft, errors, update, today };
 
   return (
-    <div data-event={draft.eventType || undefined} className="grid gap-8">
-      <WizardProgress current={step} onJump={goTo} />
+    <div
+      data-event={draft.eventType || undefined}
+      className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)] lg:gap-16"
+    >
+      <SidePhoto eventType={draft.eventType} />
+      <div className="grid min-w-0 content-start gap-8">
+        <WizardProgress current={step} onJump={goTo} />
 
-      <form
-        noValidate
-        onSubmit={onSubmit}
-        aria-labelledby="wizard-step-title"
-        className="grid gap-8"
-      >
-        <h2
-          id="wizard-step-title"
-          ref={headingRef}
-          tabIndex={-1}
-          className="font-display text-title outline-none"
+        <form
+          noValidate
+          onSubmit={onSubmit}
+          aria-labelledby="wizard-step-title"
+          className="grid gap-8"
         >
-          {current.title}
-        </h2>
+          <h2
+            id="wizard-step-title"
+            ref={headingRef}
+            tabIndex={-1}
+            className="font-display text-title outline-none"
+          >
+            {current.title}
+          </h2>
 
-        {StepComponent ? <StepComponent {...stepProps} /> : null}
-        {isReview ? (
-          <>
-            <ReviewSummary draft={draft} today={today} onEdit={goTo} />
-            <GenerationProgress
-              state={generation.state}
-              onCancel={generation.cancel}
-              onRetry={generate}
-            />
-          </>
-        ) : null}
-
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t-2 border-hairline pt-6">
-          {step > 0 ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => goTo(step - 1)}
-              disabled={busy}
-            >
-              <ArrowLeft aria-hidden="true" />
-              Back
-            </Button>
-          ) : (
-            <span />
-          )}
+          {StepComponent ? <StepComponent {...stepProps} /> : null}
           {isReview ? (
-            <Button type="submit" size="lg" disabled={busy}>
-              <Sparkles aria-hidden="true" />
-              {generation.state.status === "error"
-                ? "Try generating again"
-                : "Generate my plan"}
-            </Button>
-          ) : (
-            <Button type="submit" size="lg">
-              {step === STEPS.length - 2 ? "Review answers" : "Next"}
-            </Button>
-          )}
-        </div>
-      </form>
+            <>
+              <ReviewSummary draft={draft} today={today} onEdit={goTo} />
+              <GenerationProgress
+                state={generation.state}
+                onCancel={generation.cancel}
+                onRetry={generate}
+              />
+            </>
+          ) : null}
+
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-hairline pt-6">
+            {step > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => goTo(step - 1)}
+                disabled={busy}
+              >
+                <ArrowLeft aria-hidden="true" />
+                Back
+              </Button>
+            ) : (
+              <span />
+            )}
+            {isReview ? (
+              <Button type="submit" size="lg" disabled={busy}>
+                <Sparkles aria-hidden="true" />
+                {generation.state.status === "error"
+                  ? "Try generating again"
+                  : "Generate my plan"}
+              </Button>
+            ) : (
+              <Button type="submit" size="lg">
+                {step === STEPS.length - 2 ? "Review answers" : "Next"}
+              </Button>
+            )}
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

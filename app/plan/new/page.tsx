@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 
 export default function NewPlanPage() {
   return (
-    <div className="mx-auto grid w-full max-w-4xl gap-8 px-4 py-10 sm:px-6 sm:py-14">
-      <div className="grid gap-2">
-        <h1 className="text-title font-extrabold">Plan a new event</h1>
+    <div className="mx-auto grid w-full max-w-[90rem] gap-10 px-4 py-12 sm:px-8 sm:py-16">
+      <div className="grid gap-3">
+        <h1 className="font-display text-headline">Plan a new event</h1>
         <p className="max-w-[60ch] text-muted-foreground">
           Six quick questions. Your answers are saved in this browser as you go.
         </p>

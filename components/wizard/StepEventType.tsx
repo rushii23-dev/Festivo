@@ -1,11 +1,21 @@
-import { EventIcon } from "@/components/icons/EventIcons";
+import { Photo } from "@/components/landing/Photo";
+import { PHOTOS, type SitePhoto } from "@/components/landing/photos";
 import { Fieldset } from "@/components/ui/field";
-import { EVENT_TYPES } from "@/lib/schemas/common";
+import { EVENT_TYPES, type EventType } from "@/lib/schemas/common";
 import { EVENT_TYPE_COPY } from "@/lib/wizard/labels";
 import { withEventType } from "@/lib/wizard/draft";
 import type { StepProps } from "./types";
 
-/** Large selectable cards with native radio semantics (arrow keys move between them). */
+const CARD_PHOTOS: Record<EventType, SitePhoto> = {
+  wedding: PHOTOS.heroNewlyweds,
+  birthday: PHOTOS.birthdayCandles,
+  community: PHOTOS.festivalDrummers,
+};
+
+/**
+ * Photo cards with native radio semantics (arrow keys move between them).
+ * The chosen card gains a printed double frame and a filled marker, not just a colour.
+ */
 export function StepEventType({ draft, errors, update }: StepProps) {
   return (
     <Fieldset
@@ -16,14 +26,14 @@ export function StepEventType({ draft, errors, update }: StepProps) {
       required
       error={errors.eventType}
     >
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-3">
         {EVENT_TYPES.map((type) => {
           const copy = EVENT_TYPE_COPY[type];
+          const photo = CARD_PHOTOS[type];
           return (
             <label
               key={type}
-              data-event={type}
-              className="choice-card grid cursor-pointer gap-3 rounded-xl border-2 border-border bg-card p-5 has-checked:bg-event has-checked:text-event-foreground has-checked:shadow-sticker"
+              className="choice-card group grid min-w-0 cursor-pointer grid-cols-1 content-start border border-hairline bg-card outline-1 outline-offset-[3px] outline-transparent outline-solid hover:border-foreground has-checked:border-foreground has-checked:outline-foreground"
             >
               <input
                 type="radio"
@@ -33,19 +43,30 @@ export function StepEventType({ draft, errors, update }: StepProps) {
                 onChange={() => update(withEventType(draft, type))}
                 className="sr-only"
               />
-              <span className="flex items-center justify-between">
-                <EventIcon type={type} className="size-12" />
-                <span
-                  aria-hidden="true"
-                  className="flex size-7 items-center justify-center rounded-full border-2 border-current"
-                >
-                  {draft.eventType === type ? (
-                    <span className="size-3 rounded-full bg-current" />
-                  ) : null}
+              <Photo
+                src={photo.src}
+                alt=""
+                sizes="(min-width: 768px) 22vw, 100vw"
+                className="aspect-[4/3]"
+              />
+              <span className="grid gap-3 p-5">
+                <span className="flex items-center justify-between gap-3">
+                  <span className="min-w-0 font-display text-[2rem] leading-none">
+                    {copy.title}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="flex size-6 shrink-0 items-center justify-center rounded-full border border-current"
+                  >
+                    {draft.eventType === type ? (
+                      <span className="size-2.5 rounded-full bg-current" />
+                    ) : null}
+                  </span>
+                </span>
+                <span className="text-[0.9375rem] text-muted-foreground">
+                  {copy.description}
                 </span>
               </span>
-              <span className="text-xl font-extrabold">{copy.title}</span>
-              <span className="text-base">{copy.description}</span>
             </label>
           );
         })}

@@ -33,12 +33,9 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section
-      className="grid gap-3 rounded-xl border-2 border-border bg-card p-5"
-      aria-label={title}
-    >
+    <section className="grid gap-3 border-t border-hairline pt-5" aria-label={title}>
       <div className="flex items-center justify-between gap-4">
-        <h3 className="text-lg font-extrabold">{title}</h3>
+        <h3 className="font-display text-[1.9rem] leading-none">{title}</h3>
         <Button type="button" variant="ghost" size="sm" onClick={() => onEdit(step)}>
           Edit <span className="sr-only">{title.toLowerCase()}</span>
         </Button>
@@ -51,7 +48,7 @@ function Section({
 function Row({ term, children }: { term: string; children: ReactNode }) {
   return (
     <>
-      <dt className="font-bold text-muted-foreground">{term}</dt>
+      <dt className="caps pt-1 text-muted-foreground">{term}</dt>
       <dd className="break-words">{children}</dd>
     </>
   );
@@ -154,10 +151,7 @@ export function GenerationProgress({
 }) {
   if (state.status === "error") {
     return (
-      <div
-        role="alert"
-        className="grid gap-4 rounded-xl border-2 border-destructive bg-card p-5"
-      >
+      <div role="alert" className="grid gap-4 border border-destructive bg-card p-5">
         <p className="font-bold text-destructive">{state.message}</p>
         {state.retryable ? (
           <div>
@@ -185,7 +179,7 @@ export function GenerationProgress({
             <li key={stage} className="flex items-center gap-3">
               <span
                 aria-hidden="true"
-                className="flex size-7 items-center justify-center rounded-full border-2 border-border"
+                className="flex size-7 items-center justify-center rounded-full border border-border"
               >
                 {done ? (
                   <Check className="size-4" />
