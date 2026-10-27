@@ -5,7 +5,19 @@ import { defineConfig } from "vitest/config";
 const root = fileURLToPath(new URL("./", import.meta.url));
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Next.js turns image imports into { src, width, height, blurDataURL }; Vite does not.
+    {
+      name: "next-static-image-stub",
+      enforce: "pre",
+      resolveId(id) {
+        return /\.(jpe?g|png|webp)$/.test(id)
+          ? fileURLToPath(new URL("./tests/setup/image-stub.ts", import.meta.url))
+          : null;
+      },
+    },
+  ],
   resolve: {
     alias: {
       "@": root,
