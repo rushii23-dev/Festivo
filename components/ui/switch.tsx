@@ -13,14 +13,14 @@ function Switch({
     <SwitchPrimitive.Root
       data-slot="switch"
       className={cn(
-        "peer group/switch relative inline-flex h-7 w-12 shrink-0 items-center rounded-pill border-2 border-border bg-muted p-0.5 after:absolute after:-inset-2 disabled:cursor-not-allowed disabled:opacity-60 data-[state=checked]:bg-primary",
+        "peer group/switch relative inline-flex h-7 w-12 shrink-0 items-center rounded-pill border border-border bg-muted p-0.5 after:absolute after:-inset-2 disabled:cursor-not-allowed disabled:opacity-60 data-[state=checked]:bg-primary",
         className,
       )}
       {...props}
     >
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
-        className="pointer-events-none flex size-5 items-center justify-center rounded-full border-2 border-border bg-card data-[state=checked]:translate-x-5 motion-ok:transition-transform"
+        className="pointer-events-none flex size-5 items-center justify-center rounded-full border border-border bg-card data-[state=checked]:translate-x-5 motion-ok:transition-transform"
       >
         <svg
           aria-hidden="true"

@@ -26,57 +26,63 @@
 :root {
   color-scheme: light dark;
 
-  /* Base palette */
-  --background: light-dark(#fff4dc, #160f33);
-  --foreground: light-dark(#1d1442, #fff4dc);
-  --card: light-dark(#fffbf0, #221a4a);
-  --card-foreground: light-dark(#1d1442, #fff4dc);
-  --popover: light-dark(#fffbf0, #221a4a);
-  --popover-foreground: light-dark(#1d1442, #fff4dc);
-  --muted: light-dark(#f7e7c1, #2b2259);
-  --muted-foreground: light-dark(#544a7a, #c9bfea);
+  /* Base palette: candlelit parchment by day, midnight roast by night. Ink is a warm
+     espresso, never pure black; saffron is the one chromatic accent. */
+  --background: light-dark(#d8cbb8, #292622);
+  --foreground: light-dark(#2c2a27, #e2d6c3);
+  --card: light-dark(#e2d7c6, #332f2a);
+  --card-foreground: light-dark(#2c2a27, #e2d6c3);
+  --popover: light-dark(#e2d7c6, #332f2a);
+  --popover-foreground: light-dark(#2c2a27, #e2d6c3);
+  --muted: light-dark(#cbbea9, #3d3832);
+  --muted-foreground: light-dark(#554d44, #b9ad9b);
 
-  /* Brand roles */
-  --primary: light-dark(#5b2ee8, #a78bff);
-  --primary-foreground: light-dark(#ffffff, #160f33);
-  --secondary: light-dark(#ffb627, #ffb627);
-  --secondary-foreground: light-dark(#1d1442, #160f33);
-  --accent: light-dark(#f2667a, #ff7a8a);
-  --accent-foreground: light-dark(#1d1442, #160f33);
+  /* Roles: espresso ink for primary actions, saffron for the single accent */
+  --primary: light-dark(#2c2a27, #e2d6c3);
+  --primary-foreground: light-dark(#e9dfcf, #292622);
+  --secondary: light-dark(#d49653, #d49653);
+  --secondary-foreground: light-dark(#2c2a27, #292622);
+  --accent: light-dark(#d49653, #d49653);
+  --accent-foreground: light-dark(#2c2a27, #292622);
 
   /* Status (always paired with an icon and text, never color alone) */
-  --destructive: light-dark(#b3203f, #ff8fa0);
-  --destructive-foreground: light-dark(#ffffff, #160f33);
-  --success: light-dark(#1b6e3a, #7ee2a8);
-  --success-foreground: light-dark(#ffffff, #160f33);
-  --warning: light-dark(#8a5200, #ffc85c);
-  --warning-foreground: light-dark(#ffffff, #160f33);
+  --destructive: light-dark(#8e2420, #f0a28f);
+  --destructive-foreground: light-dark(#f1e8da, #292622);
+  --success: light-dark(#35532a, #a9cf8e);
+  --success-foreground: light-dark(#f1e8da, #292622);
+  --warning: light-dark(#714208, #e8b66a);
+  --warning-foreground: light-dark(#f1e8da, #292622);
 
-  /* Lines, inputs, focus */
-  --border: light-dark(#1d1442, #c9bfea);
-  --hairline: light-dark(#e6d3a6, #3a3070);
-  --input: light-dark(#6a5f93, #8f84b8);
-  --ring: light-dark(#5b2ee8, #ffb627);
-  /* Dark mode uses a violet offset so stickers still read against the night background */
-  --shadow-ink: light-dark(#1d1442, #5b2ee8);
+  /* Lines, inputs, focus. --hairline is the editorial column rule (decorative);
+     --border and --input outline controls and meet 3:1. */
+  --border: light-dark(#2c2a27, #a59985);
+  --hairline: light-dark(#b6ab9c, #4a443c);
+  --input: light-dark(#73695c, #8f8472);
+  --ring: light-dark(#2c2a27, #d49653);
+  --shadow-ink: light-dark(#2c2a27, #e2d6c3);
+  /* Bronze for ornaments and rules that must stay visible (3:1 or more) */
+  --gold: light-dark(#8a5a26, #d49653);
 
-  /* Charts: segments are outlined with --border, so fills only need to differ in hue */
-  --chart-1: light-dark(#5b2ee8, #a78bff);
-  --chart-2: light-dark(#ffb627, #ffb627);
-  --chart-3: light-dark(#f2667a, #ff7a8a);
-  --chart-4: light-dark(#0f7c73, #4fd1c5);
-  --chart-5: light-dark(#c2185b, #ff6f91);
+  /* Charts: warm earth tones, every segment outlined with --border */
+  --chart-1: light-dark(#d49653, #d49653);
+  --chart-2: light-dark(#2c2a27, #e2d6c3);
+  --chart-3: light-dark(#8a5a26, #a8763f);
+  --chart-4: light-dark(#f1e8da, #6b6255);
+  --chart-5: light-dark(#5d6b4a, #93a57a);
+  --chart-6: light-dark(#9b4a3c, #c7705e);
+  --chart-7: light-dark(#b39b7a, #8f7d63);
+  --chart-8: light-dark(#6b5a4a, #c9b48f);
 
-  /* Event accents default to the birthday palette until an event type is chosen */
-  --event: var(--primary);
-  --event-foreground: var(--primary-foreground);
-  --event-2: var(--secondary);
-  --event-2-foreground: var(--secondary-foreground);
+  /* Event accents: one accent for every event type (photography carries the rest) */
+  --event: light-dark(#6f4418, #d49653);
+  --event-foreground: light-dark(#f1e8da, #292622);
+  --event-2: light-dark(#d49653, #d49653);
+  --event-2-foreground: light-dark(#2c2a27, #292622);
 
-  /* Shape */
-  --radius: 1rem;
-  --radius-pill: 999px;
-  --sticker-offset: 4px;
+  /* Shape: sharp cards, 3px controls */
+  --radius: 0px;
+  --radius-pill: 3px;
+  --sticker-offset: 0px;
 
   /* Sidebar tokens are required by shadcn primitives we may add later */
   --sidebar: var(--card);
@@ -97,27 +103,27 @@
   color-scheme: dark;
 }
 
-/* Per-event accent themes: wedding (rose + gold), birthday (violet + marigold),
-   community (teal + coral). Applied with data-event on any container. */
+/* Per-event accents. The editorial system keeps a single saffron accent, so every
+   event shares it; the blocks stay so pages can still scope accents per event. */
 [data-event="wedding"] {
-  --event: light-dark(#c2185b, #ff6f91);
-  --event-foreground: light-dark(#ffffff, #160f33);
-  --event-2: light-dark(#e9b949, #e9b949);
-  --event-2-foreground: light-dark(#1d1442, #160f33);
+  --event: light-dark(#6f4418, #d49653);
+  --event-foreground: light-dark(#f1e8da, #292622);
+  --event-2: light-dark(#d49653, #d49653);
+  --event-2-foreground: light-dark(#2c2a27, #292622);
 }
 
 [data-event="birthday"] {
-  --event: light-dark(#5b2ee8, #a78bff);
-  --event-foreground: light-dark(#ffffff, #160f33);
-  --event-2: light-dark(#ffb627, #ffb627);
-  --event-2-foreground: light-dark(#1d1442, #160f33);
+  --event: light-dark(#6f4418, #d49653);
+  --event-foreground: light-dark(#f1e8da, #292622);
+  --event-2: light-dark(#d49653, #d49653);
+  --event-2-foreground: light-dark(#2c2a27, #292622);
 }
 
 [data-event="community"] {
-  --event: light-dark(#0f7c73, #4fd1c5);
-  --event-foreground: light-dark(#ffffff, #160f33);
-  --event-2: light-dark(#f2667a, #ff7a8a);
-  --event-2-foreground: light-dark(#1d1442, #160f33);
+  --event: light-dark(#6f4418, #d49653);
+  --event-foreground: light-dark(#f1e8da, #292622);
+  --event-2: light-dark(#d49653, #d49653);
+  --event-2-foreground: light-dark(#2c2a27, #292622);
 }
 
 @theme inline {
@@ -155,6 +161,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-gold: var(--gold);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -168,22 +178,31 @@
   --font-display: var(--font-display);
   --font-heading: var(--font-body);
 
-  --radius-sm: calc(var(--radius) * 0.5);
-  --radius-md: calc(var(--radius) * 0.75);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.5);
-  --radius-2xl: calc(var(--radius) * 1.75);
+  /* Radius hierarchy: controls and tags 3px, cards and sections square */
+  --radius-sm: 3px;
+  --radius-md: 3px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
   --radius-pill: var(--radius-pill);
 
-  --shadow-sticker: var(--sticker-offset) var(--sticker-offset) 0 0 var(--shadow-ink);
-  --shadow-sticker-sm: 2px 2px 0 0 var(--shadow-ink);
+  /* The "sticker" became a printed double frame: a parchment gap, then a 1px rule */
+  --shadow-sticker: 0 0 0 3px var(--background), 0 0 0 4px var(--shadow-ink);
+  --shadow-sticker-sm: 0 0 0 2px var(--background), 0 0 0 3px var(--shadow-ink);
 
-  /* Fluid display sizes: comfortable from 320px phones up to wide desktops */
-  --text-display: clamp(2.75rem, 1.6rem + 5.6vw, 7rem);
-  --text-display--line-height: 0.95;
-  --text-display--letter-spacing: -0.015em;
-  --text-title: clamp(1.75rem, 1.35rem + 1.8vw, 2.75rem);
-  --text-title--line-height: 1.1;
+  /* Editorial display scale (whisper-weight serif, set in capitals) */
+  --text-display: clamp(3.25rem, 0.8rem + 7.4vw, 7.5rem);
+  --text-display--line-height: 0.98;
+  --text-display--letter-spacing: -0.035em;
+  --text-headline: clamp(2.4rem, 1.1rem + 3.9vw, 4.25rem);
+  --text-headline--line-height: 1.02;
+  --text-headline--letter-spacing: -0.03em;
+  --text-title: clamp(1.9rem, 1.3rem + 1.9vw, 3rem);
+  --text-title--line-height: 1.05;
+  --text-title--letter-spacing: -0.02em;
+  --text-caps: 0.75rem;
+  --text-caps--line-height: 1.3;
+  --text-caps--letter-spacing: 0.12em;
 }
 
 @layer base {
@@ -199,8 +218,10 @@
 
   body {
     @apply bg-background text-foreground;
-    font-size: 1.0625rem;
+    font-size: 1rem;
+    font-weight: 400;
     line-height: 1.6;
+    letter-spacing: 0;
     text-rendering: optimizeLegibility;
   }
 
@@ -221,9 +242,38 @@
 }
 
 @layer components {
-  /* Sticker card: chunky ink outline with a solid offset shadow. */
+  /* The serif is a display voice only: whisper weight, capitals, tight tracking. */
+  /* Display voice: Bodoni Moda in sentence case, optical sizing on. */
+  /* Optical size is held at a mid value: the full display cut's hairlines are
+     too fine to read at headline sizes, the text cut loses the drama. */
+  .font-display {
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    font-variation-settings: "opsz" 36;
+  }
+
+  /* Numbers (money, counts, times) are set in the sans with lining figures,
+     as the reference does for its ratings; the serif's figures are old-style. */
+  .figure {
+    font-family: var(--font-body);
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    font-variant-numeric: lining-nums tabular-nums;
+    text-transform: none;
+  }
+
+  /* Small capitals for labels and metadata, as on a printed menu. */
+  .caps {
+    font-size: var(--text-caps);
+    line-height: var(--text-caps--line-height);
+    letter-spacing: var(--text-caps--letter-spacing);
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  /* A flat printed panel: square corners and a hairline, never a shadow. */
   .sticker {
-    @apply rounded-xl border-2 border-border bg-card text-card-foreground shadow-sticker;
+    @apply border border-hairline bg-popover text-popover-foreground;
   }
 }
 
@@ -293,4 +343,173 @@
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
+}
+
+/* Petals that pop out of a ticked task (components/plan/parts.tsx). The container
+   only renders under motion-ok, and JS skips the burst when motion is reduced. */
+@keyframes petal-pop {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-28px) scale(1);
+  }
+}
+
+.petal {
+  opacity: 0;
+  animation: petal-pop 700ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+/* Print / save as PDF: light paper, no chrome, every dashboard section in turn. */
+@media print {
+  :root {
+    color-scheme: light !important;
+  }
+
+  body {
+    font-size: 11pt;
+  }
+
+  .shadow-sticker,
+  .shadow-sticker-sm {
+    box-shadow: none !important;
+  }
+
+  [data-slot="tabs-content"] + [data-slot="tabs-content"] {
+    break-before: page;
+  }
+
+  li,
+  tr,
+  figure {
+    break-inside: avoid;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Landing page motion. Everything is visible by default; these only run when
+ * motion is allowed (theme-init.js sets data-motion before first paint).
+ * ------------------------------------------------------------------------- */
+
+/* Headline letters fade in one by one on load (no JavaScript needed). */
+@keyframes char-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.split-char {
+  display: inline-block;
+}
+
+:root[data-motion="full"] [data-split="load"] .split-char {
+  animation: char-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  animation-delay: calc(var(--i) * 32ms + 250ms);
+}
+
+/* Ideas marquee: two identical runs scroll left forever; static under reduced motion. */
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee 48s linear infinite;
+}
+
+.marquee-track[data-direction="reverse"] {
+  animation-direction: reverse;
+}
+
+:root[data-motion="reduce"] .marquee-track {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}
+
+/* Timeline photos cross-fade as each chapter scrolls into the middle of the screen. */
+[data-chapter-photo] {
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+[data-chapter-photo][data-active="true"] {
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------------------
+ * Type over photographs. Three things keep words readable on busy pictures:
+ * a scrim shaped to where the words sit, a heavier serif weight than on
+ * parchment, and a wide, faint shadow behind the letters.
+ * ------------------------------------------------------------------------- */
+.photo-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 55% at 50% 46%, rgb(28 25 22 / 0.62) 0%, rgb(28 25 22 / 0) 72%),
+    linear-gradient(
+      180deg,
+      rgb(28 25 22 / 0.58) 0%,
+      rgb(28 25 22 / 0.42) 50%,
+      rgb(28 25 22 / 0.9) 100%
+    );
+}
+
+.photo-scrim[data-focus="top-left"] {
+  background:
+    radial-gradient(75% 65% at 18% 22%, rgb(28 25 22 / 0.78) 0%, rgb(28 25 22 / 0) 78%),
+    linear-gradient(
+      180deg,
+      rgb(28 25 22 / 0.5) 0%,
+      rgb(28 25 22 / 0.38) 55%,
+      rgb(28 25 22 / 0.65) 100%
+    );
+}
+
+.photo-scrim[data-focus="bottom-left"] {
+  background:
+    linear-gradient(
+      90deg,
+      rgb(28 25 22 / 0.72) 0%,
+      rgb(28 25 22 / 0.4) 60%,
+      rgb(28 25 22 / 0.25) 100%
+    ),
+    linear-gradient(180deg, rgb(28 25 22 / 0.35) 0%, rgb(28 25 22 / 0.88) 100%);
+}
+
+.photo-scrim[data-focus="bottom"] {
+  background: linear-gradient(
+    180deg,
+    rgb(28 25 22 / 0.1) 10%,
+    rgb(28 25 22 / 0.72) 52%,
+    rgb(28 25 22 / 0.95) 100%
+  );
+}
+
+.on-photo {
+  text-shadow:
+    0 0 32px rgb(24 21 18 / 0.6),
+    0 1px 3px rgb(24 21 18 / 0.5);
+}
+
+.on-photo .font-display {
+  font-weight: 500;
+}
+
+/* Parchment buttons and cards keep crisp dark type. */
+.on-photo [data-slot="button"],
+.on-photo .no-photo-shadow {
+  text-shadow: none;
 }

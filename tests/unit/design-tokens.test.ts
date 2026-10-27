@@ -45,6 +45,8 @@ const basePairs: [string, string, number][] = [
   ["ring", "background", UI],
   ["ring", "card", UI],
   ["ring", "muted", UI],
+  ["gold", "background", UI],
+  ["gold", "card", UI],
 ];
 
 function color(table: TokenTable, token: string, theme: ThemeName): string {

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Mukta, Shrikhand } from "next/font/google";
+import { Bodoni_Moda, Jost } from "next/font/google";
 import { headers } from "next/headers";
 import { AnnouncerProvider } from "@/components/a11y/LiveRegion";
 import { RouteFocus } from "@/components/a11y/RouteFocus";
@@ -8,16 +8,17 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import "./globals.css";
 
-// Display face: Shrikhand (one weight, headlines only). UI face: Mukta.
-const display = Shrikhand({
-  weight: "400",
+// Display face: Bodoni Moda, a high-contrast didone with an optical-size axis, so
+// hairlines stay sturdy at small sizes and turn fine and dramatic at display sizes.
+// UI face: Jost, a geometric sans in the Futura tradition.
+const display = Bodoni_Moda({
   subsets: ["latin"],
+  axes: ["opsz"],
   display: "swap",
   variable: "--font-display",
 });
 
-const body = Mukta({
-  weight: ["400", "500", "700", "800"],
+const body = Jost({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-body",
@@ -26,7 +27,7 @@ const body = Mukta({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: {
-    default: "Festivo | Plan the party, not the panic",
+    default: "Festivo | Planned to the last petal",
     template: "%s | Festivo",
   },
   description:
@@ -38,8 +39,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fff4dc" },
-    { media: "(prefers-color-scheme: dark)", color: "#160f33" },
+    { media: "(prefers-color-scheme: light)", color: "#d8cbb8" },
+    { media: "(prefers-color-scheme: dark)", color: "#292622" },
   ],
 };
 
