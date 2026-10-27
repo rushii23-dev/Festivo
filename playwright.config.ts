@@ -8,7 +8,7 @@ export default defineConfig({
   fullyParallel: true,
   // Every page is server-rendered per request (nonce CSP), so cap parallelism to keep
   // the single test server responsive.
-  workers: process.env.CI ? 2 : 4,
+  workers: process.env.CI ? 2 : 3,
   timeout: 60_000,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
