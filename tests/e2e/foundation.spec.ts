@@ -43,8 +43,9 @@ test.describe("page structure", () => {
     await expect(page.getByRole("main")).toBeVisible();
     await expect(page.getByRole("contentinfo")).toBeVisible();
     await expect(page.locator("h1")).toHaveCount(1);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "Plan the party, not the panic.",
+    // The headline's letters are split for the fade-in; its accessible name stays whole.
+    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(
+      "Planned to the last petal.",
     );
   });
 
@@ -72,8 +73,9 @@ test.describe("keyboard", () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/#main$/);
     await page.keyboard.press("Tab");
+    // The hero's call to action is the first stop inside main (the finale repeats it).
     await expect(
-      page.getByRole("main").getByRole("link", { name: "Start planning" }),
+      page.getByRole("main").getByRole("link", { name: "Start planning" }).first(),
     ).toBeFocused();
   });
 

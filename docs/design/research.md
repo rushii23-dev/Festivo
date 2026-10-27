@@ -72,3 +72,25 @@ font, logo, character or code from them.
 - Colour rooms must keep text at 4.5:1 or more; the existing token test already covers
   every room colour as a background for its paired foreground.
 - An inline mascot replacing a word keeps the word for screen readers (visually hidden text).
+
+## Update, 2026-10-28: editorial direction (Amrit Palace)
+
+After seeing the first dashboard, the user rejected the playful sticker look and asked for
+something "very rich", pointing at [amritpalace.com](https://amritpalace.com/) for its scroll
+animations and its use of photography. This supersedes the playful conclusions above (the
+"coloured rooms", Shrikhand, sticker shadows and the cartoon mascot).
+
+**What we observed** (captured while scrolling at 1440px): a full-bleed dark photo hero with
+a thin serif headline in capitals and small flanking labels; a framed video that opens out
+to full bleed as it scrolls in; photos drifting slowly inside their frames; a split section
+with a saffron "menu card" listing dishes and prices on hairlines; headline letters fading in
+one by one (their own GSAP + SplitType script); Lenis smooth scrolling.
+
+**What Festivo takes, in its own form:** parchment canvas with one saffron accent; whisper
+serif capitals for display and a calm sans for UI; hairline rules and square cards; the
+budget set as a menu card; the timeline as chapters with a pinned photo; ideas as a marquee;
+real sample-plan output instead of marketing claims ("show, don't tell").
+
+**What we do not take:** their photographs, logo, copy, menu content or layouts. Our photos
+are Unsplash-licensed celebration images (see `photo-credits.md`). The mascot survives as a
+line-art arch with a diya flame (the user's choice), not as anything from the reference.
