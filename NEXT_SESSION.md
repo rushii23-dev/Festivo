@@ -1,6 +1,7 @@
 # Festivo: handoff for the next session
 
-Last updated: 2026-10-26, after Phase 4 (commit `414a201`).
+Last updated: 2026-10-28, after the editorial redesign (dashboard, landing page and wizard;
+awaiting the user's review, not yet committed).
 
 Read this first, then `docs/BRIEF.md` (the full original brief) and `docs/design/research.md`
 (design references). The brief is the spec; this file says where we are against it.
@@ -14,22 +15,21 @@ Read this first, then `docs/BRIEF.md` (the full original brief) and `docs/design
 | 2     | Domain logic: schemas, budget, timeline, .ics, cache, rate limit, sanitize, fixtures        | ✅ Done (`d1fde50`) |
 | 3     | AI layer: providers, prompts, parse + repair, `/api/plan`, `/api/refine`, `/api/ideas`, CSP | ✅ Done (`72175bd`) |
 | 4     | Wizard: 6 steps, validation, focus, persistence, streamed generation                        | ✅ Done (`414a201`) |
-| 5     | **Dashboard** at `/plan/[id]`                                                               | ⏭️ **Next**         |
-| 6     | **Landing page** (scroll story, mascot, confetti)                                           | ❌ Not started      |
+| 5     | Dashboard at `/plan/[id]`: 5 tabs, refine sheet, export (editorial restyle)                 | 🔍 In review        |
+| 6     | Landing page: photo-led scroll story, refined Festi, petal finale                           | 🔍 In review        |
 | 7     | Hardening: full e2e per brief, Lighthouse, bundle analysis, audits                          | ❌ Not started      |
 | 8     | Docs + deployment: README, ARCHITECTURE/SECURITY/ACCESSIBILITY.md, Dockerfile               | ❌ Not started      |
 
-**The landing page is not done.** `app/page.tsx` is an interim, server-rendered hero (the
-headline "Plan the party, not the panic." plus a Start planning button). The brief's scroll
-story, Festi mascot, scenes and confetti are all Phase 6.
+**The look changed completely on 2026-10-27/28 at the user's request.** They rejected the
+playful sticker style and pointed at amritpalace.com (style notes they pasted are summarised
+under "Design system" below): parchment canvas, warm espresso ink, one saffron accent,
+whisper-weight serif capitals, hairline rules, sharp corners, full-bleed photography with
+scroll motion, and "show, don't tell". Landing, dashboard and wizard all follow it now.
 
-**`/plan/[id]` is interim too.** `components/plan/PlanPreview.tsx` only proves the plan was
-saved (title, date, summary, counts). Phase 5 replaces it with the dashboard.
-
-Checks at the end of Phase 4: lint clean, typecheck clean, **407 tests** (unit, API,
-component), `lib/` coverage **99.6% lines / 94.3% branches**, build passes, **45 Playwright
-tests** (+3 skipped by design), `npm audit` 0 vulnerabilities. Nothing has been pushed
-anywhere; the repo is local on `main`.
+Checks after the editorial redesign: lint clean, format clean, typecheck clean, **450 tests**
+(unit, API, component), `lib/` coverage **99.6% lines / 94.2% branches**, build passes, **60
+Playwright tests** (+4 skipped by design, 3 local workers), `npm audit` 0 vulnerabilities.
+Nothing has been pushed anywhere; the repo is local on `main`.
 
 ## How to run
 
@@ -91,35 +91,71 @@ mock without a key), `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-flash-lat
 10. **Lint:** `jsx-a11y/control-has-associated-label` ignores native inputs/selects/textareas
     (labels come from `<label htmlFor>` in shared components, which the rule can't follow).
     Labels are verified by axe and by `getByRole(..., { name })` in tests.
-11. **Playwright** runs 4 workers locally (2 in CI) with a 60s timeout: per-request SSR
-    overloaded a single test server with more.
+11. **Playwright** runs 3 workers locally (2 in CI) with a 60s timeout: per-request SSR
+    overloads a single test server with more (4 workers flaked once the dashboard specs landed).
+12. **Budget donut is hand-drawn SVG, not Recharts** (`components/plan/BudgetDonut.tsx`): one
+    small component, no chart library to download, full control of the ink outlines. The
+    editable table next to it is the accessible equivalent; the SVG is `aria-hidden`.
+13. **Vendor quotes win over typed actuals.** Once a vendor is Quoted/Booked/Paid with a quote,
+    that line's "Spent" cell is read-only ("from vendor quotes"). `effectiveBudget()` in
+    `lib/plan/edit.ts`.
+14. **Whole visual identity replaced by the editorial system** (see "Design system"). The
+    brief's playful sticker look, Shrikhand and Mukta are gone (and so is the interim
+    Cormorant/Manrope pairing). The cartoon mascot became a
+    refined line-art mark and the confetti became petals, as the user chose.
+15. **Budget locks live in component state** (not persisted; not in the plan schema).
+16. **Photography from Unsplash** (approved by the user), stored locally and served through
+    `next/image` (static imports give sizes and blur placeholders).
+17. **Vitest stubs image imports** (`tests/setup/image-stub.ts` via a plugin in
+    `vitest.config.mts`), since Vite returns a path where Next returns `{ src, width, … }`.
 
-## Design system (Phase 1) and research
+## Design system (editorial, since 2026-10-28)
 
-- Tokens in `app/globals.css`, each color written once as `light-dark(light, dark)`.
-  `tests/unit/design-tokens.test.ts` parses that file and enforces WCAG AA for every pairing in
-  both themes. **Add any new color pairing to that test.**
-- Palette: cream `#FFF4DC`, violet-ink `#1D1442`, marigold `#FFB627`, coral `#F2667A`,
-  electric violet `#5B2EE8`. Event accents via `data-event="wedding|birthday|community"`
-  (`--event`, `--event-foreground`, `--event-2`, `--event-2-foreground`).
-- Fonts: Shrikhand (display, headlines only, `font-display`) + Mukta (UI).
-- Shapes: `.sticker` cards (ink border + solid offset shadow), `rounded-pill` buttons, 44px targets.
-- Motion: `motion-ok:` Tailwind variant = OS allows motion AND in-site toggle is off.
-  JS animation code must check `prefersReducedMotionNow()` from `lib/prefs/store.ts`.
-- Research conclusions to apply in Phase 6 (`docs/design/research.md`): Festi's eyes live inside
-  the header pill and follow cursor + focus; faint oversized doodle behind the hero; one
-  headline, one visual, one action per scene; each scene is a coloured "room"; the mascot
-  replaces one word in one headline (word kept as screen-reader text); sticker shadows only on
-  the primary action per view.
+- Reference: amritpalace.com (Webflow + GSAP ScrollTrigger + Lenis + SplitType). We take the
+  principles, never its photos, copy or layouts.
+- Tokens in `app/globals.css`, each color written once as `light-dark(light, dark)`;
+  `tests/unit/design-tokens.test.ts` enforces WCAG AA for every pairing in both themes.
+  **Add any new color pairing to that test.**
+- Palette: parchment `#D8CBB8`, card `#E2D7C6`, linen `#CBBEA9`, espresso ink `#2C2A27`
+  (warm near-black; the user approved it, never pure black), muted text `#554D44` (the
+  reference's `#978E81` fails AA), saffron `#D49653` (the only accent), bronze `#8A5A26`/
+  `#6F4418` for accent text. Dark theme: midnight roast `#292622` with parchment text.
+  Every event type shares the same accent; photography carries the colour.
+- Type (changed 2026-10-28 at the user's request): **Bodoni Moda** for display, sentence
+  case, optical size held at `opsz 36` via `.font-display` (the full display cut's hairlines
+  disappear at headline sizes); weight 500 over photos. **Jost** for UI and body. `.caps` =
+  small capitals with 0.12em tracking; `.figure` = numbers in Jost. Bodoni italic is not
+  loaded (it read poorly). Alternatives rendered for the user: `docs/design/font-options.jpg`.
+- Hero (rebuilt 2026-10-28): one statement, "Planned to the last petal.", on parchment, with
+  an arcade of five arched windows below (budget, timeline, the celebration, vendors, ideas,
+  each with a figure from the sample plan). On desktop the hero pins and the centre window
+  grows to fill the screen (`LandingMotion`).
+- Shape: cards and sections square with 1px hairlines; buttons, inputs and tags 3px. No
+  shadows; the primary button is filled ink with a 1px outer frame (`outline-offset 3px`).
+  Button variants `photo` / `photoOutline` are for use over photographs.
+- Type over photos: `.photo-scrim` (with `data-focus="top-left|bottom-left|bottom"`) shapes
+  the darkening to where the words sit; `.on-photo` adds a soft shadow and the 500 weight.
+  The user found the first version hard to read; keep these on every photo section.
+- Photos: 15 Unsplash-License images in `public/images/`, registry with alt text in
+  `components/landing/photos.ts`, credits in `docs/design/photo-credits.md`.
+- Motion: `motion-ok:` Tailwind variant = OS allows motion AND in-site toggle is off. JS
+  animation must check `prefersReducedMotionNow()`. Landing motion lives in
+  `components/landing/LandingMotion.tsx` (GSAP + ScrollTrigger + Lenis, loaded after first
+  paint, skipped entirely under reduced motion): parallax (`data-parallax`), expanding frame
+  (`data-expand`), letter reveals (`SplitHeading reveal="scroll"`), rise-in (`data-reveal`),
+  timeline photo cross-fade (`data-chapter`). The hero headline fades in with CSS only.
+- Festi, refined (user's choice): `components/brand/FestiMark.tsx`, a line-art arch with a diya
+  flame and two eyes that follow the pointer and keyboard focus. The confetti became falling
+  marigold petals on a canvas in the finale (`PetalFall`), off under reduced motion.
 
 ## Code map
 
 ```
 app/
   layout.tsx            fonts, nonce, theme-init script, SkipLink, header/footer, RouteFocus
-  page.tsx              INTERIM hero (Phase 6 replaces)
   plan/new/page.tsx     wizard page
-  plan/[id]/page.tsx    INTERIM plan view (Phase 5 replaces)
+  page.tsx              landing scroll story (8 scenes, real sample-plan data)
+  plan/[id]/page.tsx    plan dashboard page (renders PlanDashboard)
   api/plan|refine|ideas route handlers (guard → body limit → Zod → service)
 proxy.ts                per-request nonce CSP
 components/
@@ -128,10 +164,13 @@ components/
   layout/               SiteHeader, SiteFooter, Wordmark, DisplaySettings (theme + motion popover)
   theme/ThemePicker     system/light/dark radios
   ui/                   button, field (Field/Fieldset/Choice/ErrorText), label, popover,
-                        radio-group, switch, skeleton  (shadcn on Radix, restyled)
+                        radio-group, switch, skeleton, tabs, sheet  (shadcn on Radix, restyled)
   wizard/               Wizard, WizardProgress, Step* components, StepReview (+GenerationProgress)
-  plan/PlanPreview      INTERIM
-  icons/EventIcons      original line icons per event type
+  plan/                 PlanDashboard (shell, hash tabs), PlanHero (toran + arch), Overview/
+                        Budget(+BudgetDonut)/Timeline(+TaskForm)/Vendors/Ideas panels,
+                        RefineSheet, ShareMenu, parts (MoneyInput, Garland, TaskCheck), client
+  brand/FestiMark       refined mascot mark (eyes follow pointer + focus)
+  landing/              Photo, photos (registry), SplitHeading, Marquee, LandingMotion, PetalFall
 hooks/                  use-preferences, use-hydrated-store, use-plan-generation
 lib/
   schemas/              common (vocabularies), eventInput, plan (PlanSchema etc.)
@@ -144,7 +183,8 @@ lib/
   ai/                   provider (interface, errors), config, gemini, mock (incl. mockRefine),
                         schemas (draft + PlanPatchSchema), prompts, parse (repair), getProvider
   plan/                 fromDraft, patch (applyPatch), diff (diffPlans, describeChange), ids,
-                        ndjson (client stream reader), service (streamPlan, refinePlan, moreIdeas)
+                        ndjson (client stream reader), service (streamPlan, refinePlan, moreIdeas),
+                        edit (pure dashboard edits), share (copy-summary text), dashboard (tabs, labels)
   http/                 api (guard, rate limiter, body limits, errors), requests (body schemas)
   security/             sanitize, promptGuard, rateLimit, headers (CSP + static headers)
   cache/lru             LRU + TTL, stableStringify, hashKey (SHA-256)
@@ -152,58 +192,22 @@ lib/
   store/                planStore (zustand persist, sanitizePersisted), debouncedStorage
   wizard/               draft (model, validateStep, toEventInput), labels
   design/contrast       WCAG contrast helpers
+  landing/showcase      sample wedding + budget menu, chapters, vendors, idea titles for the landing
 tests/  unit/ api/ component/ e2e/ setup/
 ```
 
-## Phase 5 plan: the dashboard (`/plan/[id]`)
+## Phase 5 as built
 
-Replace `components/plan/PlanPreview.tsx` with a client dashboard. Reuse what exists; most of
-the logic is already written and tested.
+Everything in the Phase 5 plan shipped: tabs with the active tab in the URL hash, Overview,
+Budget (donut + editable table, locks, rebalance, vendor-fed actuals), Timeline (phases, add /
+edit / delete with undo, run sheet, `.ics`), Vendors, Ideas (save, dismiss, More like this),
+Refine with AI (side sheet, preview, Apply / Discard), Export and share (print stylesheet,
+`.ics`, copy summary). Ticking a task pops marigold petals (motion-ok only) and always
+announces. Festi himself does not exist yet; the cheer is a petal burst until Phase 6.
 
-1. **Shell**: load the plan from `usePlanStore` after `useHydratedStore()`; skeleton while
-   loading; friendly not-found (the current one). Wrap in `data-event={plan.eventType}`.
-   `h1` = plan title; Radix Tabs (`npx shadcn@latest add tabs`, then restyle like the other
-   primitives): Overview · Budget · Timeline · Vendors · Ideas. Keep the active tab in the URL
-   hash or search param so it survives reload. One `h2` per panel.
-2. **Overview**: `countdown()` (lib/timeline/dates), budget health from `summarizeBudget()`
-   (text + icon, never color alone), `nextTasks(plan.timeline, 3)` with checkboxes,
-   `bookingProgress(plan.vendors)`, the plan summary.
-3. **Budget**: Recharts donut (dynamic import, `ssr: false`) **plus an always-present data
-   table** (the accessible alternative). Editable allocated and actual amounts
-   (`parseMoneyInput`), live totals (memoize `summarizeBudget`), lock + "Rebalance" using
-   `rebalance(items, total, locked)`, over-budget warnings with icon + text. Actual spend should
-   include vendor quotes via `applyVendorSpend(budget, vendors, eventType)`; decide and document
-   whether manual actuals or vendor quotes win (the function currently lets vendor quotes override).
-   Chart segments need the ink border (tokens `--chart-1..5`).
-4. **Timeline**: `groupByPhase()`; mark done, add, edit, delete tasks (validate with
-   `TimelineTaskSchema`, then `normalizeTimeline`); a Day-of run sheet view from `runSheet()`;
-   ".ics" download via `buildIcs()` + `icsFileName()` (Blob + object URL; CSP allows `blob:`).
-   When a task is ticked, Festi "cheers" only if `!prefersReducedMotionNow()`; always announce
-   via `useAnnounce()`.
-5. **Vendors**: one card per vendor; status select (To research → Contacted → Quoted → Booked →
-   Paid, labels in `VENDOR_STATUS_LABELS`), quote input feeding actual spend, notes, and the
-   "Questions to ask" list.
-6. **Ideas**: cards grouped by category with `costTierSymbol()` + `costTierName()` (screen-reader
-   text) and a "Fits your budget" badge from `fitsBudget()`; Save / Dismiss (`saved`,
-   `dismissed`); "More like this" → `POST /api/ideas { plan, category }` (returns
-   `{ ideas: [] }` when demo mode runs out; show a friendly message).
-7. **Refine with AI**: a side panel / dialog (focus moves in, Esc closes, focus returns).
-   `POST /api/refine { plan, instruction, timeZone }` → `{ explanation, plan, changes }`. Show
-   the explanation and the `changes` list (use `describeChange()`), then **Accept** (save the
-   returned `plan` via `savePlan`) or **Reject**. Announce results. Errors are generic.
-   Demo mode understands: cut/raise budget by N%, move the date to <month>, eco-friendly,
-   cheaper.
-8. **Export & share**: a print stylesheet (`@media print`: hide chrome/tabs, show every
-   section) + "Print or save as PDF" button (`window.print()`), "Download calendar (.ics)",
-   and "Copy summary" (Clipboard API, text built by a pure function in `lib/` with a test).
-9. **Store**: use `updatePlan(id, fn)`; keep all mutations as pure functions in `lib/plan/`
-   (e.g. `setTaskDone`, `addTask`, `updateVendor`, `setIdeaSaved`) with unit tests.
-10. **Tests (brief requires)**: component tests for budget editing + live totals, vendor status
-    changes, the refine accept/reject flow; unit tests for the new pure helpers; e2e: generate →
-    edit budget → tick a task → export .ics for each event type; axe on the dashboard (every tab,
-    both themes); keyboard-only through the tabs.
-11. Remove `PlanPreview` and update the e2e assertions in `tests/e2e/wizard.spec.ts` that look
-    for its "tasks, N vendors and N ideas" text.
+Specs: `tests/unit/plan-edit.test.ts`, `tests/component/dashboard.test.tsx`,
+`tests/e2e/dashboard.spec.ts` (flow ×3 event types, refine, axe on every tab in both themes,
+320px reflow, keyboard tabs). Shared e2e steps live in `tests/e2e/helpers.ts`.
 
 ## Phases 6–8 (after the dashboard)
 
@@ -233,5 +237,11 @@ the Playwright web server to the standalone server if `next start` complains).
 - Vitest 5 warns about Node 25 (unsupported engine); CI uses Node 24 LTS. Harmless locally.
 - `gsap-skills.zip` / `lenis-skill.zip` sit in the repo root, git-ignored; safe to delete.
 - The `magic` (21st.dev) MCP server failed to connect (API key); not needed.
-- Brief items still open overall: dashboard, landing, full e2e, Lighthouse/bundle numbers,
+- The palette change also restyles the wizard and the interim landing page (tokens are global).
+  Their axe scans pass, but they have not had a visual review in the new colours.
+- Turbopack's dev watcher can miss CSS edits while Vitest churns `node_modules/.vitest-cache`
+  (it logs "waiting for the filesystem to settle"). Restart `npm run dev` if styles look stale.
+- Lighthouse has not been run since photography and GSAP arrived; Phase 7 must check LCP on
+  the hero (preloaded via `fetchPriority="high"`) and the landing JS budget.
+- Brief items still open overall: full e2e, Lighthouse/bundle numbers,
   docs, Dockerfile, CI never run on GitHub (repo has no remote).
