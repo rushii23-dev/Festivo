@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FestiMark } from "@/components/brand/FestiMark";
+import { FestivoSeal } from "@/components/brand/FestivoSeal";
 import { LandingMotion } from "@/components/landing/LandingMotion";
 import { Marquee } from "@/components/landing/Marquee";
 import { PetalFall } from "@/components/landing/PetalFall";
@@ -57,65 +57,6 @@ const OCCASIONS = [
 
 const dark = "bg-[#292622] text-[#e2d6c3]";
 
-interface ArchWindow {
-  photo: SitePhoto;
-  label: string;
-  value: string;
-  place: "outer" | "inner" | "center";
-}
-
-/** Window heights step up towards the centre, like a palace facade. */
-const WINDOW_SIZE: Record<ArchWindow["place"], string> = {
-  outer: "hidden h-[min(19svh,11rem)] md:block",
-  inner: "h-[min(25svh,14.5rem)]",
-  center: "h-[min(33svh,20rem)]",
-};
-
-/**
- * Five arched windows, each a different side of Festivo with a real figure from
- * the sample plan. The centre one is the celebration itself.
- */
-function Arcade({ windows }: { windows: ArchWindow[] }) {
-  return (
-    <ul
-      aria-label="What a Festivo plan holds"
-      className="relative flex items-end justify-center gap-3 px-4 sm:gap-6 lg:gap-8"
-    >
-      {windows.map((w, index) => (
-        <li
-          key={w.label}
-          data-window={w.place === "center" ? "center" : index < 2 ? "left" : "right"}
-          className="grid justify-items-center gap-3"
-        >
-          <div
-            data-window-frame
-            className={`relative aspect-[3/4] overflow-hidden rounded-t-full border border-hairline p-1.5 sm:p-2 ${WINDOW_SIZE[w.place]}`}
-          >
-            <Photo
-              src={w.photo.src}
-              alt={w.photo.alt}
-              sizes={w.place === "center" ? "100vw" : "(min-width: 768px) 16vw, 30vw"}
-              preload={w.place === "center"}
-              className="size-full rounded-t-full"
-            />
-          </div>
-          <p
-            data-window-caption
-            className={`grid text-center ${w.place === "outer" ? "hidden md:grid" : ""}`}
-          >
-            <span className="caps text-muted-foreground">{w.label}</span>
-            <span
-              className={w.place === "center" ? "font-display text-xl" : "figure text-lg"}
-            >
-              {w.value}
-            </span>
-          </p>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export default function HomePage() {
   const today = todayIso();
   const plan = samplePlan(today);
@@ -128,71 +69,59 @@ export default function HomePage() {
 
   return (
     <>
-      {/* 1. Hero: one statement over an arcade of everything Festivo plans --- */}
+      {/* 1. Hero: a photograph, the seal and one statement, revealed in turn */}
       <section
         aria-labelledby="hero-title"
-        data-hero
-        className="relative overflow-hidden"
+        data-hero-photo
+        className={`relative isolate flex min-h-[100svh] flex-col overflow-hidden ${dark}`}
       >
-        <div
-          data-hero-pin
-          className="relative flex min-h-[calc(100svh-4.5rem)] flex-col justify-between gap-10 pt-10 pb-6 sm:pt-14"
-        >
-          <div
-            data-hero-copy
-            className="mx-auto grid w-full max-w-[90rem] justify-items-center gap-6 px-4 text-center sm:px-8"
-          >
-            <SplitHeading
-              as="h1"
-              id="hero-title"
-              reveal="load"
-              lines={["Planned to the", "last petal."]}
-              label="Planned to the last petal."
-              className="text-[clamp(3.1rem,0.9rem+6.4vw,6.6rem)] leading-[0.95] tracking-[-0.035em]"
-            />
-            <p className="max-w-[46ch] text-[1.0625rem] text-muted-foreground">
-              Budget, timeline, vendors and ideas for your wedding, birthday or gathering,
-              composed into a single plan.
-            </p>
-            <Button asChild size="lg">
+        <div className="hero-photo absolute inset-0 -z-10">
+          <Photo
+            src={PHOTOS.heroNewlyweds.src}
+            alt={PHOTOS.heroNewlyweds.alt}
+            sizes="100vw"
+            preload
+            parallax={6}
+            position="50% 62%"
+            className="absolute inset-0"
+          />
+        </div>
+        <div className="hero-scrim -z-10" />
+
+        <div className="on-photo relative mx-auto flex w-full max-w-[90rem] flex-1 flex-col items-center justify-center px-4 pt-28 pb-24 text-center sm:px-8">
+          <FestivoSeal className="hero-seal h-16 text-[#e8c48f] sm:h-20" />
+          <SplitHeading
+            as="h1"
+            id="hero-title"
+            reveal="load"
+            lines={["Planned to the", "last petal"]}
+            label="Planned to the last petal."
+            className="mt-8 text-[clamp(3rem,0.4rem+7.2vw,8.2rem)] leading-[0.92] tracking-[0.01em] uppercase sm:mt-10"
+          />
+          <span aria-hidden="true" className="hero-rule mt-9 sm:mt-11">
+            <svg viewBox="0 0 12 12" className="size-2.5 text-[#e8c48f]">
+              <path d="M6 0 12 6 6 12 0 6Z" fill="currentColor" />
+            </svg>
+          </span>
+          <p className="hero-line mt-7 max-w-[36ch] text-[1.0625rem] leading-relaxed sm:text-lg">
+            Budgets, timelines, vendors and ideas for weddings, birthdays and gatherings,
+            in one plan.
+          </p>
+          <div className="hero-cta mt-9">
+            <Button asChild variant="photo" size="lg">
               <Link href="/plan/new">Start planning</Link>
             </Button>
           </div>
-          <Arcade
-            windows={[
-              {
-                photo: PHOTOS.thali,
-                label: "Budget",
-                value: glimpse.budget,
-                place: "outer",
-              },
-              {
-                photo: PHOTOS.diyas,
-                label: "Timeline",
-                value: `${glimpse.tasks} dated tasks`,
-                place: "inner",
-              },
-              {
-                photo: PHOTOS.heroNewlyweds,
-                label: `${glimpse.days} days to go`,
-                value: glimpse.title,
-                place: "center",
-              },
-              {
-                photo: PHOTOS.festivalDrummers,
-                label: "Vendors",
-                value: `${glimpse.vendors} to book`,
-                place: "inner",
-              },
-              {
-                photo: PHOTOS.birthdayCandles,
-                label: "Ideas",
-                value: `${plan.ideas.length} picked`,
-                place: "outer",
-              },
-            ]}
-          />
         </div>
+
+        <a
+          href="#story"
+          className="hero-scroll caps absolute bottom-6 left-1/2 flex min-h-11 -translate-x-1/2 flex-col items-center gap-3 text-[#e2d6c3]/80"
+        >
+          Scroll
+          <span className="sr-only"> to see how a plan comes together</span>
+          <span aria-hidden="true" className="hero-scroll-line" />
+        </a>
       </section>
 
       {/* 2. A framed photo opens out to full bleed --------------------------- */}
@@ -245,7 +174,7 @@ export default function HomePage() {
                   {plan.title}, {plan.location}, {plan.guestCount} guests
                 </p>
               </div>
-              <FestiMark className="h-12" />
+              <FestivoSeal className="h-14" flame="currentColor" />
             </div>
             <ul>
               {menu.map((line) => (
@@ -524,7 +453,7 @@ export default function HomePage() {
         <div className="photo-scrim" />
         <PetalFall />
         <div className="on-photo relative z-10 grid justify-items-center gap-8 px-4 py-24 text-center">
-          <FestiMark className="h-20" />
+          <FestivoSeal className="h-20" />
           <SplitHeading
             id="finale-title"
             reveal="scroll"

@@ -6,7 +6,6 @@ import { prefersReducedMotionNow } from "@/lib/prefs/store";
 /**
  * Scroll choreography for the landing page, loaded after first paint:
  * - Lenis smooth scrolling, kept in step with GSAP's ScrollTrigger;
- * - the hero pins while its centre window grows to fill the screen (desktop);
  * - photos drift inside their frames ([data-parallax]);
  * - a framed photo opens out to full bleed ([data-expand]);
  * - headings fade in letter by letter ([data-split="scroll"]);
@@ -37,71 +36,6 @@ export function LandingMotion() {
       gsap.ticker.lagSmoothing(0);
 
       const ctx = gsap.context(() => {
-        // Hero: the statement lifts away, the side windows part, and the centre
-        // window grows until the visitor is looking through it. Desktop only.
-        const hero = document.querySelector<HTMLElement>("[data-hero-pin]");
-        const centre = hero?.querySelector<HTMLElement>(
-          '[data-window="center"] [data-window-frame]',
-        );
-        if (hero && centre) {
-          gsap.matchMedia().add("(min-width: 1024px)", () => {
-            const cover = () =>
-              Math.max(
-                window.innerWidth / centre.offsetWidth,
-                window.innerHeight / centre.offsetHeight,
-              ) * 1.3;
-            const lift = () => {
-              const frame = centre.getBoundingClientRect();
-              const top = frame.top - hero.getBoundingClientRect().top;
-              return window.innerHeight / 2 - (top + frame.height / 2);
-            };
-            gsap
-              .timeline({
-                scrollTrigger: {
-                  trigger: hero,
-                  start: "top top",
-                  end: "+=110%",
-                  scrub: 0.6,
-                  pin: true,
-                  invalidateOnRefresh: true,
-                },
-              })
-              .to(hero.querySelector("[data-hero-copy]"), {
-                y: -90,
-                opacity: 0,
-                ease: "power1.in",
-                duration: 0.35,
-              })
-              .to(
-                hero.querySelectorAll("[data-window-caption]"),
-                { opacity: 0, duration: 0.15 },
-                0,
-              )
-              .to(
-                hero.querySelectorAll('[data-window="left"]'),
-                { xPercent: -80, opacity: 0, duration: 0.55, ease: "power2.in" },
-                0.05,
-              )
-              .to(
-                hero.querySelectorAll('[data-window="right"]'),
-                { xPercent: 80, opacity: 0, duration: 0.55, ease: "power2.in" },
-                0.05,
-              )
-              .to(
-                centre,
-                {
-                  scale: cover,
-                  y: lift,
-                  padding: 0,
-                  borderColor: "transparent",
-                  ease: "power2.inOut",
-                  duration: 1,
-                },
-                0,
-              );
-          });
-        }
-
         gsap.utils.toArray<HTMLElement>("[data-parallax]").forEach((layer) => {
           const amount = Number(layer.dataset.parallax) || 8;
           gsap.fromTo(
