@@ -1,17 +1,15 @@
 import Link from "next/link";
-import { FestiMark } from "@/components/brand/FestiMark";
+import { FestivoSeal } from "@/components/brand/FestivoSeal";
 
-/** Festi's arch mark beside "Festivo" in widely spaced serif capitals. */
+/** The seal beside "Festivo" in the display serif's italic. */
 export function Wordmark() {
   return (
     <Link
       href="/"
-      className="inline-flex min-h-11 items-center gap-2.5 rounded-sm leading-none"
+      className="inline-flex min-h-11 items-center gap-3 rounded-sm leading-none"
     >
-      <FestiMark className="h-8" />
-      <span className="font-display text-[1.4rem] tracking-[0.2em] uppercase sm:text-[1.55rem]">
-        Festivo
-      </span>
+      <FestivoSeal className="h-9" />
+      <span className="wordmark text-[1.9rem] sm:text-[2.1rem]">Festivo</span>
     </Link>
   );
 }
