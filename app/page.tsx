@@ -57,6 +57,25 @@ const OCCASIONS = [
 
 const dark = "bg-[#292622] text-[#e2d6c3]";
 
+/** The finale's row of palace windows, stepping up to the centre. */
+const FINALE_WINDOWS: {
+  photo: SitePhoto;
+  place: "outer" | "inner" | "center";
+  position?: string;
+}[] = [
+  { photo: PHOTOS.henna, place: "outer", position: "60% 50%" },
+  { photo: PHOTOS.diyas, place: "inner" },
+  { photo: PHOTOS.heroNewlyweds, place: "center", position: "50% 60%" },
+  { photo: PHOTOS.marigoldGarlands, place: "inner" },
+  { photo: PHOTOS.birthdayCandles, place: "outer" },
+];
+
+const FINALE_SIZES = {
+  outer: "hidden w-[13vw] max-w-[11rem] sm:block",
+  inner: "w-[26vw] max-w-[14rem] sm:w-[17vw]",
+  center: "w-[38vw] max-w-[19rem] sm:w-[23vw]",
+};
+
 export default function HomePage() {
   const today = todayIso();
   const plan = samplePlan(today);
@@ -69,7 +88,7 @@ export default function HomePage() {
 
   return (
     <>
-      {/* 1. Hero: a photograph, the seal and one statement, revealed in turn */}
+      {/* 1. Hero: the ballroom and one quiet statement in the bottom-left corner */}
       <section
         aria-labelledby="hero-title"
         data-hero-photo
@@ -77,86 +96,90 @@ export default function HomePage() {
       >
         <div className="hero-photo absolute inset-0 -z-10">
           <Photo
-            src={PHOTOS.heroNewlyweds.src}
-            alt={PHOTOS.heroNewlyweds.alt}
+            src={PHOTOS.ballroomMandap.src}
+            alt={PHOTOS.ballroomMandap.alt}
             sizes="100vw"
             preload
-            parallax={6}
-            position="50% 62%"
+            parallax={5}
+            position="50% 45%"
             className="absolute inset-0"
           />
         </div>
         <div className="hero-scrim -z-10" />
 
-        <div className="on-photo relative mx-auto flex w-full max-w-[90rem] flex-1 flex-col items-center justify-center px-4 pt-28 pb-24 text-center sm:px-8">
-          <FestivoSeal className="hero-seal h-16 text-[#e8c48f] sm:h-20" />
-          <SplitHeading
-            as="h1"
-            id="hero-title"
-            reveal="load"
-            lines={["Planned to the", "last petal"]}
-            label="Planned to the last petal."
-            className="mt-8 text-[clamp(3rem,0.4rem+7.2vw,8.2rem)] leading-[0.92] tracking-[0.01em] uppercase sm:mt-10"
-          />
-          <span aria-hidden="true" className="hero-rule mt-9 sm:mt-11">
-            <svg viewBox="0 0 12 12" className="size-2.5 text-[#e8c48f]">
-              <path d="M6 0 12 6 6 12 0 6Z" fill="currentColor" />
-            </svg>
-          </span>
-          <p className="hero-line mt-7 max-w-[36ch] text-[1.0625rem] leading-relaxed sm:text-lg">
-            Budgets, timelines, vendors and ideas for weddings, birthdays and gatherings,
-            in one plan.
-          </p>
-          <div className="hero-cta mt-9">
-            <Button asChild variant="photo" size="lg">
-              <Link href="/plan/new">Start planning</Link>
-            </Button>
-          </div>
-        </div>
-
-        <a
-          href="#story"
-          className="hero-scroll caps absolute bottom-6 left-1/2 flex min-h-11 -translate-x-1/2 flex-col items-center gap-3 text-[#e2d6c3]/80"
-        >
-          Scroll
-          <span className="sr-only"> to see how a plan comes together</span>
-          <span aria-hidden="true" className="hero-scroll-line" />
-        </a>
-      </section>
-
-      {/* 2. A framed photo opens out to full bleed --------------------------- */}
-      <section id="story" aria-labelledby="story-title" className="p-2 sm:p-3">
-        <div
-          data-expand
-          className={`relative isolate flex min-h-[100svh] flex-col justify-start overflow-hidden ${dark}`}
-        >
-          <Photo
-            src={PHOTOS.mandapNight.src}
-            alt={PHOTOS.mandapNight.alt}
-            sizes="100vw"
-            parallax={8}
-            className="absolute inset-0"
-          />
-          <div className="photo-scrim" data-focus="top-left" />
-          <div className="on-photo relative z-10 grid max-w-[46rem] gap-6 p-6 pt-12 sm:p-12 lg:p-16">
+        <div className="relative mx-auto grid w-full max-w-[90rem] flex-1 items-end px-6 pt-32 pb-14 sm:px-10 sm:pb-20 lg:px-14 lg:pb-24">
+          <div className="on-photo grid max-w-[34rem] justify-items-start">
             <SplitHeading
-              id="story-title"
-              reveal="scroll"
-              lines={["Every detail,", "held in one place"]}
-              className="text-headline"
+              as="h1"
+              id="hero-title"
+              reveal="load"
+              lines={["Planned to", "the last petal."]}
+              label="Planned to the last petal."
+              className="text-[clamp(2.75rem,1.4rem+3.4vw,4.75rem)] leading-[1.02] tracking-[-0.01em]"
             />
-            <p className="max-w-[46ch] leading-relaxed">
-              One plan holds the money, the dates, the people you hire and the ideas you
-              love. Change one part and the rest keeps up.
-            </p>
-            <div>
+            <span aria-hidden="true" className="hero-rule mt-7" />
+            <div className="hero-cta mt-8 flex flex-wrap items-center gap-x-7 gap-y-4">
               <Button asChild variant="photo">
-                <Link href="/plan/new">Start your plan</Link>
+                <Link href="/plan/new">Start planning</Link>
               </Button>
+              <Link
+                href="#story"
+                className="caps min-h-11 content-center border-b border-[#e2d6c3]/40 text-[#e2d6c3]/90 hover:border-[#e2d6c3]"
+              >
+                See how it works
+              </Link>
             </div>
           </div>
         </div>
       </section>
+
+      {/* 2. A palace window grows until the photograph fills the screen. Without
+             motion it is simply a full-bleed photograph with the copy on it. */}
+      {/* The wrapper keeps ScrollTrigger's pin spacer inside a node React owns, so
+          leaving the page can remove the section cleanly. */}
+      <div>
+        <section
+          id="story"
+          aria-labelledby="story-title"
+          data-window-grow
+          className="relative h-[100svh] min-h-[34rem] overflow-hidden"
+        >
+          <div
+            data-window
+            className={`absolute inset-0 isolate flex flex-col justify-end overflow-hidden ${dark}`}
+          >
+            <div data-window-photo className="absolute inset-0">
+              <Photo
+                src={PHOTOS.lightsUnderTrees.src}
+                alt={PHOTOS.lightsUnderTrees.alt}
+                sizes="100vw"
+                position="50% 60%"
+                className="absolute inset-0"
+              />
+            </div>
+            <div data-window-scrim className="photo-scrim" data-focus="corner" />
+            <div
+              data-window-copy
+              className="on-photo relative z-10 grid max-w-[46rem] gap-6 p-6 pb-12 sm:p-12 lg:p-16"
+            >
+              <h2 id="story-title" className="font-display text-headline">
+                Every detail,
+                <br />
+                held in one place
+              </h2>
+              <p className="max-w-[46ch] leading-relaxed">
+                One plan holds the money, the dates, the people you hire and the ideas you
+                love. Change one part and the rest keeps up.
+              </p>
+              <div>
+                <Button asChild variant="photo">
+                  <Link href="/plan/new">Start your plan</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
       {/* 3. The budget, set like a menu -------------------------------------- */}
       <section id="budget" aria-labelledby="budget-title" className="grid lg:grid-cols-2">
@@ -237,8 +260,8 @@ export default function HomePage() {
             </div>
           </dl>
           <Photo
-            src={PHOTOS.lightsUnderTrees.src}
-            alt={PHOTOS.lightsUnderTrees.alt}
+            src={PHOTOS.mandapNight.src}
+            alt={PHOTOS.mandapNight.alt}
             sizes="(min-width: 1024px) 45vw, 100vw"
             parallax={10}
             className="aspect-[4/5] w-full"
@@ -437,36 +460,53 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 8. Finale ------------------------------------------------------------ */}
+      {/* 8. Finale: the invitation to start, above a row of palace windows */}
       <section
         aria-labelledby="finale-title"
-        className={`relative isolate flex min-h-[100svh] items-center justify-center overflow-hidden ${dark}`}
+        className="finale relative isolate overflow-hidden"
       >
-        <Photo
-          src={PHOTOS.birthdayCake.src}
-          alt={PHOTOS.birthdayCake.alt}
-          sizes="100vw"
-          parallax={8}
-          className="absolute inset-0"
-          position="50% 60%"
-        />
-        <div className="photo-scrim" />
         <PetalFall />
-        <div className="on-photo relative z-10 grid justify-items-center gap-8 px-4 py-24 text-center">
-          <FestivoSeal className="h-20" />
+        <div className="relative mx-auto grid w-full max-w-[90rem] justify-items-center px-4 pt-28 text-center sm:px-8 lg:pt-36">
+          <FestivoSeal className="h-16 text-gold" />
           <SplitHeading
             id="finale-title"
             reveal="scroll"
             lines={["Your celebration,", "beautifully planned"]}
-            className="text-display"
+            className="mt-8 text-display"
           />
-          <p className="max-w-[44ch] leading-relaxed">
+          <span aria-hidden="true" className="ornament-center mt-9">
+            <span />
+          </span>
+          <p className="mt-7 max-w-[44ch] text-lg leading-relaxed text-muted-foreground">
             Six short questions, about a minute, and your plan is ready to edit, share and
             print.
           </p>
-          <Button asChild variant="photo" size="lg">
-            <Link href="/plan/new">Start planning</Link>
-          </Button>
+          <div className="mt-10">
+            <Button asChild size="lg">
+              <Link href="/plan/new">Start planning</Link>
+            </Button>
+          </div>
+
+          {/* Five windows stepping up to the centre, standing on a gold ledge */}
+          <ul
+            aria-hidden="true"
+            className="mt-20 flex w-full items-end justify-center gap-3 border-b border-gold/60 sm:gap-5 lg:mt-28 lg:gap-8"
+          >
+            {FINALE_WINDOWS.map((w) => (
+              <li key={w.photo.alt} data-reveal className={FINALE_SIZES[w.place]}>
+                <div className="rounded-t-full border border-gold/50 p-1.5 sm:p-2">
+                  <Photo
+                    src={w.photo.src}
+                    alt=""
+                    sizes="(min-width: 1024px) 20vw, 30vw"
+                    parallax={6}
+                    position={w.position}
+                    className="aspect-[3/4] w-full rounded-t-full"
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

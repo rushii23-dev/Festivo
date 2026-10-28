@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bodoni_Moda, Jost } from "next/font/google";
+import { Cormorant_Garamond, Jost } from "next/font/google";
 import { headers } from "next/headers";
 import { AnnouncerProvider } from "@/components/a11y/LiveRegion";
 import { RouteFocus } from "@/components/a11y/RouteFocus";
@@ -8,13 +8,12 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import "./globals.css";
 
-// Display face: Bodoni Moda, a high-contrast didone with an optical-size axis, so
-// hairlines stay sturdy at small sizes and turn fine and dramatic at display sizes.
-// Its italic sets the wordmark. UI face: Jost, a geometric sans in the Futura tradition.
-const display = Bodoni_Moda({
+// Display face: Cormorant Garamond, a Garamond cut for display sizes: fine,
+// high-contrast and graceful, with an italic that sets the wordmark.
+// UI face: Jost, a geometric sans in the Futura tradition.
+const display = Cormorant_Garamond({
   subsets: ["latin"],
   style: ["normal", "italic"],
-  axes: ["opsz"],
   display: "swap",
   variable: "--font-display",
 });
