@@ -4,6 +4,16 @@ import { expect, test, type Page } from "@playwright/test";
 const PAGES = ["/", "/plan/new", "/missing-page"];
 
 async function expectNoAxeViolations(page: Page) {
+  // Let the entrance finish first: mid-fade text is half transparent. Endless
+  // loops (the ideas marquee) are skipped so the wait always ends.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  );
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .analyze();
@@ -87,29 +97,28 @@ test.describe("keyboard", () => {
   });
 });
 
-test.describe("display preferences", () => {
-  test("reduce motion toggle is saved and applied", async ({ page }) => {
+test.describe("motion", () => {
+  test("animates by default, with no switch to turn it off", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("data-motion", "full");
-    await page
-      .getByRole("contentinfo")
-      .getByRole("switch", { name: "Reduce motion" })
-      .click();
-    await expect(page.locator("html")).toHaveAttribute("data-motion", "reduce");
-    await page.reload();
-    await expect(page.locator("html")).toHaveAttribute("data-motion", "reduce");
+    await expect(page.getByRole("switch", { name: "Reduce motion" })).toHaveCount(0);
   });
 
-  test("device reduced-motion setting is respected", async ({ page }) => {
+  test("a choice saved by the old switch no longer stops motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    await page.evaluate(() =>
+      localStorage.setItem("festivo:prefs", JSON.stringify({ reduceMotion: true })),
+    );
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-motion", "full");
+  });
+
+  test("the device's reduced-motion setting is respected", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("data-motion", "reduce");
-    const toggle = page
-      .getByRole("contentinfo")
-      .getByRole("switch", { name: "Reduce motion" });
-    await expect(toggle).toBeChecked();
-    await expect(toggle).toBeDisabled();
   });
 });
 

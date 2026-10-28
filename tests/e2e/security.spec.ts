@@ -22,9 +22,9 @@ test.describe("security headers", () => {
         violations.push(msg.text());
     });
     await page.goto("/");
-    // Toggling a client component proves the app hydrated under the policy.
-    await page.getByRole("switch", { name: "Reduce motion" }).click();
-    await expect(page.locator("html")).toHaveAttribute("data-motion", "reduce");
+    // Smooth scrolling starts from a client component, which proves the app
+    // hydrated and loaded its scripts under the policy.
+    await expect(page.locator("html.lenis")).toHaveCount(1);
     expect(violations).toEqual([]);
   });
 });

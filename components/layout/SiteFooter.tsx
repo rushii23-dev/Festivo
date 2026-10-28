@@ -1,4 +1,3 @@
-import { MotionToggle } from "@/components/a11y/MotionToggle";
 import { FestivoSeal } from "@/components/brand/FestivoSeal";
 
 export function SiteFooter() {
@@ -9,15 +8,10 @@ export function SiteFooter() {
           <FestivoSeal className="h-14" />
           <p className="wordmark text-5xl">Festivo</p>
         </div>
-        <div className="grid gap-6 md:justify-items-end">
-          <div className="grid gap-1 text-muted-foreground md:text-right">
-            <p className="caps">Weddings, birthdays and community events</p>
-            <p className="caps">Your plans are saved in this browser only</p>
-            <p className="caps">Photography from Unsplash</p>
-          </div>
-          <div className="w-full border-t border-hairline pt-5 md:max-w-80">
-            <MotionToggle />
-          </div>
+        <div className="grid gap-1 text-muted-foreground md:text-right">
+          <p className="caps">Weddings, birthdays and community events</p>
+          <p className="caps">Your plans are saved in this browser only</p>
+          <p className="caps">Photography from Unsplash</p>
         </div>
       </div>
     </footer>
