@@ -16,7 +16,7 @@ Read this first, then `docs/BRIEF.md` (the full original brief) and `docs/design
 | 3     | AI layer: providers, prompts, parse + repair, `/api/plan`, `/api/refine`, `/api/ideas`, CSP | ✅ Done (`72175bd`) |
 | 4     | Wizard: 6 steps, validation, focus, persistence, streamed generation                        | ✅ Done (`414a201`) |
 | 5     | Dashboard at `/plan/[id]`: 5 tabs, refine sheet, export (editorial restyle)                 | 🔍 In review        |
-| 6     | Landing page: photo-led scroll story, refined Festi, petal finale                           | 🔍 In review        |
+| 6     | Landing page: photo-led scroll story, seal + wordmark, petal finale                         | 🔍 In review        |
 | 7     | Hardening: full e2e per brief, Lighthouse, bundle analysis, audits                          | ❌ Not started      |
 | 8     | Docs + deployment: README, ARCHITECTURE/SECURITY/ACCESSIBILITY.md, Dockerfile               | ❌ Not started      |
 
@@ -72,7 +72,7 @@ mock without a key), `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-flash-lat
    with build-time SRI broke hydration (Next's inline bootstrap scripts cannot be hashed in
    advance). `proxy.ts` (Next 16's name for middleware) now sets
    `script-src 'self' 'nonce-…' 'strict-dynamic'`; the root layout passes the nonce to
-   `public/theme-init.js`. Next's docs say PPR cannot carry nonces, so `cacheComponents` is
+   `public/prefs-init.js`. Next's docs say PPR cannot carry nonces, so `cacheComponents` is
    disabled and every page renders per request. Re-check the cost in the Phase 7 Lighthouse pass.
 2. **The AI returns a lean draft, not a full Plan.** Tasks come back as `daysBefore`; code
    computes every date, ID and exact budget sum (`lib/plan/fromDraft.ts`). Models are bad at
@@ -113,23 +113,28 @@ mock without a key), `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-flash-lat
 
 - Reference: amritpalace.com (Webflow + GSAP ScrollTrigger + Lenis + SplitType). We take the
   principles, never its photos, copy or layouts.
-- Tokens in `app/globals.css`, each color written once as `light-dark(light, dark)`;
-  `tests/unit/design-tokens.test.ts` enforces WCAG AA for every pairing in both themes.
+- **Light only (since 2026-10-28, the user's request):** no theme picker and no dark mode;
+  `color-scheme: light` even when the device prefers dark. Reduce motion is the only display
+  preference, as a switch in the footer (`lib/prefs`, `public/prefs-init.js`).
+- Tokens in `app/globals.css` as plain hex values;
+  `tests/unit/design-tokens.test.ts` enforces WCAG AA for every pairing.
   **Add any new color pairing to that test.**
 - Palette: parchment `#D8CBB8`, card `#E2D7C6`, linen `#CBBEA9`, espresso ink `#2C2A27`
   (warm near-black; the user approved it, never pure black), muted text `#554D44` (the
   reference's `#978E81` fails AA), saffron `#D49653` (the only accent), bronze `#8A5A26`/
-  `#6F4418` for accent text. Dark theme: midnight roast `#292622` with parchment text.
+  `#6F4418` for accent text. Dark bands on the landing page use `#292622` with parchment text.
   Every event type shares the same accent; photography carries the colour.
 - Type (changed 2026-10-28 at the user's request): **Bodoni Moda** for display, sentence
   case, optical size held at `opsz 36` via `.font-display` (the full display cut's hairlines
   disappear at headline sizes); weight 500 over photos. **Jost** for UI and body. `.caps` =
   small capitals with 0.12em tracking; `.figure` = numbers in Jost. Bodoni italic is not
   loaded (it read poorly). Alternatives rendered for the user: `docs/design/font-options.jpg`.
-- Hero (rebuilt 2026-10-28): one statement, "Planned to the last petal.", on parchment, with
-  an arcade of five arched windows below (budget, timeline, the celebration, vendors, ideas,
-  each with a figure from the sample plan). On desktop the hero pins and the centre window
-  grows to fill the screen (`LandingMotion`).
+- Hero (2026-10-28, in the Amrit Palace manner the user asked for): a full-bleed photograph
+  (newlyweds under a chandelier) with "Planned to the last petal" in serif capitals, small
+  labels either side of the second line (xl and up), the intro and CTA bottom-left and a
+  parchment sample-plan card bottom-right. The header floats over it (CSS in globals.css,
+  `body:has([data-hero-photo])`). The arched-windows hero and a later "invitation" hero
+  were tried and set aside (the invitation one is in `git stash`).
 - Shape: cards and sections square with 1px hairlines; buttons, inputs and tags 3px. No
   shadows; the primary button is filled ink with a 1px outer frame (`outline-offset 3px`).
   Button variants `photo` / `photoOutline` are for use over photographs.
@@ -144,15 +149,20 @@ mock without a key), `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-flash-lat
   paint, skipped entirely under reduced motion): parallax (`data-parallax`), expanding frame
   (`data-expand`), letter reveals (`SplitHeading reveal="scroll"`), rise-in (`data-reveal`),
   timeline photo cross-fade (`data-chapter`). The hero headline fades in with CSS only.
-- Festi, refined (user's choice): `components/brand/FestiMark.tsx`, a line-art arch with a diya
-  flame and two eyes that follow the pointer and keyboard focus. The confetti became falling
-  marigold petals on a canvas in the finale (`PetalFall`), off under reduced motion.
+- Brand (2026-10-28, the user's choice from rendered options): the seal
+  (`components/brand/FestivoSeal.tsx`), a marigold rosette around a lit diya in 1px hairlines
+  with a saffron flame (pass `flame` on saffron backgrounds), and the wordmark "Festivo" in
+  Bodoni Moda italic (`.wordmark`). `app/icon.svg` is the seal for browser tabs. The old
+  line-art Festi with following eyes is gone.
+- Hero entrance (CSS, motion-ok only): photo fades in and settles, seal turns in, headline
+  letters appear, the gold rule draws out, then the line, the button, the header and the
+  scroll cue. Nothing is shown all at once except under reduced motion.
 
 ## Code map
 
 ```
 app/
-  layout.tsx            fonts, nonce, theme-init script, SkipLink, header/footer, RouteFocus
+  layout.tsx            fonts, nonce, prefs-init script, SkipLink, header/footer, RouteFocus
   plan/new/page.tsx     wizard page
   page.tsx              landing scroll story (8 scenes, real sample-plan data)
   plan/[id]/page.tsx    plan dashboard page (renders PlanDashboard)
@@ -161,15 +171,14 @@ proxy.ts                per-request nonce CSP
 components/
   a11y/                 SkipLink, LiveRegion (AnnouncerProvider/useAnnounce), RouteFocus,
                         MotionToggle, VisuallyHidden
-  layout/               SiteHeader, SiteFooter, Wordmark, DisplaySettings (theme + motion popover)
-  theme/ThemePicker     system/light/dark radios
+  layout/               SiteHeader, SiteFooter (with the Reduce motion switch), Wordmark
   ui/                   button, field (Field/Fieldset/Choice/ErrorText), label, popover,
                         radio-group, switch, skeleton, tabs, sheet  (shadcn on Radix, restyled)
   wizard/               Wizard, WizardProgress, Step* components, StepReview (+GenerationProgress)
   plan/                 PlanDashboard (shell, hash tabs), PlanHero (toran + arch), Overview/
                         Budget(+BudgetDonut)/Timeline(+TaskForm)/Vendors/Ideas panels,
                         RefineSheet, ShareMenu, parts (MoneyInput, Garland, TaskCheck), client
-  brand/FestiMark       refined mascot mark (eyes follow pointer + focus)
+  brand/FestivoSeal     the seal (rosette + diya); the wordmark lives in layout/Wordmark
   landing/              Photo, photos (registry), SplitHeading, Marquee, LandingMotion, PetalFall
 hooks/                  use-preferences, use-hydrated-store, use-plan-generation
 lib/
@@ -188,7 +197,7 @@ lib/
   http/                 api (guard, rate limiter, body limits, errors), requests (body schemas)
   security/             sanitize, promptGuard, rateLimit, headers (CSP + static headers)
   cache/lru             LRU + TTL, stableStringify, hashKey (SHA-256)
-  prefs/                preferences (pure), store (theme/motion external store)
+  prefs/                preferences (pure), store (reduce-motion external store)
   store/                planStore (zustand persist, sanitizePersisted), debouncedStorage
   wizard/               draft (model, validateStep, toEventInput), labels
   design/contrast       WCAG contrast helpers
@@ -206,7 +215,7 @@ Refine with AI (side sheet, preview, Apply / Discard), Export and share (print s
 announces. Festi himself does not exist yet; the cheer is a petal burst until Phase 6.
 
 Specs: `tests/unit/plan-edit.test.ts`, `tests/component/dashboard.test.tsx`,
-`tests/e2e/dashboard.spec.ts` (flow ×3 event types, refine, axe on every tab in both themes,
+`tests/e2e/dashboard.spec.ts` (flow ×3 event types, refine, axe on every tab,
 320px reflow, keyboard tabs). Shared e2e steps live in `tests/e2e/helpers.ts`.
 
 ## Phases 6–8 (after the dashboard)
@@ -222,7 +231,7 @@ motion; simplified on mobile; works at 360px. Register only the GSAP plugins use
 **Phase 7, hardening**: Playwright e2e exactly as the brief lists (landing → wizard → generate
 → edit budget → tick task → export .ics, ×3 event types), axe on every page, keyboard-only,
 reduced-motion emulation; Lighthouse mobile (Perf ≥ 90, A11y 100, BP 100, SEO ≥ 95); bundle
-analyzer numbers; contrast audit in both themes; 200% text zoom.
+analyzer numbers; contrast audit; 200% text zoom.
 
 **Phase 8, docs + deploy**: README (problem statement, feature → judging-criteria table,
 Mermaid architecture, setup, env, scripts, tests, screenshot placeholders, Cloud Run + Vercel
