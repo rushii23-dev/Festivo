@@ -3,16 +3,11 @@
 @import "shadcn/tailwind.css";
 
 /*
- * Festivo design tokens.
+ * Festivo design tokens: one light theme.
  *
- * Every color token is written once as light-dark(<light>, <dark>), so both themes
- * live side by side and tests/unit/design-tokens.test.ts can verify contrast for
- * each pair. The active theme is chosen through `color-scheme`:
- *   - no preference (or no JS): follows the OS via `color-scheme: light dark`
- *   - user choice: <html data-theme="light|dark"> set by public/theme-init.js
+ * tests/unit/design-tokens.test.ts parses these values and checks WCAG AA
+ * contrast for every pairing.
  */
-
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* Motion variants honour both the OS setting and the in-site "Reduce motion" toggle. */
 @custom-variant motion-ok {
@@ -24,60 +19,60 @@
 }
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
-  /* Base palette: candlelit parchment by day, midnight roast by night. Ink is a warm
-     espresso, never pure black; saffron is the one chromatic accent. */
-  --background: light-dark(#d8cbb8, #292622);
-  --foreground: light-dark(#2c2a27, #e2d6c3);
-  --card: light-dark(#e2d7c6, #332f2a);
-  --card-foreground: light-dark(#2c2a27, #e2d6c3);
-  --popover: light-dark(#e2d7c6, #332f2a);
-  --popover-foreground: light-dark(#2c2a27, #e2d6c3);
-  --muted: light-dark(#cbbea9, #3d3832);
-  --muted-foreground: light-dark(#554d44, #b9ad9b);
+  /* Base palette: candlelit parchment. Ink is a warm espresso, never pure black;
+     saffron is the one chromatic accent. */
+  --background: #d8cbb8;
+  --foreground: #2c2a27;
+  --card: #e2d7c6;
+  --card-foreground: #2c2a27;
+  --popover: #e2d7c6;
+  --popover-foreground: #2c2a27;
+  --muted: #cbbea9;
+  --muted-foreground: #554d44;
 
   /* Roles: espresso ink for primary actions, saffron for the single accent */
-  --primary: light-dark(#2c2a27, #e2d6c3);
-  --primary-foreground: light-dark(#e9dfcf, #292622);
-  --secondary: light-dark(#d49653, #d49653);
-  --secondary-foreground: light-dark(#2c2a27, #292622);
-  --accent: light-dark(#d49653, #d49653);
-  --accent-foreground: light-dark(#2c2a27, #292622);
+  --primary: #2c2a27;
+  --primary-foreground: #e9dfcf;
+  --secondary: #d49653;
+  --secondary-foreground: #2c2a27;
+  --accent: #d49653;
+  --accent-foreground: #2c2a27;
 
   /* Status (always paired with an icon and text, never color alone) */
-  --destructive: light-dark(#8e2420, #f0a28f);
-  --destructive-foreground: light-dark(#f1e8da, #292622);
-  --success: light-dark(#35532a, #a9cf8e);
-  --success-foreground: light-dark(#f1e8da, #292622);
-  --warning: light-dark(#714208, #e8b66a);
-  --warning-foreground: light-dark(#f1e8da, #292622);
+  --destructive: #8e2420;
+  --destructive-foreground: #f1e8da;
+  --success: #35532a;
+  --success-foreground: #f1e8da;
+  --warning: #714208;
+  --warning-foreground: #f1e8da;
 
   /* Lines, inputs, focus. --hairline is the editorial column rule (decorative);
      --border and --input outline controls and meet 3:1. */
-  --border: light-dark(#2c2a27, #a59985);
-  --hairline: light-dark(#b6ab9c, #4a443c);
-  --input: light-dark(#73695c, #8f8472);
-  --ring: light-dark(#2c2a27, #d49653);
-  --shadow-ink: light-dark(#2c2a27, #e2d6c3);
+  --border: #2c2a27;
+  --hairline: #b6ab9c;
+  --input: #73695c;
+  --ring: #2c2a27;
+  --shadow-ink: #2c2a27;
   /* Bronze for ornaments and rules that must stay visible (3:1 or more) */
-  --gold: light-dark(#8a5a26, #d49653);
+  --gold: #8a5a26;
 
   /* Charts: warm earth tones, every segment outlined with --border */
-  --chart-1: light-dark(#d49653, #d49653);
-  --chart-2: light-dark(#2c2a27, #e2d6c3);
-  --chart-3: light-dark(#8a5a26, #a8763f);
-  --chart-4: light-dark(#f1e8da, #6b6255);
-  --chart-5: light-dark(#5d6b4a, #93a57a);
-  --chart-6: light-dark(#9b4a3c, #c7705e);
-  --chart-7: light-dark(#b39b7a, #8f7d63);
-  --chart-8: light-dark(#6b5a4a, #c9b48f);
+  --chart-1: #d49653;
+  --chart-2: #2c2a27;
+  --chart-3: #8a5a26;
+  --chart-4: #f1e8da;
+  --chart-5: #5d6b4a;
+  --chart-6: #9b4a3c;
+  --chart-7: #b39b7a;
+  --chart-8: #6b5a4a;
 
   /* Event accents: one accent for every event type (photography carries the rest) */
-  --event: light-dark(#6f4418, #d49653);
-  --event-foreground: light-dark(#f1e8da, #292622);
-  --event-2: light-dark(#d49653, #d49653);
-  --event-2-foreground: light-dark(#2c2a27, #292622);
+  --event: #6f4418;
+  --event-foreground: #f1e8da;
+  --event-2: #d49653;
+  --event-2-foreground: #2c2a27;
 
   /* Shape: sharp cards, 3px controls */
   --radius: 0px;
@@ -95,35 +90,27 @@
   --sidebar-ring: var(--ring);
 }
 
-:root[data-theme="light"] {
-  color-scheme: light;
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-}
-
 /* Per-event accents. The editorial system keeps a single saffron accent, so every
    event shares it; the blocks stay so pages can still scope accents per event. */
 [data-event="wedding"] {
-  --event: light-dark(#6f4418, #d49653);
-  --event-foreground: light-dark(#f1e8da, #292622);
-  --event-2: light-dark(#d49653, #d49653);
-  --event-2-foreground: light-dark(#2c2a27, #292622);
+  --event: #6f4418;
+  --event-foreground: #f1e8da;
+  --event-2: #d49653;
+  --event-2-foreground: #2c2a27;
 }
 
 [data-event="birthday"] {
-  --event: light-dark(#6f4418, #d49653);
-  --event-foreground: light-dark(#f1e8da, #292622);
-  --event-2: light-dark(#d49653, #d49653);
-  --event-2-foreground: light-dark(#2c2a27, #292622);
+  --event: #6f4418;
+  --event-foreground: #f1e8da;
+  --event-2: #d49653;
+  --event-2-foreground: #2c2a27;
 }
 
 [data-event="community"] {
-  --event: light-dark(#6f4418, #d49653);
-  --event-foreground: light-dark(#f1e8da, #292622);
-  --event-2: light-dark(#d49653, #d49653);
-  --event-2-foreground: light-dark(#2c2a27, #292622);
+  --event: #6f4418;
+  --event-foreground: #f1e8da;
+  --event-2: #d49653;
+  --event-2-foreground: #2c2a27;
 }
 
 @theme inline {
@@ -250,6 +237,17 @@
     font-weight: 400;
     letter-spacing: -0.02em;
     font-variation-settings: "opsz" 36;
+  }
+
+  /* The wordmark: the display serif's italic, at a high optical size so its
+     hairlines turn fine and its curves full. */
+  .wordmark {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 500;
+    font-variation-settings: "opsz" 72;
+    letter-spacing: -0.01em;
+    line-height: 1;
   }
 
   /* Numbers (money, counts, times) are set in the sans with lining figures,
@@ -391,7 +389,7 @@
 
 /* ---------------------------------------------------------------------------
  * Landing page motion. Everything is visible by default; these only run when
- * motion is allowed (theme-init.js sets data-motion before first paint).
+ * motion is allowed (prefs-init.js sets data-motion before first paint).
  * ------------------------------------------------------------------------- */
 
 /* Headline letters fade in one by one on load (no JavaScript needed). */
@@ -404,13 +402,15 @@
   }
 }
 
+/* Inline (not inline-block) so the font's kerning still applies between letters;
+   only opacity is animated, which works on inline boxes. */
 .split-char {
-  display: inline-block;
+  display: inline;
 }
 
 :root[data-motion="full"] [data-split="load"] .split-char {
   animation: char-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-  animation-delay: calc(var(--i) * 32ms + 250ms);
+  animation-delay: calc(var(--i) * 32ms + 500ms);
 }
 
 /* Ideas marquee: two identical runs scroll left forever; static under reduced motion. */
@@ -512,4 +512,175 @@
 .on-photo [data-slot="button"],
 .on-photo .no-photo-shadow {
   text-shadow: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * On the home page the header floats over the hero photograph: transparent,
+ * parchment type, a parchment button and a parchment focus ring.
+ * ------------------------------------------------------------------------- */
+body:has([data-hero-photo]) .site-header {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 30;
+  border-color: transparent;
+  background: transparent;
+  color: #e2d6c3;
+  --ring: #e2d6c3;
+}
+
+body:has([data-hero-photo]) .site-header [data-slot="button"] {
+  border-color: #e2d6c3;
+  background: #e2d6c3;
+  color: #292622;
+  outline-color: #e2d6c3;
+}
+
+body:has([data-hero-photo]) .site-header [data-slot="button"]:hover {
+  background: transparent;
+  color: #e2d6c3;
+}
+
+/* The hero's own focus ring stays visible on the photograph. */
+[data-hero-photo] {
+  --ring: #e2d6c3;
+}
+
+/* ---------------------------------------------------------------------------
+ * Hero: one statement over a photograph. The pieces arrive in turn rather than
+ * all at once: photo, seal, headline, gold rule, line, button, then the menu
+ * and the scroll cue. All of it is visible at once when motion is reduced.
+ * ------------------------------------------------------------------------- */
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(62% 52% at 50% 46%, rgb(22 19 16 / 0.6) 0%, rgb(22 19 16 / 0) 74%),
+    linear-gradient(
+      180deg,
+      rgb(22 19 16 / 0.72) 0%,
+      rgb(22 19 16 / 0.42) 38%,
+      rgb(22 19 16 / 0.5) 70%,
+      rgb(22 19 16 / 0.9) 100%
+    );
+}
+
+/* A gold hairline either side of a small diamond. */
+.hero-rule {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.hero-rule::before,
+.hero-rule::after {
+  content: "";
+  width: clamp(3.5rem, 11vw, 8rem);
+  height: 1px;
+  background: linear-gradient(90deg, rgb(232 196 143 / 0), #e8c48f);
+  transform-origin: right;
+}
+
+.hero-rule::after {
+  background: linear-gradient(90deg, #e8c48f, rgb(232 196 143 / 0));
+  transform-origin: left;
+}
+
+.hero-scroll-line {
+  display: block;
+  width: 1px;
+  height: 2.75rem;
+  background: linear-gradient(#e2d6c3, rgb(226 214 195 / 0));
+  transform-origin: top;
+}
+
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes hero-settle {
+  from {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes seal-turn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) rotate(-30deg);
+  }
+}
+
+@keyframes rule-draw {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes scroll-drip {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  45% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+
+:root[data-motion="full"] .hero-photo {
+  animation:
+    hero-fade 1.2s ease-out backwards,
+    hero-settle 3.2s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+:root[data-motion="full"] .hero-seal {
+  animation: seal-turn 1.3s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s backwards;
+}
+
+:root[data-motion="full"] .hero-rule {
+  animation: hero-fade 0.6s ease-out 1.35s backwards;
+}
+
+:root[data-motion="full"] .hero-rule::before,
+:root[data-motion="full"] .hero-rule::after {
+  animation: rule-draw 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) 1.4s backwards;
+}
+
+:root[data-motion="full"] .hero-line {
+  animation: hero-rise 1s cubic-bezier(0.2, 0.8, 0.2, 1) 1.6s backwards;
+}
+
+:root[data-motion="full"] .hero-cta {
+  animation: hero-rise 1s cubic-bezier(0.2, 0.8, 0.2, 1) 1.8s backwards;
+}
+
+:root[data-motion="full"] body:has([data-hero-photo]) .site-header {
+  animation: hero-fade 1s ease-out 2s backwards;
+}
+
+:root[data-motion="full"] .hero-scroll {
+  animation: hero-fade 1s ease-out 2.4s backwards;
+}
+
+:root[data-motion="full"] .hero-scroll-line {
+  animation: scroll-drip 2.4s cubic-bezier(0.6, 0, 0.3, 1) 3s infinite;
 }

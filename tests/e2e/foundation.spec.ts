@@ -15,22 +15,22 @@ async function expectNoAxeViolations(page: Page) {
 }
 
 test.describe("accessibility scan", () => {
-  for (const scheme of ["light", "dark"] as const) {
-    for (const path of PAGES) {
-      test(`${path} has no axe violations in ${scheme} theme`, async ({ page }) => {
-        await page.emulateMedia({ colorScheme: scheme });
-        await page.goto(path);
-        await expect(page.locator("html")).toHaveAttribute("data-theme", scheme);
-        await expectNoAxeViolations(page);
-      });
-    }
+  for (const path of PAGES) {
+    test(`${path} has no axe violations`, async ({ page }) => {
+      await page.goto(path);
+      await expectNoAxeViolations(page);
+    });
   }
 
-  test("display settings popover has no axe violations", async ({ page }) => {
+  test("stays light when the device prefers dark", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/");
-    await page.getByRole("button", { name: "Display settings" }).click();
-    await expect(page.getByRole("radiogroup", { name: "Theme" })).toBeVisible();
-    await expectNoAxeViolations(page);
+    await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.*/);
+    const background = await page.evaluate(
+      () => getComputedStyle(document.body).backgroundColor,
+    );
+    expect(background).toBe("rgb(216, 203, 184)");
+    await expect(page.getByRole("radiogroup", { name: "Theme" })).toHaveCount(0);
   });
 });
 
@@ -88,22 +88,14 @@ test.describe("keyboard", () => {
 });
 
 test.describe("display preferences", () => {
-  test("theme choice is saved across reloads", async ({ page }) => {
-    await page.emulateMedia({ colorScheme: "light" });
-    await page.goto("/");
-    await page.getByRole("button", { name: "Display settings" }).click();
-    await page.getByRole("radio", { name: "Dark" }).click();
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-    await page.reload();
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  });
-
   test("reduce motion toggle is saved and applied", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("data-motion", "full");
-    await page.getByRole("button", { name: "Display settings" }).click();
-    await page.getByRole("switch", { name: "Reduce motion" }).click();
+    await page
+      .getByRole("contentinfo")
+      .getByRole("switch", { name: "Reduce motion" })
+      .click();
     await expect(page.locator("html")).toHaveAttribute("data-motion", "reduce");
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("data-motion", "reduce");
@@ -113,8 +105,9 @@ test.describe("display preferences", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("data-motion", "reduce");
-    await page.getByRole("button", { name: "Display settings" }).click();
-    const toggle = page.getByRole("switch", { name: "Reduce motion" });
+    const toggle = page
+      .getByRole("contentinfo")
+      .getByRole("switch", { name: "Reduce motion" });
     await expect(toggle).toBeChecked();
     await expect(toggle).toBeDisabled();
   });

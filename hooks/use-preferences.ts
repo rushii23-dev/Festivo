@@ -1,12 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import {
-  isMotionReduced,
-  resolveTheme,
-  type ResolvedTheme,
-  type ThemeChoice,
-} from "@/lib/prefs/preferences";
+import { isMotionReduced } from "@/lib/prefs/preferences";
 import {
   getServerSnapshot,
   getSnapshot,
@@ -16,9 +11,7 @@ import {
 } from "@/lib/prefs/store";
 
 export interface UsePreferences extends PreferencesSnapshot {
-  resolvedTheme: ResolvedTheme;
   motionReduced: boolean;
-  setTheme: (theme: ThemeChoice) => void;
   setReduceMotion: (reduce: boolean) => void;
 }
 
@@ -27,9 +20,7 @@ export function usePreferences(): UsePreferences {
   return useMemo(
     () => ({
       ...state,
-      resolvedTheme: resolveTheme(state.prefs.theme, state.systemPrefersDark),
       motionReduced: isMotionReduced(state.prefs, state.systemPrefersReducedMotion),
-      setTheme: (theme) => setPreferences({ theme }),
       setReduceMotion: (reduceMotion) => setPreferences({ reduceMotion }),
     }),
     [state],

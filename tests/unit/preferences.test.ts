@@ -2,9 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_PREFERENCES,
   isMotionReduced,
-  isThemeChoice,
   parsePreferences,
-  resolveTheme,
   serializePreferences,
 } from "@/lib/prefs/preferences";
 
@@ -15,18 +13,15 @@ describe("parsePreferences", () => {
     }
   });
 
-  it("keeps valid fields and drops invalid ones", () => {
+  it("keeps valid fields and drops invalid or retired ones", () => {
     expect(parsePreferences('{"theme":"dark","reduceMotion":true}')).toEqual({
-      theme: "dark",
       reduceMotion: true,
     });
-    expect(parsePreferences('{"theme":"neon","reduceMotion":"yes"}')).toEqual(
-      DEFAULT_PREFERENCES,
-    );
+    expect(parsePreferences('{"reduceMotion":"yes"}')).toEqual(DEFAULT_PREFERENCES);
   });
 
   it("round-trips through serializePreferences", () => {
-    const prefs = { theme: "light", reduceMotion: true } as const;
+    const prefs = { reduceMotion: true };
     expect(parsePreferences(serializePreferences(prefs))).toEqual(prefs);
   });
 
@@ -35,30 +30,10 @@ describe("parsePreferences", () => {
   });
 });
 
-describe("isThemeChoice", () => {
-  it("accepts only the known choices", () => {
-    expect(isThemeChoice("system")).toBe(true);
-    expect(isThemeChoice("DARK")).toBe(false);
-    expect(isThemeChoice(undefined)).toBe(false);
-  });
-});
-
-describe("resolveTheme", () => {
-  it("follows the device for system", () => {
-    expect(resolveTheme("system", true)).toBe("dark");
-    expect(resolveTheme("system", false)).toBe("light");
-  });
-
-  it("uses an explicit choice regardless of the device", () => {
-    expect(resolveTheme("light", true)).toBe("light");
-    expect(resolveTheme("dark", false)).toBe("dark");
-  });
-});
-
 describe("isMotionReduced", () => {
   it("is reduced when either the device or the toggle asks", () => {
-    expect(isMotionReduced({ theme: "system", reduceMotion: false }, false)).toBe(false);
-    expect(isMotionReduced({ theme: "system", reduceMotion: true }, false)).toBe(true);
-    expect(isMotionReduced({ theme: "system", reduceMotion: false }, true)).toBe(true);
+    expect(isMotionReduced({ reduceMotion: false }, false)).toBe(false);
+    expect(isMotionReduced({ reduceMotion: true }, false)).toBe(true);
+    expect(isMotionReduced({ reduceMotion: false }, true)).toBe(true);
   });
 });

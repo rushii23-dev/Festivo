@@ -2,7 +2,7 @@
  * Runs before every page request: creates a per-request nonce and sets the
  * strict Content-Security-Policy. Next.js reads the nonce from the request's
  * CSP header and applies it to its own scripts; the root layout applies it
- * to theme-init.js.
+ * to prefs-init.js.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { contentSecurityPolicy, createNonce } from "@/lib/security/headers";
@@ -27,7 +27,7 @@ export const config = {
   matcher: [
     {
       // Pages only: skip API routes, static files and prefetches.
-      source: "/((?!api|_next/static|_next/image|favicon.ico|theme-init.js).*)",
+      source: "/((?!api|_next/static|_next/image|favicon.ico|prefs-init.js).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

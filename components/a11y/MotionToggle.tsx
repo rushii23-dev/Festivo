@@ -22,7 +22,7 @@ export function MotionToggle() {
         <p id={hintId} className="text-sm text-muted-foreground">
           {systemPrefersReducedMotion
             ? "On because your device asks for less motion."
-            : "Turns off scroll animations and confetti."}
+            : "Turns off scroll animations and falling petals."}
         </p>
       </div>
       <Switch

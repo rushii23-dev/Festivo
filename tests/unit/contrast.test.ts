@@ -3,7 +3,7 @@ import {
   contrastRatio,
   extractBlock,
   parseHex,
-  parseLightDarkTokens,
+  parseColorTokens,
   relativeLuminance,
 } from "@/lib/design/contrast";
 
@@ -33,15 +33,18 @@ describe("contrastRatio", () => {
 });
 
 describe("token parsing", () => {
-  const css = `:root {\n  --a: light-dark(#111111, #eeeeee);\n  --b: var(--a);\n}\n.x {\n  --c: light-dark(#fff, #000);\n}`;
+  const css = `:root {
+  --a: #111111;
+  --b: var(--a);
+  --c: rgb(0 0 0);
+}
+.x {
+  --d: #fff;
+}`;
 
-  it("extracts only light-dark tokens from a block", () => {
-    expect(parseLightDarkTokens(extractBlock(css, ":root"))).toEqual({
-      a: { light: "#111111", dark: "#eeeeee" },
-    });
-    expect(parseLightDarkTokens(extractBlock(css, ".x"))).toEqual({
-      c: { light: "#fff", dark: "#000" },
-    });
+  it("extracts only hex color tokens from a block", () => {
+    expect(parseColorTokens(extractBlock(css, ":root"))).toEqual({ a: "#111111" });
+    expect(parseColorTokens(extractBlock(css, ".x"))).toEqual({ d: "#fff" });
   });
 
   it("throws for a missing selector", () => {

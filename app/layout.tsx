@@ -10,9 +10,10 @@ import "./globals.css";
 
 // Display face: Bodoni Moda, a high-contrast didone with an optical-size axis, so
 // hairlines stay sturdy at small sizes and turn fine and dramatic at display sizes.
-// UI face: Jost, a geometric sans in the Futura tradition.
+// Its italic sets the wordmark. UI face: Jost, a geometric sans in the Futura tradition.
 const display = Bodoni_Moda({
   subsets: ["latin"],
+  style: ["normal", "italic"],
   axes: ["opsz"],
   display: "swap",
   variable: "--font-display",
@@ -38,28 +39,26 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#d8cbb8" },
-    { media: "(prefers-color-scheme: dark)", color: "#292622" },
-  ],
+  colorScheme: "light",
+  themeColor: "#d8cbb8",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   // Per-request CSP nonce from proxy.ts; Next.js applies it to its own scripts.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
-    // theme-init.js sets data-theme/data-motion before hydration, so React must
-    // not warn about those attributes differing from the server HTML.
+    // prefs-init.js sets data-motion before hydration, so React must not warn
+    // about that attribute differing from the server HTML.
     <html
       lang="en"
       suppressHydrationWarning
       className={`${display.variable} ${body.variable}`}
     >
       <head>
-        {/* Must run synchronously before first paint to prevent a theme flash.
-            It is a 600-byte same-origin file, allowed by this response's CSP nonce. */}
+        {/* Must run synchronously before first paint so motion is settled early.
+            It is a 500-byte same-origin file, allowed by this response's CSP nonce. */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script src="/theme-init.js" nonce={nonce} />
+        <script src="/prefs-init.js" nonce={nonce} />
       </head>
       <body className="flex min-h-dvh flex-col antialiased">
         <AnnouncerProvider>

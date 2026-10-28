@@ -1,29 +1,25 @@
 /**
  * External store for display preferences, consumed with useSyncExternalStore.
- * Tracks the saved choice plus the live OS media queries, and mirrors the
- * resolved result onto <html data-theme data-motion>.
+ * Tracks the saved choice plus the live OS reduced-motion query, and mirrors the
+ * result onto <html data-motion>.
  */
 import {
-  DARK_SCHEME_QUERY,
   DEFAULT_PREFERENCES,
   PREFS_STORAGE_KEY,
   REDUCED_MOTION_QUERY,
   isMotionReduced,
   parsePreferences,
-  resolveTheme,
   serializePreferences,
   type Preferences,
 } from "./preferences";
 
 export interface PreferencesSnapshot {
   prefs: Preferences;
-  systemPrefersDark: boolean;
   systemPrefersReducedMotion: boolean;
 }
 
 const SERVER_SNAPSHOT: PreferencesSnapshot = Object.freeze({
   prefs: DEFAULT_PREFERENCES,
-  systemPrefersDark: false,
   systemPrefersReducedMotion: false,
 });
 
@@ -52,9 +48,6 @@ export function applyToDocument(
   state: PreferencesSnapshot,
   root = document.documentElement,
 ) {
-  const theme = resolveTheme(state.prefs.theme, state.systemPrefersDark);
-  root.dataset.theme = theme;
-  root.style.colorScheme = theme;
   root.dataset.motion = isMotionReduced(state.prefs, state.systemPrefersReducedMotion)
     ? "reduce"
     : "full";
@@ -70,16 +63,12 @@ function init(): void {
   if (initialized || typeof window === "undefined") return;
   initialized = true;
 
-  const dark = window.matchMedia(DARK_SCHEME_QUERY);
   const motion = window.matchMedia(REDUCED_MOTION_QUERY);
   snapshot = {
     prefs: parsePreferences(readStorage()),
-    systemPrefersDark: dark.matches,
     systemPrefersReducedMotion: motion.matches,
   };
 
-  const onDark = (event: MediaQueryListEvent) =>
-    update({ systemPrefersDark: event.matches });
   const onMotion = (event: MediaQueryListEvent) =>
     update({ systemPrefersReducedMotion: event.matches });
   // Keep tabs in sync when preferences change in another window.
@@ -88,11 +77,9 @@ function init(): void {
       update({ prefs: parsePreferences(event.newValue) });
   };
 
-  dark.addEventListener("change", onDark);
   motion.addEventListener("change", onMotion);
   window.addEventListener("storage", onStorage);
   teardown = () => {
-    dark.removeEventListener("change", onDark);
     motion.removeEventListener("change", onMotion);
     window.removeEventListener("storage", onStorage);
   };
@@ -120,7 +107,7 @@ export function setPreferences(patch: Partial<Preferences>): void {
   update({ prefs });
 }
 
-/** Synchronous check for imperative animation code (GSAP, Lenis, confetti). */
+/** Synchronous check for imperative animation code (GSAP, Lenis, petals). */
 export function prefersReducedMotionNow(): boolean {
   const state = getSnapshot();
   return isMotionReduced(state.prefs, state.systemPrefersReducedMotion);

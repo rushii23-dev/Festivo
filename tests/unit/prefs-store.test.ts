@@ -38,15 +38,15 @@ afterEach(() => resetPreferencesStore());
 
 describe("preferences store", () => {
   it("serves defaults to the server", () => {
-    expect(getServerSnapshot().prefs).toEqual({ theme: "system", reduceMotion: false });
+    expect(getServerSnapshot().prefs).toEqual({ reduceMotion: false });
   });
 
   it("reads saved preferences and OS media on first use", () => {
-    installMatchMedia({ "(prefers-color-scheme: dark)": true });
-    localStorage.setItem(PREFS_STORAGE_KEY, '{"theme":"light","reduceMotion":true}');
+    installMatchMedia({});
+    localStorage.setItem(PREFS_STORAGE_KEY, '{"reduceMotion":true}');
     const snap = getSnapshot();
-    expect(snap.prefs).toEqual({ theme: "light", reduceMotion: true });
-    expect(snap.systemPrefersDark).toBe(true);
+    expect(snap.prefs).toEqual({ reduceMotion: true });
+    expect(snap.systemPrefersReducedMotion).toBe(false);
     expect(prefersReducedMotionNow()).toBe(true);
   });
 
@@ -59,28 +59,26 @@ describe("preferences store", () => {
     installMatchMedia({});
     const listener = vi.fn();
     const unsubscribe = subscribe(listener);
-    setPreferences({ theme: "dark" });
-    expect(listener).toHaveBeenCalledTimes(1);
-    expect(JSON.parse(localStorage.getItem(PREFS_STORAGE_KEY) ?? "{}")).toEqual({
-      theme: "dark",
-      reduceMotion: false,
-    });
-    expect(root.dataset.theme).toBe("dark");
-    expect(root.style.colorScheme).toBe("dark");
-    expect(root.dataset.motion).toBe("full");
-    unsubscribe();
     setPreferences({ reduceMotion: true });
     expect(listener).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(localStorage.getItem(PREFS_STORAGE_KEY) ?? "{}")).toEqual({
+      reduceMotion: true,
+    });
     expect(root.dataset.motion).toBe("reduce");
+    expect(root.dataset.theme).toBeUndefined();
+    unsubscribe();
+    setPreferences({ reduceMotion: false });
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(root.dataset.motion).toBe("full");
   });
 
-  it("follows OS changes while the choice is system", () => {
+  it("follows the OS reduced-motion setting as it changes", () => {
     const flip = installMatchMedia({});
     getSnapshot();
-    flip("(prefers-color-scheme: dark)", true);
-    expect(root.dataset.theme).toBe("dark");
     flip("(prefers-reduced-motion: reduce)", true);
     expect(root.dataset.motion).toBe("reduce");
+    flip("(prefers-reduced-motion: reduce)", false);
+    expect(root.dataset.motion).toBe("full");
   });
 
   it("syncs when another tab writes preferences", () => {
@@ -89,12 +87,12 @@ describe("preferences store", () => {
     window.dispatchEvent(
       new StorageEvent("storage", {
         key: PREFS_STORAGE_KEY,
-        newValue: '{"theme":"dark"}',
+        newValue: '{"reduceMotion":true}',
       }),
     );
-    expect(getSnapshot().prefs.theme).toBe("dark");
+    expect(getSnapshot().prefs.reduceMotion).toBe(true);
     window.dispatchEvent(new StorageEvent("storage", { key: "other", newValue: "x" }));
-    expect(getSnapshot().prefs.theme).toBe("dark");
+    expect(getSnapshot().prefs.reduceMotion).toBe(true);
   });
 
   it("keeps working when storage is blocked", () => {
@@ -105,9 +103,9 @@ describe("preferences store", () => {
     const set = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("blocked");
     });
-    expect(getSnapshot().prefs.theme).toBe("system");
-    setPreferences({ theme: "dark" });
-    expect(root.dataset.theme).toBe("dark");
+    expect(getSnapshot().prefs.reduceMotion).toBe(false);
+    setPreferences({ reduceMotion: true });
+    expect(root.dataset.motion).toBe("reduce");
     get.mockRestore();
     set.mockRestore();
   });

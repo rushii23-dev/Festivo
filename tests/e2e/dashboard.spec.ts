@@ -79,25 +79,21 @@ test.describe("dashboard flow", () => {
 });
 
 test.describe("dashboard accessibility", () => {
-  for (const scheme of ["light", "dark"] as const) {
-    test(`every tab has no axe violations in ${scheme} theme`, async ({ page }) => {
-      test.slow(); // seven full-page axe scans
-      await page.emulateMedia({ colorScheme: scheme });
-      await generatePlan(page, scenarios[0] as Scenario);
-      await expect(page.locator("html")).toHaveAttribute("data-theme", scheme);
-      for (const tab of TABS) {
-        await page.getByRole("tab", { name: tab }).click();
-        await expect(page.getByRole("tab", { name: tab, selected: true })).toBeVisible();
-        await expectNoAxeViolations(page, `${tab} (${scheme})`);
-      }
-      await page.getByRole("tab", { name: "Timeline" }).click();
-      await page.getByRole("radio", { name: "Day-of run sheet" }).check({ force: true });
-      await expectNoAxeViolations(page, `run sheet (${scheme})`);
-      await page.getByRole("button", { name: "Refine with AI" }).click();
-      await expect(page.getByRole("dialog")).toBeVisible();
-      await expectNoAxeViolations(page, `refine panel (${scheme})`);
-    });
-  }
+  test("every tab has no axe violations", async ({ page }) => {
+    test.slow(); // seven full-page axe scans
+    await generatePlan(page, scenarios[0] as Scenario);
+    for (const tab of TABS) {
+      await page.getByRole("tab", { name: tab }).click();
+      await expect(page.getByRole("tab", { name: tab, selected: true })).toBeVisible();
+      await expectNoAxeViolations(page, tab);
+    }
+    await page.getByRole("tab", { name: "Timeline" }).click();
+    await page.getByRole("radio", { name: "Day-of run sheet" }).check({ force: true });
+    await expectNoAxeViolations(page, "run sheet");
+    await page.getByRole("button", { name: "Refine with AI" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expectNoAxeViolations(page, "refine panel");
+  });
 
   test("does not scroll sideways at 320px", async ({ page }) => {
     await generatePlan(page, scenarios[0] as Scenario);

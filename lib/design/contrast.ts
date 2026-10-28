@@ -1,10 +1,9 @@
 /**
- * WCAG 2.x contrast utilities and a tiny parser for Festivo's `light-dark()` tokens.
- * Used by tests to prove every token pairing passes AA in both themes.
+ * WCAG 2.x contrast utilities and a tiny parser for Festivo's color tokens.
+ * Used by tests to prove every token pairing passes AA.
  */
 
-export type ThemeName = "light" | "dark";
-export type TokenTable = Record<string, Record<ThemeName, string>>;
+export type TokenTable = Record<string, string>;
 
 const HEX_PATTERN = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
 
@@ -42,15 +41,14 @@ export function contrastRatio(a: string, b: string): number {
 }
 
 /**
- * Extracts `--token: light-dark(#light, #dark)` declarations from one CSS block
- * (the text between a selector's braces). Tokens written any other way are skipped.
+ * Extracts `--token: #hex` declarations from one CSS block (the text between a
+ * selector's braces). Tokens written any other way (var(), rgb()) are skipped.
  */
-export function parseLightDarkTokens(cssBlock: string): TokenTable {
+export function parseColorTokens(cssBlock: string): TokenTable {
   const tokens: TokenTable = {};
-  const pattern =
-    /--([\w-]+)\s*:\s*light-dark\(\s*(#[0-9a-f]{3,6})\s*,\s*(#[0-9a-f]{3,6})\s*\)/gi;
-  for (const [, name, light, dark] of cssBlock.matchAll(pattern)) {
-    if (name && light && dark) tokens[name] = { light, dark };
+  const pattern = /--([\w-]+)\s*:\s*(#[0-9a-f]{3,6})\s*;/gi;
+  for (const [, name, value] of cssBlock.matchAll(pattern)) {
+    if (name && value) tokens[name] = value;
   }
   return tokens;
 }

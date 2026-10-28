@@ -22,8 +22,9 @@ test.describe("security headers", () => {
         violations.push(msg.text());
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Display settings" }).click();
-    await expect(page.getByRole("radiogroup", { name: "Theme" })).toBeVisible();
+    // Toggling a client component proves the app hydrated under the policy.
+    await page.getByRole("switch", { name: "Reduce motion" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-motion", "reduce");
     expect(violations).toEqual([]);
   });
 });
