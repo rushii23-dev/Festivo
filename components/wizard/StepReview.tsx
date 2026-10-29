@@ -5,13 +5,19 @@ import { BUDGET_CATEGORY_LABELS } from "@/lib/budget/categories";
 import { formatMoney, parseMoneyInput } from "@/lib/budget/format";
 import type { BudgetCategory } from "@/lib/schemas/common";
 import { formatLongDate } from "@/lib/timeline/dates";
-import { upcomingMonths, type WizardDraft } from "@/lib/wizard/draft";
+import {
+  draftOccasion,
+  draftQuestions,
+  upcomingMonths,
+  type WizardDraft,
+} from "@/lib/wizard/draft";
 import {
   ACCESSIBILITY_LABELS,
   CEREMONY_LABELS,
   DIETARY_LABELS,
-  EVENT_TYPE_COPY,
+  FORMAT_COPY,
   PRIORITY_LABELS,
+  TICKET_COPY,
   SETTING_LABELS,
   VIBE_LABELS,
 } from "@/lib/wizard/labels";
@@ -40,7 +46,7 @@ function Section({
           Edit <span className="sr-only">{title.toLowerCase()}</span>
         </Button>
       </div>
-      <dl className="grid gap-2 sm:grid-cols-[12rem_1fr]">{children}</dl>
+      <dl className="grid gap-2 @md:grid-cols-[11rem_1fr]">{children}</dl>
     </section>
   );
 }
@@ -56,6 +62,18 @@ function Row({ term, children }: { term: string; children: ReactNode }) {
 
 const listOr = (values: string[], empty: string) =>
   values.length > 0 ? values.join(", ") : empty;
+
+export function describeTickets(draft: WizardDraft): string {
+  if (draft.tickets === "none") return TICKET_COPY.none;
+  const price = parseMoneyInput(draft.ticketPrice);
+  return [
+    draft.tickets === "paid" && price
+      ? formatMoney(price, draft.currency)
+      : TICKET_COPY.free,
+    draft.capacity ? `${draft.capacity} spots` : "no limit",
+    ...(draft.approval ? ["you approve each guest"] : []),
+  ].join(", ");
+}
 
 export function describeDate(draft: WizardDraft, today: string): string {
   if (draft.dateKind === "fixed")
@@ -76,6 +94,7 @@ export function ReviewSummary({
   onEdit: (step: number) => void;
 }) {
   const total = parseMoneyInput(draft.budgetTotal);
+  const questions = draftQuestions(draft);
   const priorities = Object.entries(draft.priorities)
     .filter(([, value]) => value !== 3)
     .map(
@@ -85,19 +104,26 @@ export function ReviewSummary({
 
   return (
     <div className="grid gap-4">
-      <Section title="Event type" step={0} onEdit={onEdit}>
-        <Row term="Celebrating">
-          {draft.eventType ? EVENT_TYPE_COPY[draft.eventType].title : "Not set"}
-        </Row>
+      <Section title="Occasion" step={0} onEdit={onEdit}>
+        <Row term="Celebrating">{draftOccasion(draft)?.label ?? "Not set"}</Row>
       </Section>
       <Section title="Basics" step={1} onEdit={onEdit}>
         <Row term="Name">{draft.name || "Not set"}</Row>
         <Row term="Date">{describeDate(draft, today)}</Row>
+        {questions.multiDay ? <Row term="Days">{draft.days || "1"}</Row> : null}
+        {questions.formats.length > 1 ? (
+          <Row term="Format">{FORMAT_COPY[draft.format].label}</Row>
+        ) : null}
         <Row term="Place">{draft.location || "Not set"}</Row>
         <Row term="Guests">{draft.guestCount || "Not set"}</Row>
+        {questions.age && draft.ageTurning ? (
+          <Row term="Turning">{draft.ageTurning}</Row>
+        ) : null}
+        {questions.kids ? <Row term="Children">{draft.kids ? "Yes" : "No"}</Row> : null}
       </Section>
       <Section title="Budget" step={2} onEdit={onEdit}>
         <Row term="Total">{total ? formatMoney(total, draft.currency) : "Not set"}</Row>
+        {questions.tickets ? <Row term="Tickets">{describeTickets(draft)}</Row> : null}
         <Row term="Priorities">
           {listOr(priorities, "Balanced across every category")}
         </Row>
@@ -109,7 +135,7 @@ export function ReviewSummary({
             "No preference",
           )}
         </Row>
-        {draft.eventType === "wedding" ? (
+        {questions.ceremonies ? (
           <Row term="Functions">
             {listOr(
               draft.ceremonies.map((c) => CEREMONY_LABELS[c]),
@@ -119,19 +145,23 @@ export function ReviewSummary({
         ) : null}
       </Section>
       <Section title="Needs and limits" step={4} onEdit={onEdit}>
-        <Row term="Dietary">
-          {listOr(
-            draft.dietary.map((d) => DIETARY_LABELS[d]),
-            "None",
-          )}
-        </Row>
+        {questions.venue ? (
+          <Row term="Dietary">
+            {listOr(
+              draft.dietary.map((d) => DIETARY_LABELS[d]),
+              "None",
+            )}
+          </Row>
+        ) : null}
         <Row term="Accessibility">
           {listOr(
             draft.accessibility.map((a) => ACCESSIBILITY_LABELS[a]),
             "None",
           )}
         </Row>
-        <Row term="Setting">{SETTING_LABELS[draft.setting]}</Row>
+        {questions.venue ? (
+          <Row term="Setting">{SETTING_LABELS[draft.setting]}</Row>
+        ) : null}
         <Row term="Must-haves">{draft.mustHaves || "None"}</Row>
         <Row term="Must-avoids">{draft.mustAvoid || "None"}</Row>
       </Section>

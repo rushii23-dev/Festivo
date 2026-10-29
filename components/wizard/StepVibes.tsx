@@ -1,11 +1,12 @@
 import { Choice, Fieldset } from "@/components/ui/field";
-import { CEREMONIES, VIBES, type Ceremony, type Vibe } from "@/lib/schemas/common";
+import { CEREMONIES, type Ceremony, type Vibe } from "@/lib/schemas/common";
 import { LIMITS } from "@/lib/schemas/eventInput";
-import { toggleValue } from "@/lib/wizard/draft";
+import { draftQuestions, toggleValue } from "@/lib/wizard/draft";
 import { CEREMONY_LABELS, VIBE_LABELS } from "@/lib/wizard/labels";
 import type { StepProps } from "./types";
 
 export function StepVibes({ draft, errors, update }: StepProps) {
+  const questions = draftQuestions(draft);
   return (
     <div className="grid gap-8">
       <Fieldset
@@ -16,7 +17,7 @@ export function StepVibes({ draft, errors, update }: StepProps) {
         error={errors.vibes}
       >
         <div className="flex flex-wrap gap-3">
-          {VIBES.map((vibe) => (
+          {questions.vibes.map((vibe) => (
             <Choice
               key={vibe}
               type="checkbox"
@@ -30,7 +31,7 @@ export function StepVibes({ draft, errors, update }: StepProps) {
         </div>
       </Fieldset>
 
-      {draft.eventType === "wedding" ? (
+      {questions.ceremonies ? (
         <Fieldset
           id="ceremonies"
           name="ceremonies"

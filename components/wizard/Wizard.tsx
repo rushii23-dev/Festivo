@@ -1,17 +1,24 @@
 "use client";
 
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useAnnounce } from "@/components/a11y/LiveRegion";
-import { Photo } from "@/components/landing/Photo";
-import { PHOTOS, type SitePhoto } from "@/components/landing/photos";
+import { StageHeading } from "@/components/onboarding/StageHeading";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHydratedStore } from "@/hooks/use-hydrated-store";
 import { usePlanGeneration } from "@/hooks/use-plan-generation";
-import type { EventType } from "@/lib/schemas/common";
+import { firstName } from "@/lib/profile/profile";
 import type { Plan } from "@/lib/schemas/plan";
 import { usePlanStore } from "@/lib/store/planStore";
 import { todayIso } from "@/lib/timeline/dates";
@@ -25,38 +32,27 @@ import {
   type FieldErrors,
   type WizardDraft,
 } from "@/lib/wizard/draft";
+import { STEP_COPY } from "@/lib/wizard/labels";
 import { StepBasics } from "./StepBasics";
 import { StepBudget } from "./StepBudget";
 import { StepConstraints } from "./StepConstraints";
 import { StepEventType } from "./StepEventType";
+import { PlanSoFar } from "./PlanSoFar";
 import { GenerationProgress, ReviewSummary } from "./StepReview";
 import { StepVibes } from "./StepVibes";
 import { WizardProgress } from "./WizardProgress";
 import type { StepProps } from "./types";
 
-/** The side photograph follows the celebration being planned. */
-const SIDE_PHOTOS: { key: EventType | "none"; photo: SitePhoto }[] = [
-  { key: "none", photo: PHOTOS.marigoldGarlands },
-  { key: "wedding", photo: PHOTOS.bride },
-  { key: "birthday", photo: PHOTOS.birthdayCake },
-  { key: "community", photo: PHOTOS.holi },
-];
-
-function SidePhoto({ eventType }: { eventType: EventType | "" }) {
-  const active = eventType || "none";
+/**
+ * The plan card on the left, the question on the right, and plenty of
+ * parchment around both. On phones the card shrinks to one line on top.
+ */
+function WizardLayout({ aside, children }: { aside: ReactNode; children: ReactNode }) {
   return (
-    <div aria-hidden="true" className="relative hidden lg:block">
-      <div className="sticky top-8 aspect-[4/5] overflow-hidden bg-[#292622]">
-        {SIDE_PHOTOS.map(({ key, photo }) => (
-          <div
-            key={key}
-            className={`absolute inset-0 motion-ok:transition-opacity motion-ok:duration-700 ${
-              key === active ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <Photo src={photo.src} alt="" sizes="35vw" className="absolute inset-0" />
-          </div>
-        ))}
+    <div className="mx-auto grid w-full max-w-[84rem] grid-cols-1 items-start gap-10 px-5 py-10 sm:px-8 sm:py-14 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-[clamp(3rem,7vw,8rem)] lg:py-[clamp(3.5rem,8vh,6.5rem)]">
+      {aside}
+      <div className="@container min-w-0">
+        <div className="grid w-full max-w-[42rem] content-start gap-10">{children}</div>
       </div>
     </div>
   );
@@ -79,7 +75,8 @@ function focusField(field: DraftField) {
   control?.focus();
 }
 
-export function Wizard() {
+/** `name` personalises the first question once the planner has an account. */
+export function Wizard({ name }: { name?: string } = {}) {
   const hydrated = useHydratedStore();
   const router = useRouter();
   const announce = useAnnounce();
@@ -147,15 +144,17 @@ export function Wizard() {
 
   if (!hydrated) {
     return (
-      <div
-        className="grid gap-6"
-        aria-busy="true"
-        aria-label="Loading your saved answers"
-      >
-        <Skeleton className="h-16" />
-        <Skeleton className="h-10 w-2/3" />
-        <Skeleton className="h-48" />
-      </div>
+      <WizardLayout aside={<Skeleton className="h-[28rem]" />}>
+        <div
+          className="grid gap-6"
+          aria-busy="true"
+          aria-label="Loading your saved answers"
+        >
+          <Skeleton className="h-16" />
+          <Skeleton className="h-10 w-2/3" />
+          <Skeleton className="h-48" />
+        </div>
+      </WizardLayout>
     );
   }
 
@@ -207,47 +206,57 @@ export function Wizard() {
   const StepComponent = isReview ? null : STEP_COMPONENTS[step];
   const stepProps: StepProps = { draft, errors, update, today };
 
+  const copy = STEP_COPY[current.id];
+  const title =
+    current.id === "type" && name
+      ? `What are you celebrating, ${firstName(name)}?`
+      : current.title;
+
   return (
-    <div
-      data-event={draft.eventType || undefined}
-      className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)] lg:gap-16"
-    >
-      <SidePhoto eventType={draft.eventType} />
-      <div className="grid min-w-0 content-start gap-8">
+    <div data-event={draft.eventType || undefined}>
+      <WizardLayout aside={<PlanSoFar draft={draft} today={today} />}>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+          <h1 className="caps">Plan a new event</h1>
+          <p className="text-sm text-muted-foreground">Saved on this device as you go</p>
+        </div>
         <WizardProgress current={step} onJump={goTo} />
 
+        {/* Keyed by step so each question rises into place. */}
         <form
+          key={current.id}
           noValidate
           onSubmit={onSubmit}
           aria-labelledby="wizard-step-title"
-          className="grid gap-8"
+          className="grid gap-10"
         >
-          <h2
+          <StageHeading
+            level={2}
             id="wizard-step-title"
             ref={headingRef}
-            tabIndex={-1}
-            className="font-display text-title outline-none"
-          >
-            {current.title}
-          </h2>
+            eyebrow={`Step ${step + 1} of ${STEPS.length}`}
+            title={title}
+            intro={copy.intro}
+          />
 
-          {StepComponent ? <StepComponent {...stepProps} /> : null}
-          {isReview ? (
-            <>
-              <ReviewSummary draft={draft} today={today} onEdit={goTo} />
-              <GenerationProgress
-                state={generation.state}
-                onCancel={generation.cancel}
-                onRetry={generate}
-              />
-            </>
-          ) : null}
+          <div className="stage-rise grid gap-10 [--delay:0.12s]">
+            {StepComponent ? <StepComponent {...stepProps} /> : null}
+            {isReview ? (
+              <>
+                <ReviewSummary draft={draft} today={today} onEdit={goTo} />
+                <GenerationProgress
+                  state={generation.state}
+                  onCancel={generation.cancel}
+                  onRetry={generate}
+                />
+              </>
+            ) : null}
+          </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-hairline pt-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-hairline pt-8">
             {step > 0 ? (
               <Button
                 type="button"
-                variant="outline"
+                variant="link"
                 onClick={() => goTo(step - 1)}
                 disabled={busy}
               >
@@ -267,11 +276,12 @@ export function Wizard() {
             ) : (
               <Button type="submit" size="lg">
                 {step === STEPS.length - 2 ? "Review answers" : "Next"}
+                <ArrowRight aria-hidden="true" />
               </Button>
             )}
           </div>
         </form>
-      </div>
+      </WizardLayout>
     </div>
   );
 }

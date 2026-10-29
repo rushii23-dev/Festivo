@@ -1,76 +1,107 @@
-import { Photo } from "@/components/landing/Photo";
-import { PHOTOS, type SitePhoto } from "@/components/landing/photos";
 import { Fieldset } from "@/components/ui/field";
-import { EVENT_TYPES, type EventType } from "@/lib/schemas/common";
-import { EVENT_TYPE_COPY } from "@/lib/wizard/labels";
-import { withEventType } from "@/lib/wizard/draft";
+import { OCCASION_GROUP_COPY, occasionsIn } from "@/lib/events/occasions";
+import { OCCASION_GROUPS } from "@/lib/schemas/common";
+import { withGroup, withOccasion } from "@/lib/wizard/draft";
 import type { StepProps } from "./types";
 
-const CARD_PHOTOS: Record<EventType, SitePhoto> = {
-  wedding: PHOTOS.heroNewlyweds,
-  birthday: PHOTOS.birthdayCandles,
-  community: PHOTOS.festivalDrummers,
-};
+/** A filled ring for the chosen option, so selection never relies on colour alone. */
+function Marker({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="flex size-6 shrink-0 items-center justify-center rounded-full border border-current"
+    >
+      {checked ? <span className="size-2.5 rounded-full bg-current" /> : null}
+    </span>
+  );
+}
+
+const cardClass =
+  "group grid min-w-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-start gap-4 border border-hairline bg-card outline-1 outline-offset-[3px] outline-transparent outline-solid motion-ok:transition-[border-color,outline-color] motion-ok:duration-300 hover:border-foreground has-checked:border-foreground has-checked:outline-foreground";
 
 /**
- * Photo cards with native radio semantics (arrow keys move between them).
- * The chosen card gains a printed double frame and a filled marker, not just a colour.
+ * Two native radio groups: first the kind of event, then the occasion inside
+ * it (arrow keys move within each group). The occasions appear once a group
+ * is chosen, so the page never shows forty options at once.
  */
 export function StepEventType({ draft, errors, update }: StepProps) {
+  const occasions = draft.group ? occasionsIn(draft.group) : [];
   return (
-    <Fieldset
-      id="event-type"
-      name="eventType"
-      legend="Event type"
-      legendHidden
-      required
-      error={errors.eventType}
-    >
-      <div className="grid gap-5 md:grid-cols-3">
-        {EVENT_TYPES.map((type) => {
-          const copy = EVENT_TYPE_COPY[type];
-          const photo = CARD_PHOTOS[type];
-          return (
-            <label
-              key={type}
-              className="choice-card group grid min-w-0 cursor-pointer grid-cols-1 content-start border border-hairline bg-card outline-1 outline-offset-[3px] outline-transparent outline-solid hover:border-foreground has-checked:border-foreground has-checked:outline-foreground"
-            >
-              <input
-                type="radio"
-                name="eventType"
-                value={type}
-                checked={draft.eventType === type}
-                onChange={() => update(withEventType(draft, type))}
-                className="sr-only"
-              />
-              <Photo
-                src={photo.src}
-                alt=""
-                sizes="(min-width: 768px) 22vw, 100vw"
-                className="aspect-[4/3]"
-              />
-              <span className="grid gap-3 p-5">
-                <span className="flex items-center justify-between gap-3">
-                  <span className="min-w-0 font-display text-[2rem] leading-none">
+    <div className="grid gap-12">
+      <Fieldset
+        id="occasion-group"
+        name="group"
+        legend="Kind of event"
+        required
+        error={errors.group}
+      >
+        <div className="grid gap-4 @lg:grid-cols-2">
+          {OCCASION_GROUPS.map((group) => {
+            const copy = OCCASION_GROUP_COPY[group];
+            const checked = draft.group === group;
+            return (
+              <label key={group} className={`${cardClass} p-5 sm:p-6`}>
+                <input
+                  type="radio"
+                  name="group"
+                  value={group}
+                  checked={checked}
+                  onChange={() => update(withGroup(draft, group))}
+                  className="sr-only"
+                />
+                <span className="grid gap-2">
+                  <span className="font-display text-[1.75rem] leading-none sm:text-[2rem]">
                     {copy.title}
                   </span>
-                  <span
-                    aria-hidden="true"
-                    className="flex size-6 shrink-0 items-center justify-center rounded-full border border-current"
-                  >
-                    {draft.eventType === type ? (
-                      <span className="size-2.5 rounded-full bg-current" />
-                    ) : null}
+                  <span className="text-[0.9375rem] text-muted-foreground">
+                    {copy.description}
                   </span>
                 </span>
-                <span className="text-[0.9375rem] text-muted-foreground">
-                  {copy.description}
-                </span>
-              </span>
-            </label>
-          );
-        })}
-      </div>
-    </Fieldset>
+                <Marker checked={checked} />
+              </label>
+            );
+          })}
+        </div>
+      </Fieldset>
+
+      {draft.group ? (
+        <Fieldset
+          key={draft.group}
+          id="occasion"
+          name="occasion"
+          legend={`Which ${OCCASION_GROUP_COPY[draft.group].title.toLowerCase()} occasion?`}
+          required
+          error={errors.occasion}
+          className="stage-rise"
+        >
+          <div className="grid gap-3 @lg:grid-cols-2">
+            {occasions.map((occasion) => {
+              const checked = draft.occasion === occasion.id;
+              return (
+                <label key={occasion.id} className={`${cardClass} px-5 py-4`}>
+                  <input
+                    type="radio"
+                    name="occasion"
+                    value={occasion.id}
+                    checked={checked}
+                    onChange={() => update(withOccasion(draft, occasion.id))}
+                    className="sr-only"
+                  />
+                  <span className="grid gap-1">
+                    <span className="font-display text-[1.45rem] leading-tight">
+                      {occasion.label}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {occasion.description}
+                    </span>
+                  </span>
+                  <Marker checked={checked} />
+                </label>
+              );
+            })}
+          </div>
+        </Fieldset>
+      ) : null}
+    </div>
   );
 }

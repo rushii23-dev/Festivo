@@ -12,7 +12,12 @@ import {
   type AccessibilityNeed,
   type DietaryNeed,
 } from "@/lib/schemas/common";
-import { FREE_TEXT_MAX, toggleValue } from "@/lib/wizard/draft";
+import {
+  FREE_TEXT_MAX,
+  ONLINE_ACCESSIBILITY,
+  draftQuestions,
+  toggleValue,
+} from "@/lib/wizard/draft";
 import {
   ACCESSIBILITY_LABELS,
   DIETARY_LABELS,
@@ -58,39 +63,49 @@ function FreeText({
 }
 
 export function StepConstraints({ draft, errors, update }: StepProps) {
+  const inPerson = draftQuestions(draft).venue;
+  const needs: readonly AccessibilityNeed[] = inPerson
+    ? ACCESSIBILITY_NEEDS
+    : ONLINE_ACCESSIBILITY;
   return (
     <div className="grid gap-8">
-      <Fieldset
-        id="dietary"
-        name="dietary"
-        legend="Dietary needs"
-        hint="Optional. Pick all that apply."
-      >
-        <div className="flex flex-wrap gap-3">
-          {DIETARY_NEEDS.map((need) => (
-            <Choice
-              key={need}
-              type="checkbox"
-              name="dietary"
-              value={need}
-              label={DIETARY_LABELS[need]}
-              checked={draft.dietary.includes(need)}
-              onChange={() =>
-                update({ dietary: toggleValue<DietaryNeed>(draft.dietary, need) })
-              }
-            />
-          ))}
-        </div>
-      </Fieldset>
+      {inPerson ? (
+        <Fieldset
+          id="dietary"
+          name="dietary"
+          legend="Dietary needs"
+          hint="Optional. Pick all that apply."
+        >
+          <div className="flex flex-wrap gap-3">
+            {DIETARY_NEEDS.map((need) => (
+              <Choice
+                key={need}
+                type="checkbox"
+                name="dietary"
+                value={need}
+                label={DIETARY_LABELS[need]}
+                checked={draft.dietary.includes(need)}
+                onChange={() =>
+                  update({ dietary: toggleValue<DietaryNeed>(draft.dietary, need) })
+                }
+              />
+            ))}
+          </div>
+        </Fieldset>
+      ) : null}
 
       <Fieldset
         id="accessibility"
         name="accessibility"
         legend="Guest accessibility needs"
-        hint="Optional. We’ll add these to venue and vendor questions."
+        hint={
+          inPerson
+            ? "Optional. We’ll add these to venue and vendor questions."
+            : "Optional. We’ll make sure the platform supports them."
+        }
       >
         <div className="flex flex-wrap gap-3">
-          {ACCESSIBILITY_NEEDS.map((need) => (
+          {needs.map((need) => (
             <Choice
               key={need}
               type="checkbox"
@@ -111,21 +126,23 @@ export function StepConstraints({ draft, errors, update }: StepProps) {
         </div>
       </Fieldset>
 
-      <Fieldset id="setting" name="setting" legend="Indoors or outdoors?">
-        <div className="flex flex-wrap gap-3">
-          {SETTINGS.map((setting) => (
-            <Choice
-              key={setting}
-              type="radio"
-              name="setting"
-              value={setting}
-              label={SETTING_LABELS[setting]}
-              checked={draft.setting === setting}
-              onChange={() => update({ setting })}
-            />
-          ))}
-        </div>
-      </Fieldset>
+      {inPerson ? (
+        <Fieldset id="setting" name="setting" legend="Indoors or outdoors?">
+          <div className="flex flex-wrap gap-3">
+            {SETTINGS.map((setting) => (
+              <Choice
+                key={setting}
+                type="radio"
+                name="setting"
+                value={setting}
+                label={SETTING_LABELS[setting]}
+                checked={draft.setting === setting}
+                onChange={() => update({ setting })}
+              />
+            ))}
+          </div>
+        </Fieldset>
+      ) : null}
 
       <FreeText
         id="must-haves"

@@ -1,6 +1,10 @@
 import { STEPS } from "@/lib/wizard/draft";
 
-/** Step indicator. Earlier steps are buttons so people can jump back. */
+/**
+ * Six hairline segments, one per step: filled in gold once answered, in ink
+ * for the current step. Answered steps are buttons so people can jump back;
+ * the step count and name sit beside the question.
+ */
 export function WizardProgress({
   current,
   onJump,
@@ -8,51 +12,50 @@ export function WizardProgress({
   current: number;
   onJump: (step: number) => void;
 }) {
-  const percent = Math.round(((current + 1) / STEPS.length) * 100);
   return (
-    <nav aria-label="Wizard steps" className="grid gap-4">
-      <p className="caps text-muted-foreground">
-        Step {current + 1} of {STEPS.length}
-      </p>
-      <div aria-hidden="true" className="h-[3px] overflow-hidden bg-hairline">
-        <div
-          className="h-full bg-secondary motion-ok:transition-[width] motion-ok:duration-500"
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-      <ol className="hidden flex-wrap gap-x-6 gap-y-1 sm:flex">
+    <nav aria-label="Wizard steps">
+      <ol className="grid grid-cols-6 gap-2">
         {STEPS.map((step, index) => {
           const done = index < current;
           const isCurrent = index === current;
-          const content = (
-            <>
-              <span aria-hidden="true" className="text-muted-foreground">
-                {String(index + 1).padStart(2, "0")}
-              </span>
+          const bar = (
+            <span
+              aria-hidden="true"
+              className={`block h-[3px] w-full motion-ok:transition-colors motion-ok:duration-500 ${
+                done ? "bg-gold" : isCurrent ? "bg-foreground" : "bg-hairline"
+              }`}
+            />
+          );
+          const label = (
+            <span
+              aria-hidden="true"
+              className="caps mt-3 hidden text-[0.6875rem] text-muted-foreground md:block"
+            >
               {step.label}
-              {done ? <span className="sr-only">, completed</span> : null}
-            </>
+            </span>
           );
           return (
-            <li key={step.id}>
+            <li key={step.id} className="min-w-0">
               {done ? (
                 <button
                   type="button"
                   onClick={() => onJump(index)}
-                  className="caps inline-flex min-h-11 items-center gap-2 underline-offset-4 hover:underline"
+                  className="group grid min-h-11 w-full content-start pt-4 text-left hover:[&>span:first-child]:bg-foreground"
                 >
-                  {content}
+                  {bar}
+                  {label}
+                  <span className="sr-only">
+                    {`Step ${index + 1}, ${step.label}, completed`}
+                  </span>
                 </button>
               ) : (
                 <span
                   aria-current={isCurrent ? "step" : undefined}
-                  className={`caps inline-flex min-h-11 items-center gap-2 border-b-2 ${
-                    isCurrent
-                      ? "border-secondary text-foreground"
-                      : "border-transparent text-muted-foreground"
-                  }`}
+                  className="grid min-h-11 content-start pt-4"
                 >
-                  {content}
+                  {bar}
+                  {label}
+                  <span className="sr-only">{`Step ${index + 1}, ${step.label}`}</span>
                 </span>
               )}
             </li>

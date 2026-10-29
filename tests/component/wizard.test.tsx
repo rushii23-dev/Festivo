@@ -15,6 +15,8 @@ const eventDate = addDays(todayIso(), 120);
 const completeDraft: WizardDraft = {
   ...DEFAULT_DRAFT,
   eventType: "birthday",
+  group: "life",
+  occasion: "birthday",
   name: "Maya turns 7",
   date: eventDate,
   location: "Pune",
@@ -49,29 +51,48 @@ beforeEach(() => {
 });
 
 describe("Wizard navigation and validation", () => {
-  it("blocks Next until an event type is chosen, focusing the first option", async () => {
+  it("blocks Next until a kind of event and an occasion are chosen", async () => {
     const user = renderWizard();
     await screen.findByRole("heading", { name: "What are you celebrating?" });
     expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: /occasion/ })).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Next" }));
-    const group = screen.getByRole("group", { name: /Event type/ });
+    const group = screen.getByRole("group", { name: /Kind of event/ });
     expect(group).toHaveAccessibleDescription(/Choose the kind of event/);
     await waitFor(() =>
-      expect(screen.getByRole("radio", { name: /Wedding/ })).toHaveFocus(),
+      expect(screen.getByRole("radio", { name: /Life moments/ })).toHaveFocus(),
     );
     await waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent("1 answer needs attention."),
     );
+
+    // Choosing a group reveals its occasions; Next still waits for one.
+    await user.click(screen.getByRole("radio", { name: /Work & causes/ }));
+    const occasions = screen.getByRole("group", { name: /Which work & causes occasion/ });
+    expect(within(occasions).getAllByRole("radio")).toHaveLength(7);
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    expect(occasions).toHaveAccessibleDescription(/Choose the occasion/);
+    await user.click(within(occasions).getByRole("radio", { name: /^Hackathon/ }));
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    await screen.findByRole("heading", { name: "The basics" });
+    expect(usePlanStore.getState().draft).toMatchObject({
+      group: "work",
+      occasion: "hackathon",
+      eventType: "community",
+    });
   });
 
   it("is fully operable by keyboard and moves focus to each new step heading", async () => {
     const user = renderWizard();
     await screen.findByRole("heading", { name: "What are you celebrating?" });
 
-    screen.getByRole("radio", { name: /Wedding/ }).focus();
+    screen.getByRole("radio", { name: /Life moments/ }).focus();
     await user.keyboard("{ArrowRight}");
-    expect(screen.getByRole("radio", { name: /Birthday/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Festivals/ })).toBeChecked();
+    screen.getByRole("radio", { name: /^Diwali/ }).focus();
+    await user.keyboard(" ");
+    expect(screen.getByRole("radio", { name: /^Diwali/ })).toBeChecked();
 
     screen.getByRole("button", { name: "Next" }).focus();
     await user.keyboard("{Enter}");
@@ -80,7 +101,15 @@ describe("Wizard navigation and validation", () => {
   });
 
   it("links errors to fields and focuses the first invalid one", async () => {
-    usePlanStore.setState({ draft: { ...DEFAULT_DRAFT, eventType: "wedding" }, step: 1 });
+    usePlanStore.setState({
+      draft: {
+        ...DEFAULT_DRAFT,
+        eventType: "wedding",
+        group: "life",
+        occasion: "wedding",
+      },
+      step: 1,
+    });
     const user = renderWizard();
     await screen.findByRole("heading", { name: "The basics" });
     await user.type(screen.getByRole("textbox", { name: /City or place/ }), "Jaipur");
@@ -125,11 +154,9 @@ describe("Wizard navigation and validation", () => {
     expect(await screen.findByRole("textbox", { name: /Event name/ })).toHaveValue(
       "Maya turns 7",
     );
-    await user.click(screen.getByRole("button", { name: /Event type, completed/ }));
-    expect(await screen.findByRole("radio", { name: /Birthday/ })).toBeChecked();
-    expect(document.querySelector('[aria-current="step"]')).toHaveTextContent(
-      "Event type",
-    );
+    await user.click(screen.getByRole("button", { name: /Occasion, completed/ }));
+    expect(await screen.findByRole("radio", { name: /^Birthday/ })).toBeChecked();
+    expect(document.querySelector('[aria-current="step"]')).toHaveTextContent("Occasion");
   });
 
   it("previews the budget split live as priorities change", async () => {
@@ -152,7 +179,10 @@ describe("Wizard navigation and validation", () => {
   });
 
   it("shows wedding functions only for weddings and counts free-text characters", async () => {
-    usePlanStore.setState({ draft: { ...completeDraft, eventType: "wedding" }, step: 3 });
+    usePlanStore.setState({
+      draft: { ...completeDraft, eventType: "wedding", occasion: "wedding" },
+      step: 3,
+    });
     const user = renderWizard();
     await screen.findByRole("heading", { name: "Vibe and style" });
     await user.click(screen.getByRole("checkbox", { name: "Sangeet" }));

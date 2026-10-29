@@ -5,9 +5,11 @@ import type {
   Currency,
   DietaryNeed,
   EventType,
+  Format,
   Setting,
   Vibe,
 } from "@/lib/schemas/common";
+import type { StepId } from "./draft";
 
 export const EVENT_TYPE_COPY: Record<EventType, { title: string; description: string }> =
   {
@@ -37,6 +39,10 @@ export const VIBE_LABELS: Record<Vibe, string> = {
   modern: "Modern",
   rustic: "Rustic",
   playful: "Playful",
+  cozy: "Cozy",
+  casual: "Casual",
+  professional: "Professional",
+  "high-energy": "High energy",
 };
 
 export const CEREMONY_LABELS: Record<Ceremony, string> = {
@@ -66,6 +72,25 @@ export const ACCESSIBILITY_LABELS: Record<AccessibilityNeed, string> = {
   "sign-language": "Sign language interpreter",
   "large-print": "Large-print materials",
   "hearing-loop": "Hearing loop",
+  "live-captions": "Live captions",
+};
+
+export const FORMAT_COPY: Record<Format, { label: string; hint: string }> = {
+  "in-person": { label: "In person", hint: "Everyone meets at one place." },
+  online: {
+    label: "Online",
+    hint: "On Zoom, Meet or a stream: no venue, food or décor to plan.",
+  },
+  hybrid: {
+    label: "Hybrid",
+    hint: "A place to meet, with a stream for people joining from afar.",
+  },
+};
+
+export const TICKET_COPY: Record<"none" | "free" | "paid", string> = {
+  none: "No registration",
+  free: "Free, with registration",
+  paid: "Paid tickets",
 };
 
 export const SETTING_LABELS: Record<Setting, string> = {
@@ -87,4 +112,27 @@ export const PRIORITY_LABELS: Record<number, string> = {
   3: "Balanced",
   4: "A bit more",
   5: "Spend more",
+};
+
+/** A line under each step's question. */
+export const STEP_COPY: Record<StepId, { intro: string }> = {
+  type: {
+    intro:
+      "Pick a kind of event, then the occasion. The questions, budget lines and vendors adapt to it.",
+  },
+  basics: {
+    intro: "A name, a date and a rough guest count. Nothing here is final.",
+  },
+  budget: {
+    intro: "The total you would like to spend. Festivo splits it for you.",
+  },
+  vibe: {
+    intro: "Pick a few words that sound like your celebration.",
+  },
+  constraints: {
+    intro: "Anything your guests need, and anything you would rather avoid.",
+  },
+  review: {
+    intro: "Have a last look. Change anything, then let Festivo draft your plan.",
+  },
 };

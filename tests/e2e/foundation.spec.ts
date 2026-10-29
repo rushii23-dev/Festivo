@@ -1,19 +1,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { settleAnimations } from "./helpers";
 
 const PAGES = ["/", "/plan/new", "/missing-page"];
 
 async function expectNoAxeViolations(page: Page) {
-  // Let the entrance finish first: mid-fade text is half transparent. Endless
-  // loops (the ideas marquee) are skipped so the wait always ends.
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getTiming().iterations !== Infinity)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
+  // Let the entrance finish first: mid-fade text is half transparent.
+  await settleAnimations(page);
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .analyze();
@@ -92,7 +85,9 @@ test.describe("keyboard", () => {
   test("focus moves to main after client-side navigation", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("banner").getByRole("link", { name: "Start planning" }).click();
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Plan a new event");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Create your account",
+    );
     await expect(page.locator("#main")).toBeFocused();
   });
 });

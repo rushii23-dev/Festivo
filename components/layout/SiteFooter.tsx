@@ -9,7 +9,7 @@ export function SiteFooter() {
           <p className="wordmark text-5xl">Festivo</p>
         </div>
         <div className="grid gap-1 text-muted-foreground md:text-right">
-          <p className="caps">Weddings, birthdays and community events</p>
+          <p className="caps">Life moments, festivals, meetups and work events</p>
           <p className="caps">Your plans are saved in this browser only</p>
           <p className="caps">Photography from Unsplash</p>
         </div>
