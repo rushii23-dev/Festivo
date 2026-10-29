@@ -5,13 +5,15 @@ import {
   STEPS,
   STEP_FIELDS,
   draftEventDate,
+  draftQuestions,
   firstInvalidStep,
   parseGuestCount,
   toEventInput,
   toggleValue,
   upcomingMonths,
   validateStep,
-  withEventType,
+  withGroup,
+  withOccasion,
   type WizardDraft,
 } from "@/lib/wizard/draft";
 
@@ -20,6 +22,8 @@ const TODAY = "2026-10-26";
 const complete: WizardDraft = {
   ...DEFAULT_DRAFT,
   eventType: "wedding",
+  group: "life",
+  occasion: "wedding",
   name: "Priya & Arjun",
   date: "2027-02-14",
   location: "Jaipur",
@@ -31,9 +35,12 @@ const complete: WizardDraft = {
 };
 
 describe("validateStep", () => {
-  it("requires an event type", () => {
+  it("requires a group, then an occasion", () => {
     expect(validateStep("type", DEFAULT_DRAFT, TODAY)).toEqual({
-      eventType: "Choose the kind of event you're planning.",
+      group: "Choose the kind of event you're planning.",
+    });
+    expect(validateStep("type", { ...DEFAULT_DRAFT, group: "meetup" }, TODAY)).toEqual({
+      occasion: "Choose the occasion you're planning.",
     });
     expect(validateStep("type", complete, TODAY)).toEqual({});
   });
@@ -132,7 +139,8 @@ describe("whole-draft helpers", () => {
   });
 
   it("drops ceremonies for non-weddings and reports invalid drafts", () => {
-    const birthday = toEventInput({ ...complete, eventType: "birthday" });
+    const birthday = toEventInput(withOccasion(complete, "birthday"));
+    expect(birthday.ok && birthday.input.occasion).toBe("birthday");
     expect(birthday.ok && birthday.input.ceremonies).toEqual([]);
     expect(toEventInput(DEFAULT_DRAFT).ok).toBe(false);
   });
@@ -149,13 +157,32 @@ describe("whole-draft helpers", () => {
     });
   });
 
-  it("resets priorities when the event type changes", () => {
+  it("resets answers that no longer apply when the occasion changes", () => {
     const withPriorities = { ...complete, priorities: { photography: 5 } };
-    expect(withEventType(withPriorities, "wedding")).toBe(withPriorities);
-    expect(withEventType(withPriorities, "community")).toMatchObject({
+    expect(withOccasion(withPriorities, "wedding")).toBe(withPriorities);
+    expect(
+      withOccasion({ ...withPriorities, format: "hybrid", tickets: "paid" }, "book-club"),
+    ).toMatchObject({
+      group: "meetup",
+      occasion: "book-club",
       eventType: "community",
+      format: "hybrid",
       priorities: {},
       ceremonies: [],
+      tickets: "paid",
+    });
+    // A naming ceremony is in person only and has no tickets.
+    expect(
+      withOccasion({ ...complete, format: "online", tickets: "free" }, "naming-ceremony"),
+    ).toMatchObject({ format: "in-person", tickets: "none", eventType: "birthday" });
+  });
+
+  it("keeps the occasion only while its group stays chosen", () => {
+    expect(withGroup(complete, "life")).toBe(complete);
+    expect(withGroup(complete, "work")).toMatchObject({
+      group: "work",
+      occasion: "",
+      eventType: "",
     });
   });
 
@@ -179,5 +206,88 @@ describe("whole-draft helpers", () => {
   it("has a title for every step", () => {
     expect(STEPS.map((s) => s.id)).toEqual(Object.keys(STEP_FIELDS));
     expect(addDays(TODAY, 1)).toBe("2026-10-27");
+  });
+});
+
+describe("questions that follow the occasion", () => {
+  const bookClub = withOccasion(
+    {
+      ...complete,
+      dietary: ["vegan"],
+      setting: "outdoor",
+      accessibility: ["live-captions", "step-free-access"],
+      vibes: ["cozy", "traditional"],
+    },
+    "book-club",
+  );
+
+  it("asks only what applies", () => {
+    expect(draftQuestions(withOccasion(complete, "birthday"))).toMatchObject({
+      age: true,
+      tickets: false,
+      ceremonies: false,
+      formats: ["in-person", "hybrid"],
+    });
+    expect(draftQuestions(bookClub)).toMatchObject({
+      age: false,
+      tickets: true,
+      multiDay: false,
+      formats: ["in-person", "online", "hybrid"],
+    });
+    expect(draftQuestions(complete)).toMatchObject({ ceremonies: true, multiDay: true });
+  });
+
+  it("leaves in-person answers out of an online event", () => {
+    const result = toEventInput({ ...bookClub, format: "online" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.input).toMatchObject({
+      occasion: "book-club",
+      format: "online",
+      vibes: ["cozy"],
+      constraints: { dietary: [], setting: "either", accessibility: ["live-captions"] },
+    });
+  });
+
+  it("validates and maps tickets", () => {
+    const paid = {
+      ...bookClub,
+      tickets: "paid" as const,
+      ticketPrice: "",
+      capacity: "lots",
+    };
+    expect(validateStep("budget", paid, TODAY)).toEqual({
+      ticketPrice: "Enter a ticket price.",
+      capacity: "Use a whole number, like 80.",
+    });
+    const fixed = { ...paid, ticketPrice: "199", capacity: "40", approval: true };
+    expect(validateStep("budget", fixed, TODAY)).toEqual({});
+    const result = toEventInput(fixed);
+    expect(result.ok && result.input.tickets).toEqual({
+      pricing: "paid",
+      price: 199,
+      capacity: 40,
+      approval: true,
+    });
+    // Tickets are ignored where the occasion has none.
+    const engagement = toEventInput({
+      ...withOccasion(complete, "engagement"),
+      tickets: "paid",
+    });
+    expect(engagement.ok && engagement.input.tickets).toBeUndefined();
+  });
+
+  it("checks days, age and children only where asked", () => {
+    expect(validateStep("basics", { ...complete, days: "0" }, TODAY)).toEqual({
+      days: "An event runs at least one day.",
+    });
+    const birthday = { ...withOccasion(complete, "birthday"), ageTurning: "seven" };
+    expect(validateStep("basics", birthday, TODAY)).toEqual({
+      ageTurning: "Use a whole number, like 7.",
+    });
+    const party = toEventInput({ ...birthday, ageTurning: "7", days: "3", kids: true });
+    expect(party.ok && party.input.details).toEqual({ ageTurning: 7 });
+    const diwali = toEventInput({ ...withOccasion(complete, "diwali"), kids: true });
+    expect(diwali.ok && diwali.input.details).toEqual({ kids: true });
   });
 });
