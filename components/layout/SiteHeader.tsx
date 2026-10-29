@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { DiyaButton } from "@/components/landing/DiyaButton";
 import { AccountMenu } from "./AccountMenu";
 import { Wordmark } from "./Wordmark";
 
@@ -11,9 +10,7 @@ export function SiteHeader() {
         <Wordmark />
         <nav aria-label="Main" className="flex items-center gap-2 sm:gap-4">
           <AccountMenu />
-          <Button asChild size="sm">
-            <Link href="/plan/new">Start planning</Link>
-          </Button>
+          <DiyaButton href="/plan/new">Start planning</DiyaButton>
         </nav>
       </div>
     </header>
