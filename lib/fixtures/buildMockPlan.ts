@@ -6,23 +6,39 @@
 import { allocateBudget } from "@/lib/budget/allocate";
 import { formatMoney } from "@/lib/budget/format";
 import { fitsBudget } from "@/lib/ideas/fit";
-import type { EventType, Vibe } from "@/lib/schemas/common";
+import { profileOf, occasionOf, type PlanKind } from "@/lib/events/kind";
+import type { FixtureKey } from "@/lib/events/profiles";
+import type { EventType, Occasion, Vibe } from "@/lib/schemas/common";
 import type { EventInput } from "@/lib/schemas/eventInput";
 import { PlanSchema, type Idea, type IdeaCategory, type Plan } from "@/lib/schemas/plan";
 import { formatLongDate } from "@/lib/timeline/dates";
 import { generateTimeline } from "@/lib/timeline/generate";
 import { resolveEventDate } from "@/lib/timeline/resolveDate";
+import { planKindFields } from "@/lib/plan/fromDraft";
 import { defaultVendors } from "@/lib/vendors/catalog";
+import { activeFixture } from "./active";
 import { birthdayFixture } from "./birthday";
 import { communityFixture } from "./community";
+import { gatheringFixture } from "./gathering";
+import { meetupFixture } from "./meetup";
 import type { FixtureContent, IdeaSeed } from "./types";
 import { weddingFixture } from "./wedding";
+import { workFixture } from "./work";
 
-export const FIXTURES: Record<EventType, FixtureContent> = {
+export const FIXTURES: Record<FixtureKey, FixtureContent> = {
   wedding: weddingFixture,
   birthday: birthdayFixture,
   community: communityFixture,
+  gathering: gatheringFixture,
+  meetup: meetupFixture,
+  active: activeFixture,
+  work: workFixture,
 };
+
+/** The demo rationales and ideas for a kind of event. */
+export function fixtureFor(kind: PlanKind): FixtureContent {
+  return FIXTURES[profileOf(kind).fixture];
+}
 
 export const IDEAS_PER_CATEGORY = 3;
 
@@ -31,11 +47,14 @@ interface BudgetContext {
   currency: EventInput["budget"]["currency"];
   totalBudget: number;
   guestCount: number;
+  /** Ideas written for this occasion rank above the rest. */
+  occasion?: Occasion | undefined;
 }
 
 /**
- * Ranks idea seeds for a category: more matching vibes first, then ideas that
- * fit the budget, then the fixture's own order. Skips `excludeKeys`.
+ * Ranks idea seeds for a category: ideas written for the occasion first, then
+ * more matching vibes, then ideas that fit the budget, then the fixture's own
+ * order. Skips `excludeKeys`.
  */
 export function selectIdeas(
   seeds: readonly IdeaSeed[],
@@ -52,6 +71,7 @@ export function selectIdeas(
       seed,
       index,
       score:
+        (budget.occasion && seed.occasions?.includes(budget.occasion) ? 10 : 0) +
         seed.vibes.filter((v) => vibes.includes(v)).length * 2 +
         (fitsBudget(seed.costTier, budget) ? 1 : 0),
     }))
@@ -99,7 +119,7 @@ export function buildMockPlan(
   input: EventInput,
   { id, today, now }: BuildPlanOptions,
 ): Plan {
-  const fixture = FIXTURES[input.eventType];
+  const fixture = fixtureFor(input);
   const { date, flexible } = resolveEventDate(input.date, today);
   const total = Math.round(input.budget.total);
   const budgetContext: BudgetContext = {
@@ -107,9 +127,10 @@ export function buildMockPlan(
     currency: input.budget.currency,
     totalBudget: total,
     guestCount: input.guestCount,
+    occasion: occasionOf(input).id,
   };
 
-  const budget = allocateBudget(input.eventType, total, input.budget.priorities).map(
+  const budget = allocateBudget(input, total, input.budget.priorities).map(
     ({ key, amount }) => ({
       category: key,
       allocated: amount,
@@ -140,7 +161,7 @@ export function buildMockPlan(
 
   return PlanSchema.parse({
     id,
-    eventType: input.eventType,
+    ...planKindFields(input),
     title: input.name,
     date,
     dateFlexible: flexible,
@@ -150,8 +171,8 @@ export function buildMockPlan(
     currency: input.budget.currency,
     totalBudget: total,
     budget,
-    timeline: generateTimeline(input.eventType, date, today).tasks,
-    vendors: defaultVendors(input.eventType),
+    timeline: generateTimeline(input, date, today).tasks,
+    vendors: defaultVendors(input),
     ideas,
     summary: summary.slice(0, 800),
     createdAt: now.toISOString(),

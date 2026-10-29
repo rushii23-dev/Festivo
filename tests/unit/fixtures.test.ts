@@ -1,10 +1,10 @@
+import { vendorsFor } from "@/lib/events/kind";
 import { describe, expect, it } from "vitest";
 import { FIXTURES, buildMockPlan, selectIdeas } from "@/lib/fixtures/buildMockPlan";
 import { categoriesFor } from "@/lib/budget/categories";
 import { EVENT_TYPES, type EventType } from "@/lib/schemas/common";
 import { EventInputSchema, type EventInputDraft } from "@/lib/schemas/eventInput";
 import { IDEA_CATEGORIES, PlanSchema } from "@/lib/schemas/plan";
-import { VENDORS_BY_EVENT } from "@/lib/vendors/catalog";
 
 const TODAY = "2026-10-26";
 const now = new Date("2026-10-26T10:00:00Z");
@@ -63,7 +63,9 @@ describe.each(EVENT_TYPES)("mock %s plan", (type) => {
   });
 
   it("allocates every category and sums exactly to the total", () => {
-    expect(plan.budget.map((b) => b.category)).toEqual(categoriesFor(type));
+    expect(plan.budget.map((b) => b.category)).toEqual(
+      categoriesFor({ eventType: type }),
+    );
     expect(plan.budget.reduce((s, b) => s + b.allocated, 0)).toBe(plan.totalBudget);
     expect(plan.budget.every((b) => b.rationale.length > 10)).toBe(true);
   });
@@ -78,7 +80,7 @@ describe.each(EVENT_TYPES)("mock %s plan", (type) => {
   });
 
   it("lists the event's vendors with questions", () => {
-    expect(plan.vendors.map((v) => v.category)).toEqual(VENDORS_BY_EVENT[type]);
+    expect(plan.vendors.map((v) => v.category)).toEqual(vendorsFor({ eventType: type }));
   });
 
   it("offers three ideas in each category", () => {
