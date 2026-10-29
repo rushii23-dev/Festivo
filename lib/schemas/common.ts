@@ -4,6 +4,10 @@
  */
 import { z } from "zod";
 
+/**
+ * The planning family behind every occasion: it picks the base timeline and
+ * the fixtures. People choose a specific occasion (below), never a family.
+ */
 export const EVENT_TYPES = ["wedding", "birthday", "community"] as const;
 export const EventTypeSchema = z.enum(EVENT_TYPES);
 export type EventType = z.infer<typeof EventTypeSchema>;
@@ -13,6 +17,66 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   birthday: "Birthday",
   community: "Community event",
 };
+
+/** The groups people browse first, then the occasion inside the group. */
+export const OCCASION_GROUPS = ["life", "festival", "meetup", "work"] as const;
+export const OccasionGroupSchema = z.enum(OCCASION_GROUPS);
+export type OccasionGroup = z.infer<typeof OccasionGroupSchema>;
+
+/** Every occasion Festivo plans (catalog with labels and rules: lib/events/occasions). */
+export const OCCASIONS = [
+  // Life moments
+  "wedding",
+  "engagement",
+  "anniversary",
+  "birthday",
+  "baby-shower",
+  "naming-ceremony",
+  "graduation",
+  "retirement",
+  "farewell",
+  "housewarming",
+  // Festivals
+  "diwali",
+  "holi",
+  "eid",
+  "christmas",
+  "navratri",
+  "puja",
+  "community-festival",
+  // Meetups and communities (after Luma's categories)
+  "tech-meetup",
+  "ai-meetup",
+  "crypto-meetup",
+  "book-club",
+  "game-night",
+  "running-club",
+  "fitness-class",
+  "wellness",
+  "arts-culture",
+  "climate",
+  "food-drink",
+  "family-day",
+  // Work and causes
+  "conference",
+  "hackathon",
+  "workshop",
+  "networking",
+  "product-launch",
+  "team-offsite",
+  "fundraiser",
+] as const;
+export const OccasionSchema = z.enum(OCCASIONS);
+export type Occasion = z.infer<typeof OccasionSchema>;
+
+/** Where guests take part (Luma's in-person / online / hybrid). */
+export const FORMATS = ["in-person", "online", "hybrid"] as const;
+export const FormatSchema = z.enum(FORMATS);
+export type Format = z.infer<typeof FormatSchema>;
+
+export const TICKET_PRICING = ["free", "paid"] as const;
+export const TicketPricingSchema = z.enum(TICKET_PRICING);
+export type TicketPricing = z.infer<typeof TicketPricingSchema>;
 
 export const CURRENCIES = ["INR", "USD", "EUR", "GBP"] as const;
 export const CurrencySchema = z.enum(CURRENCIES);
@@ -35,6 +99,10 @@ export const BUDGET_CATEGORIES = [
   "equipment",
   "marketing",
   "volunteers",
+  "speakers",
+  "prizes",
+  "rituals",
+  "platform",
   "misc",
 ] as const;
 export const BudgetCategorySchema = z.enum(BUDGET_CATEGORIES);
@@ -51,11 +119,15 @@ export const VIBES = [
   "modern",
   "rustic",
   "playful",
+  "cozy",
+  "casual",
+  "professional",
+  "high-energy",
 ] as const;
 export const VibeSchema = z.enum(VIBES);
 export type Vibe = z.infer<typeof VibeSchema>;
 
-/** Optional wedding ceremonies, used when the "cultural" vibe applies. */
+/** Optional wedding functions, offered for weddings and engagements. */
 export const CEREMONIES = [
   "haldi",
   "mehendi",
@@ -87,6 +159,7 @@ export const ACCESSIBILITY_NEEDS = [
   "sign-language",
   "large-print",
   "hearing-loop",
+  "live-captions",
 ] as const;
 export const AccessibilityNeedSchema = z.enum(ACCESSIBILITY_NEEDS);
 export type AccessibilityNeed = z.infer<typeof AccessibilityNeedSchema>;

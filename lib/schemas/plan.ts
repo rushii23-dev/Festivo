@@ -7,11 +7,13 @@ import {
   BudgetCategorySchema,
   CurrencySchema,
   EventTypeSchema,
+  FormatSchema,
   IsoDateSchema,
+  OccasionSchema,
   VibeSchema,
   textField,
 } from "./common";
-import { LIMITS } from "./eventInput";
+import { DetailsSchema, LIMITS, TicketsSchema } from "./eventInput";
 
 export const TIMELINE_PHASES = [
   "12+ weeks",
@@ -61,6 +63,10 @@ export const VENDOR_CATEGORIES = [
   "rentals",
   "permits-office",
   "volunteer-lead",
+  "streaming",
+  "speaker",
+  "ticketing",
+  "merch",
 ] as const;
 export const VendorCategorySchema = z.enum(VENDOR_CATEGORIES);
 export type VendorCategory = z.infer<typeof VendorCategorySchema>;
@@ -132,6 +138,11 @@ export type Idea = z.infer<typeof IdeaSchema>;
 export const PlanSchema = z.strictObject({
   id: IdSchema,
   eventType: EventTypeSchema,
+  /** Optional: plans saved before occasions existed use their family's default. */
+  occasion: OccasionSchema.optional(),
+  format: FormatSchema.optional(),
+  tickets: TicketsSchema.optional(),
+  details: DetailsSchema.optional(),
   title: textField(LIMITS.nameMax, "Title").min(1),
   date: IsoDateSchema,
   /** True when the user chose "flexible"; `date` is then our planning anchor. */
