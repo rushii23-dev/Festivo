@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { vendorsFor } from "@/lib/events/kind";
+import { OCCASION_INFO } from "@/lib/events/occasions";
 import { budgetLevel, fitsBudget } from "@/lib/ideas/fit";
-import { EVENT_TYPES } from "@/lib/schemas/common";
+import { OCCASIONS } from "@/lib/schemas/common";
 import { VENDOR_CATEGORIES, type BudgetItem, type Vendor } from "@/lib/schemas/plan";
 import {
   DEFAULT_QUESTIONS,
-  VENDORS_BY_EVENT,
-  VENDOR_BUDGET_CATEGORY,
+  VENDOR_BUDGET_CATEGORIES,
   budgetCategoryFor,
   VENDOR_LABELS,
   applyVendorSpend,
@@ -27,24 +28,28 @@ describe("vendor catalog", () => {
   it("has a label, budget line and questions for every vendor category", () => {
     for (const category of VENDOR_CATEGORIES) {
       expect(VENDOR_LABELS[category]).toBeTruthy();
-      expect(VENDOR_BUDGET_CATEGORY[category]).toBeTruthy();
+      expect(VENDOR_BUDGET_CATEGORIES[category].length).toBeGreaterThan(0);
       expect(DEFAULT_QUESTIONS[category].length).toBeGreaterThanOrEqual(2);
     }
   });
 
-  it.each(EVENT_TYPES)(
-    "maps every %s vendor to a budget line that event uses",
-    (type) => {
-      const used = new Set(categoriesFor(type));
-      for (const category of VENDORS_BY_EVENT[type]) {
-        expect(used.has(budgetCategoryFor(category, type))).toBe(true);
+  it.each(OCCASIONS)(
+    "maps every %s vendor, in every format, to a budget line that event uses",
+    (occasion) => {
+      const info = OCCASION_INFO[occasion];
+      for (const format of info.formats) {
+        const kind = { eventType: info.eventType, occasion, format, tickets: {} };
+        const used = new Set(categoriesFor(kind));
+        for (const category of vendorsFor(kind)) {
+          expect(used.has(budgetCategoryFor(category, kind))).toBe(true);
+        }
       }
     },
   );
 
   it("creates default vendors to research", () => {
-    const vendors = defaultVendors("birthday");
-    expect(vendors.map((v) => v.category)).toEqual(VENDORS_BY_EVENT.birthday);
+    const vendors = defaultVendors({ eventType: "birthday" });
+    expect(vendors.map((v) => v.category)).toEqual(vendorsFor({ eventType: "birthday" }));
     expect(
       vendors.every((v) => v.status === "to-research" && v.questionsToAsk.length > 0),
     ).toBe(true);
@@ -61,7 +66,7 @@ describe("vendor spend", () => {
   ];
 
   it("counts quotes once a vendor has quoted, booked or been paid", () => {
-    expect(vendorSpendByCategory(vendors, "wedding")).toEqual({
+    expect(vendorSpendByCategory(vendors, { eventType: "wedding" })).toEqual({
       photography: 130_000,
       venue: 300_000,
     });
@@ -73,9 +78,9 @@ describe("vendor spend", () => {
       { category: "venue", allocated: 400_000, actual: 1, rationale: "" },
       { category: "decor", allocated: 50_000, actual: 20_000, rationale: "" },
     ];
-    expect(applyVendorSpend(budget, vendors, "wedding").map((b) => b.actual)).toEqual([
-      130_000, 300_000, 20_000,
-    ]);
+    expect(
+      applyVendorSpend(budget, vendors, { eventType: "wedding" }).map((b) => b.actual),
+    ).toEqual([130_000, 300_000, 20_000]);
   });
 
   it("reports booking progress", () => {
@@ -106,13 +111,13 @@ describe("budget fit", () => {
 });
 
 describe("budgetCategoryFor", () => {
-  it("applies per-event overrides", () => {
-    expect(budgetCategoryFor("printer", "wedding")).toBe("invitations");
-    expect(budgetCategoryFor("printer", "community")).toBe("marketing");
+  it("falls back to the next line the plan has", () => {
+    expect(budgetCategoryFor("printer", { eventType: "wedding" })).toBe("invitations");
+    expect(budgetCategoryFor("printer", { eventType: "community" })).toBe("marketing");
     expect(
       vendorSpendByCategory(
         [vendor({ category: "printer", status: "paid", quote: 900 })],
-        "community",
+        { eventType: "community" },
       ),
     ).toEqual({ marketing: 900 });
   });

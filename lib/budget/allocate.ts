@@ -4,8 +4,9 @@
  * Every function returns amounts that are non-negative integers summing
  * exactly to the total.
  */
-import type { BudgetCategory, EventType } from "@/lib/schemas/common";
-import { BASELINE_SHARES, PRIORITY_MULTIPLIER, categoriesFor } from "./categories";
+import { budgetShares, categoriesFor, type PlanKind } from "@/lib/events/kind";
+import type { BudgetCategory } from "@/lib/schemas/common";
+import { PRIORITY_MULTIPLIER } from "./categories";
 
 export interface Weighted<K extends string = string> {
   key: K;
@@ -59,13 +60,14 @@ export function allocateProportionally<K extends string>(
   return weights.map((w, i) => ({ key: w.key, amount: floors[i] ?? 0 }));
 }
 
-/** Category weights for an event type after applying the user's 1–5 priorities. */
+/** Category weights for a kind of event after applying the user's 1–5 priorities. */
 export function weightsFor(
-  eventType: EventType,
+  kind: PlanKind,
   priorities: Partial<Record<BudgetCategory, number>> = {},
 ): Weighted<BudgetCategory>[] {
-  return categoriesFor(eventType).map((category) => {
-    const base = BASELINE_SHARES[eventType][category] ?? 0;
+  const shares = budgetShares(kind);
+  return categoriesFor(kind).map((category) => {
+    const base = shares[category] ?? 0;
     const multiplier = PRIORITY_MULTIPLIER[priorities[category] ?? 3] ?? 1;
     return { key: category, weight: base * multiplier };
   });
@@ -73,11 +75,11 @@ export function weightsFor(
 
 /** Initial allocation for a new plan. */
 export function allocateBudget(
-  eventType: EventType,
+  kind: PlanKind,
   total: number,
   priorities: Partial<Record<BudgetCategory, number>> = {},
 ): Allocation<BudgetCategory>[] {
-  return allocateProportionally(total, weightsFor(eventType, priorities));
+  return allocateProportionally(total, weightsFor(kind, priorities));
 }
 
 /**

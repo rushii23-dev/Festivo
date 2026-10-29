@@ -6,7 +6,8 @@ import {
   toWholeUnits,
   weightsFor,
 } from "@/lib/budget/allocate";
-import { BASELINE_SHARES, categoriesFor } from "@/lib/budget/categories";
+import { categoriesFor } from "@/lib/budget/categories";
+import { PROFILE_IDS, PROFILES } from "@/lib/events/profiles";
 import { rebalance, scaleBudget, summarizeBudget } from "@/lib/budget/rebalance";
 import { EVENT_TYPES, type BudgetCategory } from "@/lib/schemas/common";
 import type { BudgetItem } from "@/lib/schemas/plan";
@@ -23,8 +24,8 @@ function items(entries: [BudgetCategory, number, number?][]): BudgetItem[] {
 }
 
 describe("baseline shares", () => {
-  it.each(EVENT_TYPES)("%s shares sum to 1", (type) => {
-    const total = Object.values(BASELINE_SHARES[type]).reduce((a, b) => a + b, 0);
+  it.each(PROFILE_IDS)("%s profile shares sum to 1", (id) => {
+    const total = Object.values(PROFILES[id].shares).reduce((a, b) => a + b, 0);
     expect(total).toBeCloseTo(1, 10);
   });
 });
@@ -106,14 +107,17 @@ describe("allocateProportionally", () => {
 
 describe("allocateBudget", () => {
   it.each(EVENT_TYPES)("allocates every %s category and sums to the total", (type) => {
-    const result = allocateBudget(type, 1_234_567);
-    expect(result.map((r) => r.key)).toEqual(categoriesFor(type));
+    const result = allocateBudget({ eventType: type }, 1_234_567);
+    expect(result.map((r) => r.key)).toEqual(categoriesFor({ eventType: type }));
     expect(sum(result)).toBe(1_234_567);
   });
 
   it("shifts money towards higher priorities", () => {
-    const neutral = allocateBudget("wedding", 1_000_000);
-    const boosted = allocateBudget("wedding", 1_000_000, { photography: 5, decor: 1 });
+    const neutral = allocateBudget({ eventType: "wedding" }, 1_000_000);
+    const boosted = allocateBudget({ eventType: "wedding" }, 1_000_000, {
+      photography: 5,
+      decor: 1,
+    });
     const get = (list: typeof neutral, key: BudgetCategory) =>
       list.find((r) => r.key === key)?.amount ?? 0;
     expect(get(boosted, "photography")).toBeGreaterThan(get(neutral, "photography"));
@@ -122,7 +126,9 @@ describe("allocateBudget", () => {
   });
 
   it("ignores priorities for categories the event type does not use", () => {
-    expect(weightsFor("birthday", { permits: 5 })).toEqual(weightsFor("birthday"));
+    expect(weightsFor({ eventType: "birthday" }, { permits: 5 })).toEqual(
+      weightsFor({ eventType: "birthday" }),
+    );
   });
 });
 

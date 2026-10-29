@@ -2,7 +2,8 @@
  * Vendor categories per event type, the default "questions to ask" for each,
  * and how vendor quotes feed into the budget's actual spend.
  */
-import type { BudgetCategory, EventType } from "@/lib/schemas/common";
+import { categoriesFor, vendorsFor, type PlanKind } from "@/lib/events/kind";
+import type { BudgetCategory } from "@/lib/schemas/common";
 import type {
   BudgetItem,
   Vendor,
@@ -29,44 +30,49 @@ export const VENDOR_LABELS: Record<VendorCategory, string> = {
   rentals: "Tents, chairs & rentals",
   "permits-office": "Permits office",
   "volunteer-lead": "Volunteer coordinator",
+  streaming: "Streaming & online platform",
+  speaker: "Speakers & instructors",
+  ticketing: "Ticketing & registration",
+  merch: "Merch & swag",
 };
 
-/** The budget line each vendor's quote is counted against, unless overridden below. */
-export const VENDOR_BUDGET_CATEGORY: Record<VendorCategory, BudgetCategory> = {
-  venue: "venue",
-  caterer: "catering",
-  baker: "cake",
-  decorator: "decor",
-  florist: "decor",
-  photographer: "photography",
-  videographer: "photography",
-  "makeup-artist": "attire",
-  attire: "attire",
-  "dj-or-band": "entertainment",
-  performer: "entertainment",
-  officiant: "misc",
-  printer: "invitations",
-  transport: "transport",
-  "sound-and-av": "equipment",
-  rentals: "equipment",
-  "permits-office": "permits",
-  "volunteer-lead": "volunteers",
-};
-
-/** Event types that track a vendor under a different budget line. */
-const VENDOR_BUDGET_OVERRIDES: Partial<
-  Record<EventType, Partial<Record<VendorCategory, BudgetCategory>>>
-> = {
-  community: { printer: "marketing" },
-};
+/**
+ * The budget lines each vendor's quote can count against, in order of
+ * preference; the first one the plan has wins, otherwise the buffer.
+ */
+export const VENDOR_BUDGET_CATEGORIES: Record<VendorCategory, readonly BudgetCategory[]> =
+  {
+    venue: ["venue"],
+    caterer: ["catering"],
+    baker: ["cake", "catering"],
+    decorator: ["decor"],
+    florist: ["decor"],
+    photographer: ["photography", "marketing"],
+    videographer: ["photography", "marketing"],
+    "makeup-artist": ["attire"],
+    attire: ["attire"],
+    "dj-or-band": ["entertainment"],
+    performer: ["entertainment"],
+    officiant: ["rituals"],
+    printer: ["invitations", "marketing"],
+    transport: ["transport"],
+    "sound-and-av": ["equipment"],
+    rentals: ["equipment"],
+    "permits-office": ["permits"],
+    "volunteer-lead": ["volunteers"],
+    streaming: ["platform", "equipment"],
+    speaker: ["speakers", "entertainment"],
+    ticketing: ["marketing"],
+    merch: ["favors", "marketing"],
+  };
 
 export function budgetCategoryFor(
   vendorCategory: VendorCategory,
-  eventType: EventType,
+  kind: PlanKind,
 ): BudgetCategory {
+  const lines = categoriesFor(kind);
   return (
-    VENDOR_BUDGET_OVERRIDES[eventType]?.[vendorCategory] ??
-    VENDOR_BUDGET_CATEGORY[vendorCategory]
+    VENDOR_BUDGET_CATEGORIES[vendorCategory].find((c) => lines.includes(c)) ?? "misc"
   );
 }
 
@@ -151,40 +157,28 @@ export const DEFAULT_QUESTIONS: Record<VendorCategory, string[]> = {
     "How many volunteers can you organise and for which shifts?",
     "Who handles first aid and the lost-and-found desk?",
   ],
-};
-
-export const VENDORS_BY_EVENT: Record<EventType, VendorCategory[]> = {
-  wedding: [
-    "venue",
-    "caterer",
-    "decorator",
-    "photographer",
-    "videographer",
-    "makeup-artist",
-    "attire",
-    "dj-or-band",
-    "officiant",
-    "printer",
-    "transport",
+  streaming: [
+    "How many people can join at once, and is there a time limit?",
+    "Can guests join from a phone without installing anything?",
+    "Is the session recorded, and who can download it?",
+    "Are live captions available?",
   ],
-  birthday: [
-    "venue",
-    "caterer",
-    "baker",
-    "decorator",
-    "photographer",
-    "performer",
-    "printer",
+  speaker: [
+    "What is your fee, and does it include travel?",
+    "How long is the talk or session, and do you need a Q&A slot?",
+    "What do you need on the day: projector, mic, a whiteboard?",
+    "Can we share your slides or recording afterwards?",
   ],
-  community: [
-    "venue",
-    "permits-office",
-    "caterer",
-    "sound-and-av",
-    "rentals",
-    "performer",
-    "printer",
-    "volunteer-lead",
+  ticketing: [
+    "What is the fee per ticket, and who pays it?",
+    "Can we approve guests before they get a ticket?",
+    "How do refunds and transfers work?",
+    "Is there a check-in app for the door?",
+  ],
+  merch: [
+    "What is the minimum order and the price per piece?",
+    "How long does printing take, and can we see a sample?",
+    "Do you offer sustainable fabrics or materials?",
   ],
 };
 
@@ -195,8 +189,8 @@ export const SPEND_STATUSES: ReadonlySet<VendorStatus> = new Set([
   "paid",
 ]);
 
-export function defaultVendors(eventType: EventType): Vendor[] {
-  return VENDORS_BY_EVENT[eventType].map((category) => ({
+export function defaultVendors(kind: PlanKind): Vendor[] {
+  return vendorsFor(kind).map((category) => ({
     id: `vendor-${category}`,
     category,
     status: "to-research",
@@ -207,12 +201,12 @@ export function defaultVendors(eventType: EventType): Vendor[] {
 /** Sum of counted quotes per budget category. */
 export function vendorSpendByCategory(
   vendors: readonly Vendor[],
-  eventType: EventType,
+  kind: PlanKind,
 ): Partial<Record<BudgetCategory, number>> {
   const totals: Partial<Record<BudgetCategory, number>> = {};
   for (const vendor of vendors) {
     if (vendor.quote === undefined || !SPEND_STATUSES.has(vendor.status)) continue;
-    const category = budgetCategoryFor(vendor.category, eventType);
+    const category = budgetCategoryFor(vendor.category, kind);
     totals[category] = (totals[category] ?? 0) + vendor.quote;
   }
   return totals;
@@ -225,9 +219,9 @@ export function vendorSpendByCategory(
 export function applyVendorSpend(
   budget: readonly BudgetItem[],
   vendors: readonly Vendor[],
-  eventType: EventType,
+  kind: PlanKind,
 ): BudgetItem[] {
-  const spend = vendorSpendByCategory(vendors, eventType);
+  const spend = vendorSpendByCategory(vendors, kind);
   return budget.map((item) => {
     const fromVendors = spend[item.category];
     return fromVendors === undefined ? item : { ...item, actual: fromVendors };

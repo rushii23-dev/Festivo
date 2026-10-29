@@ -5,7 +5,7 @@
 import { BUDGET_CATEGORY_LABELS } from "@/lib/budget/categories";
 import { formatMoney } from "@/lib/budget/format";
 import { summarizeBudget } from "@/lib/budget/rebalance";
-import { EVENT_TYPE_LABELS } from "@/lib/schemas/common";
+import { occasionOf } from "@/lib/events/kind";
 import type { Plan } from "@/lib/schemas/plan";
 import { countdown, formatLongDate, formatShortDate } from "@/lib/timeline/dates";
 import { nextTasks } from "@/lib/timeline/generate";
@@ -22,7 +22,7 @@ export function planSummaryText(plan: Plan, today: string): string {
 
   const lines = [
     plan.title,
-    `${EVENT_TYPE_LABELS[plan.eventType]} on ${formatLongDate(plan.date)}${
+    `${occasionOf(plan).label} on ${formatLongDate(plan.date)}${
       plan.dateFlexible ? " (date flexible)" : ""
     } in ${plan.location}, ${plan.guestCount} guests`,
     when.label,

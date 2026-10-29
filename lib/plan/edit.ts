@@ -82,13 +82,13 @@ export function rebalancePlanBudget(
  * booked or paid, its quote is the actual spend for that budget line.
  */
 export function effectiveBudget(plan: Plan): BudgetItem[] {
-  return applyVendorSpend(plan.budget, plan.vendors, plan.eventType);
+  return applyVendorSpend(plan.budget, plan.vendors, plan);
 }
 
 /** Budget lines whose actual spend comes from vendor quotes (read-only in the table). */
 export function vendorDrivenCategories(plan: Plan): Set<BudgetCategory> {
   return new Set(
-    Object.keys(vendorSpendByCategory(plan.vendors, plan.eventType)) as BudgetCategory[],
+    Object.keys(vendorSpendByCategory(plan.vendors, plan)) as BudgetCategory[],
   );
 }
 

@@ -45,7 +45,7 @@ export function applyPatch(plan: Plan, patch: PlanPatch, today: string): Plan {
   const totalBudget =
     patch.totalBudget !== undefined ? Math.round(patch.totalBudget) : plan.totalBudget;
   const budget = patch.budget
-    ? budgetFromDraft(patch.budget, plan.eventType, totalBudget, plan.budget)
+    ? budgetFromDraft(patch.budget, plan, totalBudget, plan.budget)
     : totalBudget !== plan.totalBudget
       ? scaleBudget(plan.budget, totalBudget)
       : plan.budget;

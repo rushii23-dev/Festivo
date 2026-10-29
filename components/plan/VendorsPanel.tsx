@@ -43,7 +43,7 @@ function VendorCard({
 }: { vendor: Vendor } & Omit<PanelProps, "today">) {
   const announce = useAnnounce();
   const name = VENDOR_LABELS[vendor.category];
-  const line = BUDGET_CATEGORY_LABELS[budgetCategoryFor(vendor.category, plan.eventType)];
+  const line = BUDGET_CATEGORY_LABELS[budgetCategoryFor(vendor.category, plan)];
   const id = (field: string) => `${vendor.id}-${field}`;
 
   return (

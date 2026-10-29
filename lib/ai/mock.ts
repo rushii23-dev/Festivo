@@ -4,7 +4,8 @@
  * exactly as it does with Gemini.
  */
 import "server-only";
-import { buildMockPlan, FIXTURES, selectIdeas } from "@/lib/fixtures/buildMockPlan";
+import { buildMockPlan, fixtureFor, selectIdeas } from "@/lib/fixtures/buildMockPlan";
+import { occasionOf } from "@/lib/events/kind";
 import type { Plan } from "@/lib/schemas/plan";
 import type { Vibe } from "@/lib/schemas/common";
 import { VIBES } from "@/lib/schemas/common";
@@ -106,7 +107,7 @@ export function mockRefine(plan: Plan, instruction: string, today: string): Plan
     }
   }
 
-  const fixture = FIXTURES[plan.eventType];
+  const fixture = fixtureFor(plan);
   const shownTitles = new Set(plan.ideas.map((i) => i.title));
   const vibe = VIBES.find((v) => text.includes(v.split("-")[0] ?? v));
   const wantsEco = /\b(eco|green|sustainab|zero[- ]waste|plastic)\b/.test(text);
@@ -162,7 +163,7 @@ export function mockRefine(plan: Plan, instruction: string, today: string): Plan
 function mockIdeas(context: Extract<TaskContext, { kind: "ideas" }>): IdeasDraft {
   const { plan, category, excludeTitles } = context;
   const exclude = new Set(excludeTitles);
-  const seeds = FIXTURES[plan.eventType].ideas.filter((s) => !exclude.has(s.title));
+  const seeds = fixtureFor(plan).ideas.filter((s) => !exclude.has(s.title));
   const picked = selectIdeas(
     seeds,
     category,
@@ -172,6 +173,7 @@ function mockIdeas(context: Extract<TaskContext, { kind: "ideas" }>): IdeasDraft
       currency: plan.currency,
       totalBudget: plan.totalBudget,
       guestCount: plan.guestCount,
+      occasion: occasionOf(plan).id,
     },
     3,
   );

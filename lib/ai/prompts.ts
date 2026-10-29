@@ -4,14 +4,13 @@
  * cleaned, length-capped and escaped.
  */
 import { categoriesFor } from "@/lib/budget/categories";
-import { EVENT_TYPE_LABELS } from "@/lib/schemas/common";
-import type { EventInput } from "@/lib/schemas/eventInput";
+import { formatOf, occasionOf, vendorsFor } from "@/lib/events/kind";
+import type { EventInput, Tickets } from "@/lib/schemas/eventInput";
 import { IDEA_CATEGORIES, type IdeaCategory, type Plan } from "@/lib/schemas/plan";
 import { wrapUserData } from "@/lib/security/promptGuard";
-import { VENDORS_BY_EVENT } from "@/lib/vendors/catalog";
 
 export const SYSTEM_PROMPT = [
-  "You are Festivo, an expert planner for weddings, birthdays and community events.",
+  "You are Festivo, an expert planner for life moments, festivals, meetups and work events.",
   "You produce practical, realistic plans for real budgets, with a warm and clear voice.",
   "Rules:",
   "1. Reply with JSON only, exactly matching the response schema. No markdown, no HTML.",
@@ -30,6 +29,16 @@ export const SYSTEM_PROMPT = [
 const list = (values: readonly string[]) =>
   values.length > 0 ? values.join(", ") : "none";
 
+function describeTickets(tickets: Tickets, currency: string): string {
+  return [
+    tickets.pricing === "paid" && tickets.price
+      ? `paid, ${tickets.price} ${currency}`
+      : "free",
+    ...(tickets.capacity ? [`capacity ${tickets.capacity}`] : []),
+    ...(tickets.approval ? ["hosts approve each guest"] : []),
+  ].join(", ");
+}
+
 export interface PlanPromptContext {
   input: EventInput;
   today: string;
@@ -45,13 +54,19 @@ export function buildPlanPrompt({
   daysAvailable,
   flexible,
 }: PlanPromptContext): string {
-  const priorities = categoriesFor(input.eventType)
+  const priorities = categoriesFor(input)
     .map((c) => `${c} (${input.budget.priorities[c] ?? 3})`)
     .join(", ");
-  const { constraints } = input;
+  const { constraints, details, tickets } = input;
+  const format = formatOf(input);
   return [
     "Create a complete event plan.",
-    `Event type: ${EVENT_TYPE_LABELS[input.eventType]}`,
+    `Occasion: ${occasionOf(input).label}`,
+    `Format: ${format}`,
+    ...(details.days && details.days > 1 ? [`Runs for: ${details.days} days`] : []),
+    ...(details.ageTurning ? [`Age being celebrated: ${details.ageTurning}`] : []),
+    ...(details.kids ? ["Children attending: yes"] : []),
+    ...(tickets ? [`Tickets: ${describeTickets(tickets, input.budget.currency)}`] : []),
     `Event name: ${wrapUserData("event_name", input.name, 80)}`,
     `Location: ${wrapUserData("location", input.location, 80)}`,
     `Today: ${today}`,
@@ -60,12 +75,12 @@ export function buildPlanPrompt({
     `Guests: ${input.guestCount}`,
     `Total budget: ${Math.round(input.budget.total)} ${input.budget.currency}`,
     `Budget categories with priority 1 (less) to 5 (more): ${priorities}`,
-    `Vendor categories to cover: ${list(VENDORS_BY_EVENT[input.eventType])}`,
+    `Vendor categories to cover: ${list(vendorsFor(input))}`,
     `Styles: ${list(input.vibes)}`,
     ...(input.ceremonies.length > 0 ? [`Ceremonies: ${list(input.ceremonies)}`] : []),
     `Dietary needs: ${list(constraints.dietary)}`,
     `Guest accessibility needs: ${list(constraints.accessibility)}`,
-    `Setting: ${constraints.setting}`,
+    ...(format === "online" ? [] : [`Setting: ${constraints.setting}`]),
     `Must-haves: ${wrapUserData("must_haves", constraints.mustHaves)}`,
     `Must-avoid: ${wrapUserData("must_avoid", constraints.mustAvoid)}`,
     "Return: one budget item per budget category; 10 to 20 timeline tasks including the day itself;",
@@ -77,7 +92,8 @@ export function buildPlanPrompt({
 /** A compact view of the plan for refine prompts: only what the model may change. */
 export function planSnapshot(plan: Plan): string {
   return JSON.stringify({
-    eventType: plan.eventType,
+    occasion: occasionOf(plan).id,
+    format: formatOf(plan),
     date: plan.date,
     guestCount: plan.guestCount,
     currency: plan.currency,
@@ -114,7 +130,7 @@ export function buildIdeasPrompt(
   vibes: readonly string[],
 ): string {
   return [
-    `Suggest 3 new ${category} ideas for this ${EVENT_TYPE_LABELS[plan.eventType].toLowerCase()}.`,
+    `Suggest 3 new ${category} ideas for this ${occasionOf(plan).label.toLowerCase()} (${formatOf(plan)}).`,
     `Location: ${wrapUserData("location", plan.location, 80)}`,
     `Guests: ${plan.guestCount}; total budget: ${plan.totalBudget} ${plan.currency}`,
     `Styles: ${list(vibes)}`,

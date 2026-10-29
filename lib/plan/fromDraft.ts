@@ -18,7 +18,8 @@ import {
 } from "@/lib/schemas/plan";
 import { addDays } from "@/lib/timeline/dates";
 import { normalizeTimeline, phaseForDaysBefore } from "@/lib/timeline/generate";
-import { DEFAULT_QUESTIONS, VENDORS_BY_EVENT } from "@/lib/vendors/catalog";
+import { formatOf, occasionOf, vendorsFor, type PlanKind } from "@/lib/events/kind";
+import { DEFAULT_QUESTIONS } from "@/lib/vendors/catalog";
 import type { DraftIdea, PlanDraft } from "@/lib/ai/schemas";
 import { uniqueIdFactory } from "./ids";
 
@@ -26,17 +27,17 @@ type DraftTask = PlanDraft["timeline"][number];
 type DraftBudget = PlanDraft["budget"];
 
 /**
- * One line per category the event type uses, in canonical order, summing
+ * One line per category the kind of event uses, in canonical order, summing
  * exactly to `total`. Unknown categories are dropped and missing ones added.
  * If the draft has no usable amounts, the baseline split is used instead.
  */
 export function budgetFromDraft(
   draft: DraftBudget,
-  eventType: Plan["eventType"],
+  kind: PlanKind,
   total: number,
   previous: readonly BudgetItem[] = [],
 ): BudgetItem[] {
-  const categories = categoriesFor(eventType);
+  const categories = categoriesFor(kind);
   const byCategory = new Map<BudgetCategory, DraftBudget[number]>();
   for (const item of draft) {
     if (categories.includes(item.category) && !byCategory.has(item.category)) {
@@ -49,7 +50,7 @@ export function budgetFromDraft(
         total,
         categories.map((key) => ({ key, amount: byCategory.get(key)?.amount ?? 0 })),
       )
-    : allocateBudget(eventType, total);
+    : allocateBudget(kind, total);
 
   return amounts.map(({ key, amount }) => {
     const prior = previous.find((p) => p.category === key);
@@ -95,12 +96,9 @@ export function ideasFromDraft(
   }));
 }
 
-/** Every vendor category for the event type, using the AI's questions where given. */
-export function vendorsFromDraft(
-  draft: PlanDraft["vendors"],
-  eventType: Plan["eventType"],
-): Vendor[] {
-  return VENDORS_BY_EVENT[eventType].map((category) => ({
+/** Every vendor category for the kind of event, using the AI's questions where given. */
+export function vendorsFromDraft(draft: PlanDraft["vendors"], kind: PlanKind): Vendor[] {
+  return vendorsFor(kind).map((category) => ({
     id: `vendor-${category}`,
     category,
     status: "to-research",
@@ -108,6 +106,22 @@ export function vendorsFromDraft(
       draft.find((v) => v.category === category)?.questionsToAsk ??
       DEFAULT_QUESTIONS[category],
   }));
+}
+
+/** The kind fields a new plan copies from its input (empty details left out). */
+export function planKindFields(
+  input: EventInput,
+): Pick<Plan, "eventType" | "occasion" | "format" | "tickets" | "details"> {
+  const details = Object.fromEntries(
+    Object.entries(input.details).filter(([, value]) => value !== undefined),
+  );
+  return {
+    eventType: input.eventType,
+    occasion: occasionOf(input).id,
+    format: formatOf(input),
+    ...(input.tickets ? { tickets: input.tickets } : {}),
+    ...(Object.keys(details).length > 0 ? { details } : {}),
+  };
 }
 
 export interface FromDraftContext {
@@ -132,7 +146,7 @@ export function planFromDraft(
 
   return PlanSchema.parse({
     id,
-    eventType: input.eventType,
+    ...planKindFields(input),
     title: input.name,
     date: eventDate,
     dateFlexible: flexible,
@@ -141,9 +155,9 @@ export function planFromDraft(
     vibes: input.vibes,
     currency: input.budget.currency,
     totalBudget: total,
-    budget: budgetFromDraft(draft.budget, input.eventType, total),
+    budget: budgetFromDraft(draft.budget, input, total),
     timeline,
-    vendors: vendorsFromDraft(draft.vendors, input.eventType),
+    vendors: vendorsFromDraft(draft.vendors, input),
     ideas: ideasFromDraft(draft.ideas, uniqueIdFactory("idea")),
     summary: draft.summary,
     createdAt: now.toISOString(),

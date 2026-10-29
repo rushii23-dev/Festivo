@@ -107,7 +107,7 @@ describe("phaseForDaysBefore", () => {
 describe("generateTimeline", () => {
   it.each(EVENT_TYPES)("keeps ideal dates for a %s far in the future", (type) => {
     const event = addDays(TODAY, 365);
-    const { tasks, catchUpCount } = generateTimeline(type, event, TODAY);
+    const { tasks, catchUpCount } = generateTimeline({ eventType: type }, event, TODAY);
     expect(catchUpCount).toBe(0);
     expect(tasks).toHaveLength(TASK_TEMPLATES[type].length);
     for (const t of tasks) {
@@ -121,7 +121,7 @@ describe("generateTimeline", () => {
     (type) => {
       for (const lead of [0, 1, 3, 10, 13, 30, 60, 200]) {
         const event = addDays(TODAY, lead);
-        const { tasks } = generateTimeline(type, event, TODAY);
+        const { tasks } = generateTimeline({ eventType: type }, event, TODAY);
         for (const t of tasks) {
           expect(t.dueDate >= TODAY).toBe(true);
           if (t.phase === "After") expect(t.dueDate > event).toBe(true);
@@ -135,7 +135,7 @@ describe("generateTimeline", () => {
   it("compresses overdue tasks for an event less than two weeks away", () => {
     const event = addDays(TODAY, 10);
     const { tasks, catchUpCount, daysUntilEvent } = generateTimeline(
-      "wedding",
+      { eventType: "wedding" },
       event,
       TODAY,
     );
@@ -149,7 +149,7 @@ describe("generateTimeline", () => {
   });
 
   it("puts everything on the day when the event is today", () => {
-    const { tasks } = generateTimeline("birthday", TODAY, TODAY);
+    const { tasks } = generateTimeline({ eventType: "birthday" }, TODAY, TODAY);
     for (const t of tasks.filter((x) => x.phase !== "After")) {
       expect(t.dueDate).toBe(TODAY);
       expect(t.phase).toBe("Day of");
@@ -158,7 +158,7 @@ describe("generateTimeline", () => {
 
   it("handles a single overdue task", () => {
     const { tasks, catchUpCount } = generateTimeline(
-      "birthday",
+      { eventType: "birthday" },
       addDays(TODAY, 20),
       TODAY,
       [
@@ -171,11 +171,17 @@ describe("generateTimeline", () => {
   });
 
   it("rejects an event in the past", () => {
-    expect(() => generateTimeline("wedding", "2026-10-01", TODAY)).toThrow(RangeError);
+    expect(() => generateTimeline({ eventType: "wedding" }, "2026-10-01", TODAY)).toThrow(
+      RangeError,
+    );
   });
 
   it("keeps day-of start times for the run sheet", () => {
-    const { tasks } = generateTimeline("wedding", addDays(TODAY, 200), TODAY);
+    const { tasks } = generateTimeline(
+      { eventType: "wedding" },
+      addDays(TODAY, 200),
+      TODAY,
+    );
     expect(runSheet(tasks).map((t) => t.time)).toEqual(["08:00", "11:00", "19:00"]);
   });
 });

@@ -3,14 +3,14 @@
  * from the AI: every task before the event lands on or after today and before
  * the event day; follow-ups land after it.
  */
-import type { EventType } from "@/lib/schemas/common";
+import { taskTemplatesFor, type PlanKind } from "@/lib/events/kind";
 import {
   TIMELINE_PHASES,
   type TimelinePhase,
   type TimelineTask,
 } from "@/lib/schemas/plan";
 import { addDays, diffDays, maxIso, minIso } from "./dates";
-import { TASK_TEMPLATES, type TaskTemplate } from "./templates";
+import type { TaskTemplate } from "./templates";
 
 /** Maps a lead time (days before the event; negative = after) to its phase. */
 export function phaseForDaysBefore(daysBefore: number): TimelinePhase {
@@ -38,10 +38,10 @@ export interface TimelineResult {
  * @throws RangeError when the event date is before today.
  */
 export function generateTimeline(
-  eventType: EventType,
+  kind: PlanKind,
   eventDate: string,
   today: string,
-  templates: readonly TaskTemplate[] = TASK_TEMPLATES[eventType],
+  templates: readonly TaskTemplate[] = taskTemplatesFor(kind),
 ): TimelineResult {
   const window = diffDays(today, eventDate);
   if (window < 0) throw new RangeError("The event date is in the past.");

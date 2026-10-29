@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import { Photo } from "@/components/landing/Photo";
 import { PHOTOS, type SitePhoto } from "@/components/landing/photos";
 import { formatMoney } from "@/lib/budget/format";
-import { EVENT_TYPE_LABELS, type EventType } from "@/lib/schemas/common";
+import { occasionOf } from "@/lib/events/kind";
+import type { EventType } from "@/lib/schemas/common";
 import type { Plan } from "@/lib/schemas/plan";
 import { countdown, formatLongDate, parseIsoDate } from "@/lib/timeline/dates";
 import { VIBE_LABELS } from "@/lib/wizard/labels";
@@ -84,7 +85,7 @@ export function PlanHero({
       <div className="relative mx-auto grid min-h-[30rem] w-full max-w-[90rem] content-end gap-10 px-4 pt-20 pb-10 sm:px-8 md:min-h-[34rem] md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
         <div className="on-photo grid min-w-0 gap-6">
           <p className="caps">
-            {EVENT_TYPE_LABELS[plan.eventType]} in {plan.location}
+            {occasionOf(plan).label} in {plan.location}
           </p>
           <h1 id="plan-title" className="font-display text-display break-words">
             {plan.title}

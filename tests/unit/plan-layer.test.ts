@@ -1,3 +1,4 @@
+import { vendorsFor } from "@/lib/events/kind";
 import { describe, expect, it } from "vitest";
 import { planToDraft } from "@/lib/ai/mock";
 import { buildMockPlan } from "@/lib/fixtures/buildMockPlan";
@@ -9,7 +10,7 @@ import { sectionsSeen, toErrorEvent } from "@/lib/plan/service";
 import { AiOutputError, AiProviderError } from "@/lib/ai/provider";
 import { EventInputSchema } from "@/lib/schemas/eventInput";
 import { PlanSchema } from "@/lib/schemas/plan";
-import { DEFAULT_QUESTIONS, VENDORS_BY_EVENT } from "@/lib/vendors/catalog";
+import { DEFAULT_QUESTIONS } from "@/lib/vendors/catalog";
 
 const TODAY = "2026-10-26";
 const input = EventInputSchema.parse({
@@ -71,7 +72,7 @@ describe("planFromDraft", () => {
         { category: "attire", amount: 500, rationale: "Not used for community events" },
         { category: "venue", amount: 999, rationale: "Duplicate" },
       ],
-      "community",
+      { eventType: "community" },
       150_000,
     );
     expect(budget.map((b) => b.category)).not.toContain("attire");
@@ -89,7 +90,7 @@ describe("planFromDraft", () => {
   it("falls back to the baseline split when the AI gives no amounts", () => {
     const budget = budgetFromDraft(
       [{ category: "venue", amount: 0, rationale: "x" }],
-      "community",
+      { eventType: "community" },
       100_000,
     );
     expect(budget.find((b) => b.category === "venue")?.allocated).toBe(20_000);
@@ -115,9 +116,11 @@ describe("planFromDraft", () => {
   it("keeps every vendor category, defaulting questions the AI skipped", () => {
     const vendors = vendorsFromDraft(
       [{ category: "venue", questionsToAsk: ["Q1?", "Q2?"] }],
-      "community",
+      { eventType: "community" },
     );
-    expect(vendors.map((v) => v.category)).toEqual(VENDORS_BY_EVENT.community);
+    expect(vendors.map((v) => v.category)).toEqual(
+      vendorsFor({ eventType: "community" }),
+    );
     expect(vendors[0]?.questionsToAsk).toEqual(["Q1?", "Q2?"]);
     expect(vendors[1]?.questionsToAsk).toEqual(DEFAULT_QUESTIONS["permits-office"]);
   });

@@ -151,7 +151,8 @@ describe("prompts", () => {
   it("sends only the fields a refine may change", () => {
     const snapshot = JSON.parse(planSnapshot(plan)) as Record<string, unknown>;
     expect(Object.keys(snapshot)).toEqual([
-      "eventType",
+      "occasion",
+      "format",
       "date",
       "guestCount",
       "currency",
