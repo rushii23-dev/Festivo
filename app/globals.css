@@ -543,6 +543,17 @@ body:has([data-hero-photo]) .site-header [data-slot="button"]:hover {
   color: #e2d6c3;
 }
 
+/* The account badge stays a quiet ring over the photograph. */
+body:has([data-hero-photo]) .site-header [data-slot="button"][data-account] {
+  border-color: transparent;
+  background: transparent;
+  color: #e2d6c3;
+}
+
+body:has([data-hero-photo]) .site-header [data-slot="button"][data-account]:hover {
+  background: rgb(226 214 195 / 0.12);
+}
+
 /* The hero's own focus ring stays visible on the photograph. */
 [data-hero-photo] {
   --ring: #e2d6c3;
@@ -697,4 +708,35 @@ body:has([data-hero-photo]) .site-header [data-slot="button"]:hover {
   height: 0.5rem;
   rotate: 45deg;
   background: currentColor;
+}
+
+/* ---------------------------------------------------------------------------
+ * Onboarding stage (account, welcome, wizard): each new photograph settles in
+ * over the dark ground, its caption follows, and each question rises into
+ * place. Everything is simply there when motion is reduced.
+ * ------------------------------------------------------------------------- */
+@keyframes stage-photo-in {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes stage-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+:root[data-motion="full"] .stage-photo {
+  animation: stage-photo-in 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+:root[data-motion="full"] .stage-caption {
+  animation: stage-rise 1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s backwards;
+}
+
+:root[data-motion="full"] .stage-rise {
+  animation: stage-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) var(--delay, 0s) backwards;
 }
