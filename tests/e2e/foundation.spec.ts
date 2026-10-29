@@ -64,6 +64,28 @@ test.describe("page structure", () => {
   });
 });
 
+test.describe("hero", () => {
+  test("the arch button opens the planner, with and without motion", async ({ page }) => {
+    await page.goto("/");
+    const arch = page
+      .getByRole("main")
+      .getByRole("link", { name: "Start planning" })
+      .first();
+    await arch.click();
+    await expect(arch).toHaveAttribute("data-pressed", "true");
+    await page.waitForURL(/\/plan\/new$/);
+
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await page
+      .getByRole("main")
+      .getByRole("link", { name: "Start planning" })
+      .first()
+      .click();
+    await page.waitForURL(/\/plan\/new$/);
+  });
+});
+
 test.describe("keyboard", () => {
   test.skip(({ isMobile }) => isMobile, "Keyboard flow is checked on desktop");
 
