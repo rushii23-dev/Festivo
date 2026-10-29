@@ -1,11 +1,15 @@
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { FestivoSeal } from "@/components/brand/FestivoSeal";
+import { ArchButton } from "@/components/landing/ArchButton";
 import { LandingMotion } from "@/components/landing/LandingMotion";
+import { LightsButton } from "@/components/landing/LightsButton";
 import { Marquee } from "@/components/landing/Marquee";
 import { PetalFall } from "@/components/landing/PetalFall";
 import { Photo } from "@/components/landing/Photo";
 import { PHOTOS, type SitePhoto } from "@/components/landing/photos";
 import { SplitHeading } from "@/components/landing/SplitHeading";
+import { ToranButton } from "@/components/landing/ToranButton";
 import { Button } from "@/components/ui/button";
 import {
   budgetMenu,
@@ -118,15 +122,19 @@ export default function HomePage() {
               className="text-[clamp(2.75rem,1.4rem+3.4vw,4.75rem)] leading-[1.02] tracking-[-0.01em]"
             />
             <span aria-hidden="true" className="hero-rule mt-7" />
-            <div className="hero-cta mt-8 flex flex-wrap items-center gap-x-7 gap-y-4">
-              <Button asChild variant="photo">
-                <Link href="/plan/new">Start planning</Link>
-              </Button>
+            <div className="hero-cta mt-9 flex flex-wrap items-center gap-x-9 gap-y-4">
+              <ArchButton href="/plan/new" tone="photo">
+                Start planning
+              </ArchButton>
               <Link
                 href="#story"
-                className="caps min-h-11 content-center border-b border-[#e2d6c3]/40 text-[#e2d6c3]/90 hover:border-[#e2d6c3]"
+                className="group inline-flex min-h-11 items-center gap-3 font-display text-[1.375rem] text-[#e2d6c3] italic hover:text-[#f0e4cf]"
               >
                 See how it works
+                <ArrowRight
+                  aria-hidden="true"
+                  className="size-4 text-[#e8c48f] group-hover:translate-x-1 motion-ok:transition-transform motion-ok:duration-300"
+                />
               </Link>
             </div>
           </div>
@@ -172,9 +180,7 @@ export default function HomePage() {
                 love. Change one part and the rest keeps up.
               </p>
               <div>
-                <Button asChild variant="photo">
-                  <Link href="/plan/new">Start your plan</Link>
-                </Button>
+                <LightsButton href="/plan/new">Start your plan</LightsButton>
               </div>
             </div>
           </div>
@@ -482,9 +488,7 @@ export default function HomePage() {
             print.
           </p>
           <div className="mt-10">
-            <Button asChild size="lg">
-              <Link href="/plan/new">Start planning</Link>
-            </Button>
+            <ToranButton href="/plan/new">Start planning</ToranButton>
           </div>
 
           {/* Five windows stepping up to the centre, standing on a gold ledge */}

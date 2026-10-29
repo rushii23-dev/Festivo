@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { ArchButton } from "@/components/landing/ArchButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useHydratedStore } from "@/hooks/use-hydrated-store";
@@ -56,9 +55,7 @@ function PlanNotFound() {
         Plans are saved in the browser where you made them. Start a new one here.
       </p>
       <div>
-        <Button asChild>
-          <Link href="/plan/new">Start planning</Link>
-        </Button>
+        <ArchButton href="/plan/new">Start planning</ArchButton>
       </div>
     </div>
   );

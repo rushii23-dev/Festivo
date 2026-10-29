@@ -12,6 +12,11 @@ import { STORE_KEY, usePlanStore } from "@/lib/store/planStore";
 import { addDays, todayIso } from "@/lib/timeline/dates";
 import { DEFAULT_DRAFT } from "@/lib/wizard/draft";
 
+// The "plan not found" view links back to the planner with the arch button.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
+}));
+
 // Every panel stays mounted, so jsdom re-renders a large tree on each keystroke.
 vi.setConfig({ testTimeout: 20_000 });
 
