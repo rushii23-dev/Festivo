@@ -4,7 +4,7 @@ import { ArrowRight, LockKeyhole } from "lucide-react";
 import { useState, type SubmitEvent } from "react";
 import { useAnnounce } from "@/components/a11y/LiveRegion";
 import { Button } from "@/components/ui/button";
-import { Field, controlClass, describedBy } from "@/components/ui/field";
+import { TextField } from "@/components/ui/field";
 import {
   PROFILE_LIMITS,
   validateProfile,
@@ -54,47 +54,29 @@ export function CreateAccount({ onCreate }: { onCreate: (profile: Profile) => vo
       />
 
       <form noValidate onSubmit={onSubmit} className="stage-rise grid gap-8">
-        <Field
+        <TextField
           id="account-name"
           name="name"
           label="Your name"
           required
           error={errors.name}
-        >
-          <input
-            id="account-name"
-            type="text"
-            autoComplete="name"
-            maxLength={PROFILE_LIMITS.nameMax}
-            value={values.name}
-            onChange={(e) => update("name", e.target.value)}
-            aria-invalid={errors.name ? true : undefined}
-            aria-describedby={describedBy("account-name", { error: errors.name })}
-            className={controlClass}
-          />
-        </Field>
-        <Field
+          autoComplete="name"
+          maxLength={PROFILE_LIMITS.nameMax}
+          value={values.name}
+          onValueChange={(name) => update("name", name)}
+        />
+        <TextField
           id="account-email"
           name="email"
           label="Email"
           hint="Optional. Handy if you share a plan later."
           error={errors.email}
-        >
-          <input
-            id="account-email"
-            type="email"
-            autoComplete="email"
-            maxLength={PROFILE_LIMITS.emailMax}
-            value={values.email}
-            onChange={(e) => update("email", e.target.value)}
-            aria-invalid={errors.email ? true : undefined}
-            aria-describedby={describedBy("account-email", {
-              hint: true,
-              error: errors.email,
-            })}
-            className={controlClass}
-          />
-        </Field>
+          type="email"
+          autoComplete="email"
+          maxLength={PROFILE_LIMITS.emailMax}
+          value={values.email}
+          onValueChange={(email) => update("email", email)}
+        />
 
         <div className="grid gap-6 border-t border-hairline pt-8">
           <Button type="submit" size="lg" className="justify-self-start">

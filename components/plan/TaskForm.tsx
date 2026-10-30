@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ErrorText, Field, controlClass, describedBy } from "@/components/ui/field";
+import {
+  ErrorText,
+  Field,
+  TextField,
+  controlClass,
+  describedBy,
+} from "@/components/ui/field";
 import type { TaskInput } from "@/lib/plan/edit";
 
 type Errors = Partial<Record<string, string>>;
@@ -49,55 +55,37 @@ export function TaskForm({
       }}
       className="grid gap-5 border border-hairline bg-card p-5 sm:p-6"
     >
-      <Field id={id("title")} name="title" label="Task" required error={errors.title}>
-        <input
-          id={id("title")}
-          value={values.title}
-          maxLength={120}
-          onChange={(e) => set("title")(e.target.value)}
-          aria-invalid={Boolean(errors.title) || undefined}
-          aria-describedby={describedBy(id("title"), { error: errors.title })}
-          className={controlClass}
-        />
-      </Field>
+      <TextField
+        id={id("title")}
+        name="title"
+        label="Task"
+        required
+        error={errors.title}
+        maxLength={120}
+        value={values.title}
+        onValueChange={set("title")}
+      />
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field
+        <TextField
           id={id("dueDate")}
           name="dueDate"
           label="Due date"
           required
           error={errors.dueDate}
-        >
-          <input
-            id={id("dueDate")}
-            type="date"
-            value={values.dueDate}
-            onChange={(e) => set("dueDate")(e.target.value)}
-            aria-invalid={Boolean(errors.dueDate) || undefined}
-            aria-describedby={describedBy(id("dueDate"), { error: errors.dueDate })}
-            className={controlClass}
-          />
-        </Field>
-        <Field
+          type="date"
+          value={values.dueDate}
+          onValueChange={set("dueDate")}
+        />
+        <TextField
           id={id("time")}
           name="time"
           label="Start time"
           hint="Optional. Timed tasks on the day appear in the run sheet."
           error={errors.time}
-        >
-          <input
-            id={id("time")}
-            type="time"
-            value={values.time ?? ""}
-            onChange={(e) => set("time")(e.target.value)}
-            aria-invalid={Boolean(errors.time) || undefined}
-            aria-describedby={describedBy(id("time"), {
-              hint: true,
-              error: errors.time,
-            })}
-            className={controlClass}
-          />
-        </Field>
+          type="time"
+          value={values.time ?? ""}
+          onValueChange={set("time")}
+        />
       </div>
       <Field
         id={id("description")}
