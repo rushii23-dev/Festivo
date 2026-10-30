@@ -1,7 +1,7 @@
 # Festivo — Original Build Brief
 
 > The full brief this project is built from, saved verbatim so every session works from the same source.
-> Progress against it is tracked in `NEXT_SESSION.md` at the repo root.
+> What was built from it is described in `README.md` and `ARCHITECTURE.md`.
 
 ---
 
