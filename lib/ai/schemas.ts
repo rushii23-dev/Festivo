@@ -79,17 +79,36 @@ export const PlanPatchSchema = z.strictObject({
 export type PlanPatch = z.infer<typeof PlanPatchSchema>;
 
 /**
- * JSON Schema for the provider's structured-output mode. `$schema` and
- * `additionalProperties` are dropped for compatibility; Zod still enforces
- * strictness when parsing the response.
+ * Keywords left out of the schema sent to the provider. Gemini rejects the plan
+ * schema with 400 INVALID_ARGUMENT once its length and count limits are included
+ * (too many constraint states), and patterns and formats add to the same budget.
+ * The prompt states the limits in words, and Zod still enforces every one of them
+ * when parsing the reply, asking the model to repair anything that breaks them.
  */
+const PROVIDER_DROPPED_KEYWORDS = new Set([
+  "$schema",
+  "additionalProperties",
+  "minLength",
+  "maxLength",
+  "minItems",
+  "maxItems",
+  "pattern",
+  "format",
+]);
+
+const isSchema = (value: unknown) => typeof value === "object" && value !== null;
+
+/** JSON Schema for the provider's structured-output mode. */
 export function toProviderSchema(schema: z.ZodType): Record<string, unknown> {
   const strip = (node: unknown): unknown => {
     if (Array.isArray(node)) return node.map(strip);
     if (node && typeof node === "object") {
       return Object.fromEntries(
         Object.entries(node as Record<string, unknown>)
-          .filter(([key]) => key !== "$schema" && key !== "additionalProperties")
+          // A property that happens to be named like a keyword is kept.
+          .filter(
+            ([key, value]) => !PROVIDER_DROPPED_KEYWORDS.has(key) || isSchema(value),
+          )
           .map(([key, value]) => [key, strip(value)]),
       );
     }

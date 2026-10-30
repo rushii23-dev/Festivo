@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { describe, expect, it, vi } from "vitest";
 import { readAiConfig } from "@/lib/ai/config";
 import { chunkJson, createMockProvider, mockRefine, planToDraft } from "@/lib/ai/mock";
@@ -123,6 +124,12 @@ describe("provider schema", () => {
     expect(schema).not.toContain("additionalProperties");
     expect(schema).not.toContain("$schema");
     expect(schema).toContain('"daysBefore"');
+    // Gemini answers 400 INVALID_ARGUMENT when the plan schema carries these.
+    for (const keyword of ["maxLength", "minLength", "maxItems", "minItems", "pattern"]) {
+      expect(schema).not.toContain(`"${keyword}"`);
+    }
+    // Zod still enforces them on the reply.
+    expect(JSON.stringify(z.toJSONSchema(PlanDraftSchema))).toContain('"maxItems"');
   });
 });
 
