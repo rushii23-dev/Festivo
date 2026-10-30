@@ -1,0 +1,30 @@
+/* ---------------------------------------------------------------------------
+ * Onboarding stage (account, welcome, wizard): each new photograph settles in
+ * over the dark ground, its caption follows, and each question rises into
+ * place. Everything is simply there when motion is reduced.
+ * ------------------------------------------------------------------------- */
+@keyframes stage-photo-in {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes stage-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+:root[data-motion="full"] .stage-photo {
+  animation: stage-photo-in 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+:root[data-motion="full"] .stage-caption {
+  animation: stage-rise 1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s backwards;
+}
+
+:root[data-motion="full"] .stage-rise {
+  animation: stage-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) var(--delay, 0s) backwards;
+}

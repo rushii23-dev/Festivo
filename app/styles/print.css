@@ -1,0 +1,25 @@
+/* Print / save as PDF: light paper, no chrome, every dashboard section in turn. */
+@media print {
+  :root {
+    color-scheme: light !important;
+  }
+
+  body {
+    font-size: 11pt;
+  }
+
+  .shadow-sticker,
+  .shadow-sticker-sm {
+    box-shadow: none !important;
+  }
+
+  [data-slot="tabs-content"] + [data-slot="tabs-content"] {
+    break-before: page;
+  }
+
+  li,
+  tr,
+  figure {
+    break-inside: avoid;
+  }
+}

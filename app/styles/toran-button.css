@@ -1,0 +1,180 @@
+/* ---------------------------------------------------------------------------
+ * The finale's toran button: an ink button under a garland of marigolds and
+ * mango leaves. Hover sets the garland swaying; a click lets the flowers fall.
+ * ------------------------------------------------------------------------- */
+.toran-button {
+  position: relative;
+  display: inline-grid;
+  padding-top: 1.35rem;
+  color: #f1e8da;
+}
+
+.toran {
+  position: absolute;
+  top: 0;
+  right: 0.5rem;
+  left: 0.5rem;
+  z-index: 1;
+  height: 1.35rem;
+  border-top: 1px solid #8a5a26;
+  pointer-events: none;
+}
+
+.toran-drop {
+  position: absolute;
+  top: 0;
+  width: 0;
+  transform-origin: 50% 0;
+}
+
+/* The thread */
+.toran-drop::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -0.5px;
+  width: 1px;
+  height: var(--thread);
+  background: #8a5a26;
+}
+
+/* The flower or leaf */
+.toran-drop::after {
+  content: "";
+  position: absolute;
+  top: var(--thread);
+}
+
+.toran-drop[data-kind="marigold"]::after {
+  left: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #f7c64a 0 28%, #ef9f2c 32% 62%, #d9771d 66%);
+  box-shadow: 0 1px 1px rgb(44 42 39 / 0.25);
+}
+
+.toran-drop[data-kind="leaf"]::after {
+  left: -3px;
+  width: 6px;
+  height: 10px;
+  border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+  background: #5f7a3a;
+}
+
+.toran-body {
+  position: relative;
+  display: grid;
+  min-height: 3.5rem;
+  place-items: center;
+  padding: 0 2.25rem;
+  border: 1px solid #2c2a27;
+  border-radius: 3px;
+  outline: 1px solid #2c2a27;
+  outline-offset: 3px;
+  background: #2c2a27;
+  font-size: 0.8125rem;
+  letter-spacing: 0.18em;
+}
+
+/* A warm light inside the button while the garland sways. */
+.toran-body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    120% 140% at 50% 120%,
+    rgb(212 150 83 / 0.45),
+    transparent 70%
+  );
+  opacity: 0;
+}
+
+.toran-button:is(:hover, :focus-visible, [data-pressed]) .toran-body::after {
+  opacity: 1;
+}
+
+@keyframes toran-sway {
+  from {
+    transform: rotate(-7deg);
+  }
+  to {
+    transform: rotate(7deg);
+  }
+}
+
+@keyframes toran-fall {
+  to {
+    opacity: 0;
+    transform: translateY(5.5rem) rotate(var(--spin));
+  }
+}
+
+:root[data-motion="full"] .toran-body::after {
+  transition: opacity 0.5s ease-out;
+}
+
+:root[data-motion="full"] .toran-button:is(:hover, :focus-visible) .toran-drop {
+  animation: toran-sway 1.1s ease-in-out calc(var(--i) * -0.13s) infinite alternate;
+}
+
+:root[data-motion="full"] .toran-button[data-pressed] .toran-drop {
+  animation: toran-fall 0.6s cubic-bezier(0.5, 0, 0.75, 0.4) calc(var(--i) * 35ms)
+    forwards;
+}
+
+/* A short gold rule ending in a small diamond, under page titles on parchment. */
+.ornament-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--gold);
+}
+
+.ornament-rule::before {
+  content: "";
+  width: 4.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, currentColor, rgb(138 90 38 / 0.25));
+}
+
+.ornament-rule::after {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  rotate: 45deg;
+  background: currentColor;
+}
+
+/* The finale: a warm glow behind the headline, on parchment. */
+.finale {
+  background: radial-gradient(70% 55% at 50% 28%, #e8dcc8 0%, var(--background) 72%);
+}
+
+/* A centred ornament: hairlines either side of a small gold diamond. */
+.ornament-center {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--gold);
+}
+
+.ornament-center::before,
+.ornament-center::after {
+  content: "";
+  width: clamp(3.5rem, 10vw, 7rem);
+  height: 1px;
+  background: linear-gradient(90deg, rgb(138 90 38 / 0), currentColor);
+}
+
+.ornament-center::after {
+  background: linear-gradient(90deg, currentColor, rgb(138 90 38 / 0));
+}
+
+.ornament-center > span {
+  width: 0.5rem;
+  height: 0.5rem;
+  rotate: 45deg;
+  background: currentColor;
+}

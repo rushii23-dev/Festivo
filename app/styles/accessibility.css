@@ -1,0 +1,139 @@
+/*
+ * Focus ring. Deliberately unlayered so no utility (e.g. `outline-none` in a
+ * third-party component) can remove it. --ring passes 3:1 against both backgrounds.
+ */
+:focus-visible {
+  outline: 3px solid var(--ring) !important;
+  outline-offset: 3px !important;
+  box-shadow: none;
+}
+
+/* Chips and cards hide their native input; show its focus ring on the visible box. */
+.choice:has(input:focus-visible),
+[data-choice-card]:has(input:focus-visible) {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/*
+ * Forced colours (Windows High Contrast and similar) swap every colour for a small
+ * system palette and drop background fills. Whatever showed state through a fill
+ * or a border colour alone gets a system-colour equivalent here, so selection,
+ * progress and the active tab stay visible.
+ */
+@media (forced-colors: active) {
+  :focus-visible,
+  .choice:has(input:focus-visible),
+  [data-choice-card]:has(input:focus-visible) {
+    outline-color: Highlight !important;
+  }
+
+  /*
+   * Chosen chips and cards. Forced colours repaint borders and outlines in the
+   * system text colour, so the choice is marked by a heavy outline that the rest
+   * do not have, never by colour.
+   */
+  [data-choice-card] {
+    outline-style: none;
+  }
+  .choice:has(:checked),
+  [data-choice-card]:has(:checked) {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  /* Dots drawn as fills (radio markers) would vanish with the background. */
+  [data-fill] {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+
+  /* The wizard's progress bar: answered, current and still to come. */
+  [data-step-bar] {
+    forced-color-adjust: none;
+    background-color: GrayText;
+  }
+  [data-step-bar="done"] {
+    background-color: CanvasText;
+  }
+  [data-step-bar="current"] {
+    background-color: Highlight;
+  }
+
+  /* Only the active tab keeps its underline. */
+  [role="tab"] {
+    border-bottom-color: Canvas;
+  }
+  [role="tab"][data-state="active"] {
+    border-bottom-color: Highlight;
+  }
+}
+
+/* <main> receives focus programmatically after navigation; it is not a control. */
+#main:focus {
+  outline: none !important;
+}
+
+/* Skip link: visually hidden (but focusable) until it receives keyboard focus. */
+.skip-link {
+  position: fixed;
+  inset-inline-start: 1rem;
+  top: 0.75rem;
+  z-index: 100;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+  border-radius: var(--radius-pill);
+  background: var(--foreground);
+  color: var(--background);
+  padding: 0.75rem 1.25rem;
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+}
+
+/* Reduced motion: the device's setting switches animation off. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Petals that pop out of a ticked task (components/plan/parts.tsx). The container
+   only renders under motion-ok, and JS skips the burst when motion is reduced. */
+@keyframes petal-pop {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-28px) scale(1);
+  }
+}
+
+.petal {
+  opacity: 0;
+  animation: petal-pop 700ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}

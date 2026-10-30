@@ -1,0 +1,269 @@
+/* ---------------------------------------------------------------------------
+ * The palace-arch button, used for every "Start planning". A parchment arch
+ * inside a hairline frame, like the windows further down the landing page:
+ * light gold over photographs, bronze on parchment. Hover or focus lights it
+ * from below like a lamp in a window, a sheen passes over it, and the frame
+ * breathes out. A click sends a ring of light and a few petals outward before
+ * the next page opens (ArchButton). Only transform and opacity move.
+ * ------------------------------------------------------------------------- */
+.arch-button {
+  --arch: 50% 50% 4px 4px / 3rem 3rem 4px 4px;
+  --arch-body: 50% 50% 2px 2px / 2.7rem 2.7rem 2px 2px;
+  /* On parchment: a dark window that fills with lamplight on hover. */
+  --arch-line: rgb(138 90 38 / 0.8);
+  --arch-finial: #8a5a26;
+  --arch-fill: #2c2a27;
+  --arch-text: #f1e8da;
+  --arch-glow: radial-gradient(
+    140% 125% at 50% 118%,
+    #f0a94a 0%,
+    #e9b36e 42%,
+    #e4c69a 100%
+  );
+  --finial: 7px;
+  /* How far the petals fly; smaller buttons scatter them less. */
+  --spread: 1;
+  position: relative;
+  isolation: isolate;
+  display: inline-grid;
+  padding: 6px;
+  border-radius: var(--arch);
+  color: var(--arch-text);
+}
+
+/* Over photographs: a parchment window with a light-gold frame. */
+.arch-button[data-tone="photo"] {
+  --arch-line: rgb(232 196 143 / 0.7);
+  --arch-finial: #e8c48f;
+  --arch-fill: #e2d6c3;
+  --arch-text: #292622;
+  --arch-glow: radial-gradient(
+    130% 105% at 50% 120%,
+    #f0a94a 0%,
+    rgb(232 170 96 / 0.92) 32%,
+    rgb(240 210 160 / 0.55) 58%,
+    rgb(226 214 195 / 0) 88%
+  );
+}
+
+/* Lit, the lettering turns to ink so it stays crisp on the warm light. */
+.arch-button:is(:hover, :focus-visible, [data-pressed]) {
+  color: #292622;
+}
+
+.on-photo .arch-button {
+  text-shadow: none;
+}
+
+.arch-frame {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid var(--arch-line);
+  border-radius: var(--arch);
+  pointer-events: none;
+}
+
+/* A small diamond at the top of the arch, like a finial. */
+.arch-frame::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--finial) / -2);
+  left: calc(50% - var(--finial) / 2);
+  width: var(--finial);
+  height: var(--finial);
+  rotate: 45deg;
+  background: var(--arch-finial);
+}
+
+.arch-frame-lit {
+  border-color: #f2d6a2;
+  box-shadow:
+    0 0 28px rgb(240 180 92 / 0.55),
+    0 0 4px rgb(242 214 162 / 0.8),
+    inset 0 0 16px rgb(232 196 143 / 0.35);
+  opacity: 0;
+}
+
+.arch-body {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 15rem;
+  min-height: 4.1rem;
+  padding: 1.6rem 2.75rem 1.05rem;
+  overflow: hidden;
+  border-radius: var(--arch-body);
+  background: var(--arch-fill);
+}
+
+.arch-glow {
+  position: absolute;
+  inset: 0;
+  background: var(--arch-glow);
+  opacity: 0;
+  transform: translateY(35%);
+}
+
+.arch-sheen {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 34%;
+  background: linear-gradient(
+    100deg,
+    rgb(255 248 235 / 0),
+    rgb(255 248 235 / 0.8),
+    rgb(255 248 235 / 0)
+  );
+  transform: translateX(-140%) skewX(-18deg);
+}
+
+.arch-label {
+  position: relative;
+  font-size: 0.8125rem;
+  letter-spacing: 0.2em;
+}
+
+.arch-burst,
+.arch-burst::after {
+  position: absolute;
+  inset: 0;
+  border: 1px solid #f2d6a2;
+  border-radius: var(--arch);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.arch-burst::after {
+  content: "";
+}
+
+.arch-petals {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.arch-petal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 17px;
+  border-radius: 100% 0;
+  opacity: 0;
+}
+
+/* Lit: shown at once without motion, eased in with it. */
+.arch-button:is(:hover, :focus-visible, [data-pressed]) .arch-glow {
+  opacity: 1;
+  transform: none;
+}
+
+.arch-button:is(:hover, :focus-visible, [data-pressed]) .arch-frame-lit {
+  opacity: 1;
+}
+
+@keyframes arch-sheen {
+  to {
+    transform: translateX(420%) skewX(-18deg);
+  }
+}
+
+@keyframes arch-flicker {
+  50% {
+    opacity: 0.82;
+  }
+}
+
+@keyframes arch-press {
+  20% {
+    transform: scale(0.95);
+  }
+  55% {
+    transform: scale(1.03);
+  }
+}
+
+@keyframes arch-burst {
+  from {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.55, 1.9);
+  }
+}
+
+@keyframes arch-petal {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  to {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + var(--x) * var(--spread)),
+        calc(-50% + var(--y) * var(--spread))
+      )
+      rotate(var(--spin)) scale(1);
+  }
+}
+
+:root[data-motion="full"] .arch-glow {
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+:root[data-motion="full"] .arch-frame,
+:root[data-motion="full"] .arch-frame-lit {
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:root[data-motion="full"] .arch-button {
+  transition: color 0.45s ease-out;
+}
+
+:root[data-motion="full"] .arch-label {
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:root[data-motion="full"] .arch-button:is(:hover, :focus-visible) .arch-frame,
+:root[data-motion="full"] .arch-button:is(:hover, :focus-visible) .arch-frame-lit {
+  transform: scale(1.04, 1.07);
+}
+
+:root[data-motion="full"] .arch-button:is(:hover, :focus-visible) .arch-label {
+  transform: translateY(-1px);
+}
+
+:root[data-motion="full"] .arch-button:is(:hover, :focus-visible) .arch-sheen {
+  animation: arch-sheen 1.2s cubic-bezier(0.3, 0.6, 0.2, 1) 0.15s;
+}
+
+/* Once lit, the lamp flickers softly while the pointer stays. */
+:root[data-motion="full"] .arch-button:is(:hover, :focus-visible) .arch-glow {
+  animation: arch-flicker 2.6s ease-in-out 0.9s infinite;
+}
+
+:root[data-motion="full"] .arch-button[data-pressed] .arch-body {
+  animation: arch-press 0.5s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+:root[data-motion="full"] .arch-button[data-pressed] .arch-burst {
+  animation: arch-burst 0.65s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+:root[data-motion="full"] .arch-button[data-pressed] .arch-burst::after {
+  animation: arch-burst 0.65s cubic-bezier(0.2, 0.7, 0.3, 1) 0.14s backwards;
+}
+
+:root[data-motion="full"] .arch-button[data-pressed] .arch-petal {
+  animation: arch-petal 0.75s cubic-bezier(0.15, 0.7, 0.3, 1) var(--delay) backwards;
+}

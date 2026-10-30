@@ -1,0 +1,277 @@
+/* ---------------------------------------------------------------------------
+ * Landing page motion. Everything is visible by default; these only run when
+ * motion is allowed (prefs-init.js sets data-motion before first paint).
+ * ------------------------------------------------------------------------- */
+
+/* Headline letters fade in one by one on load (no JavaScript needed). */
+@keyframes char-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Inline (not inline-block) so the font's kerning still applies between letters;
+   only opacity is animated, which works on inline boxes. */
+.split-char {
+  display: inline;
+}
+
+:root[data-motion="full"] [data-split="load"] .split-char {
+  animation: char-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  animation-delay: calc(var(--i) * 32ms + 500ms);
+}
+
+/* Ideas marquee: two identical runs scroll left forever; static under reduced motion. */
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee 48s linear infinite;
+}
+
+.marquee-track[data-direction="reverse"] {
+  animation-direction: reverse;
+}
+
+/* Holds still under the pointer, so a title can be read. */
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+:root[data-motion="reduce"] .marquee-track {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}
+
+/* Timeline photos cross-fade as each chapter scrolls into the middle of the screen. */
+[data-chapter-photo] {
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+[data-chapter-photo][data-active="true"] {
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------------------
+ * Type over photographs. Three things keep words readable on busy pictures:
+ * a scrim shaped to where the words sit, a heavier serif weight than on
+ * parchment, and a wide, faint shadow behind the letters.
+ * ------------------------------------------------------------------------- */
+.photo-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 55% at 50% 46%, rgb(28 25 22 / 0.62) 0%, rgb(28 25 22 / 0) 72%),
+    linear-gradient(
+      180deg,
+      rgb(28 25 22 / 0.58) 0%,
+      rgb(28 25 22 / 0.42) 50%,
+      rgb(28 25 22 / 0.9) 100%
+    );
+}
+
+.photo-scrim[data-focus="top-left"] {
+  background:
+    radial-gradient(75% 65% at 18% 22%, rgb(28 25 22 / 0.78) 0%, rgb(28 25 22 / 0) 78%),
+    linear-gradient(
+      180deg,
+      rgb(28 25 22 / 0.5) 0%,
+      rgb(28 25 22 / 0.38) 55%,
+      rgb(28 25 22 / 0.65) 100%
+    );
+}
+
+.photo-scrim[data-focus="bottom-left"] {
+  background:
+    linear-gradient(
+      90deg,
+      rgb(28 25 22 / 0.72) 0%,
+      rgb(28 25 22 / 0.4) 60%,
+      rgb(28 25 22 / 0.25) 100%
+    ),
+    linear-gradient(180deg, rgb(28 25 22 / 0.35) 0%, rgb(28 25 22 / 0.88) 100%);
+}
+
+/* Shade only the corner where the words sit, so the rest of the photo glows. */
+.photo-scrim[data-focus="corner"] {
+  background:
+    radial-gradient(70% 75% at 0% 100%, rgb(22 18 14 / 0.82) 0%, rgb(22 18 14 / 0) 70%),
+    linear-gradient(180deg, rgb(22 18 14 / 0) 45%, rgb(22 18 14 / 0.4) 100%);
+}
+
+.photo-scrim[data-focus="bottom"] {
+  background: linear-gradient(
+    180deg,
+    rgb(28 25 22 / 0.1) 10%,
+    rgb(28 25 22 / 0.72) 52%,
+    rgb(28 25 22 / 0.95) 100%
+  );
+}
+
+.on-photo {
+  text-shadow:
+    0 0 32px rgb(24 21 18 / 0.6),
+    0 1px 3px rgb(24 21 18 / 0.5);
+}
+
+.on-photo .font-display {
+  font-weight: 500;
+}
+
+/* Parchment buttons and cards keep crisp dark type. */
+.on-photo [data-slot="button"],
+.on-photo .no-photo-shadow {
+  text-shadow: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * On the home page the header floats over the hero photograph: transparent,
+ * parchment type, a parchment button and a parchment focus ring.
+ * ------------------------------------------------------------------------- */
+body:has([data-hero-photo]) .site-header {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 30;
+  border-color: transparent;
+  background: transparent;
+  color: #e2d6c3;
+  --ring: #e2d6c3;
+}
+
+body:has([data-hero-photo]) .site-header [data-slot="button"] {
+  border-color: #e2d6c3;
+  background: #e2d6c3;
+  color: #292622;
+  outline-color: #e2d6c3;
+}
+
+body:has([data-hero-photo]) .site-header [data-slot="button"]:hover {
+  background: transparent;
+  color: #e2d6c3;
+}
+
+/* The account badge stays a quiet ring over the photograph. */
+body:has([data-hero-photo]) .site-header [data-slot="button"][data-account] {
+  border-color: transparent;
+  background: transparent;
+  color: #e2d6c3;
+}
+
+body:has([data-hero-photo]) .site-header [data-slot="button"][data-account]:hover {
+  background: rgb(226 214 195 / 0.12);
+}
+
+/* The hero's own focus ring stays visible on the photograph. */
+[data-hero-photo] {
+  --ring: #e2d6c3;
+}
+
+/* ---------------------------------------------------------------------------
+ * Hero: the ballroom and one quiet statement in the bottom-left corner. The
+ * pieces arrive in turn: photo, headline, gold rule, buttons, then the header.
+ * Everything is simply there when motion is reduced.
+ * ------------------------------------------------------------------------- */
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(20 15 10 / 0.86) 0%,
+      rgb(20 15 10 / 0.6) 42%,
+      rgb(20 15 10 / 0.12) 72%,
+      rgb(20 15 10 / 0.3) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgb(20 15 10 / 0.9) 0%,
+      rgb(20 15 10 / 0.25) 45%,
+      rgb(20 15 10 / 0.05) 70%,
+      rgb(20 15 10 / 0.45) 100%
+    );
+}
+
+/* A small gold diamond with a hairline running out to the right. */
+.hero-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.hero-rule::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  rotate: 45deg;
+  background: #e8c48f;
+}
+
+.hero-rule::after {
+  content: "";
+  width: clamp(5rem, 14vw, 11rem);
+  height: 1px;
+  background: linear-gradient(90deg, #e8c48f, rgb(232 196 143 / 0));
+  transform-origin: left;
+}
+
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes hero-settle {
+  from {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes rule-draw {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+:root[data-motion="full"] .hero-photo {
+  animation:
+    hero-fade 1.2s ease-out backwards,
+    hero-settle 3.4s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+:root[data-motion="full"] .hero-rule {
+  animation: hero-fade 0.6s ease-out 1.3s backwards;
+}
+
+:root[data-motion="full"] .hero-rule::after {
+  animation: rule-draw 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) 1.35s backwards;
+}
+
+:root[data-motion="full"] .hero-cta {
+  animation: hero-rise 1s cubic-bezier(0.2, 0.8, 0.2, 1) 1.55s backwards;
+}
+
+:root[data-motion="full"] body:has([data-hero-photo]) .site-header {
+  animation: hero-fade 1s ease-out 1.9s backwards;
+}
