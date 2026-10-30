@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "bundle:check": "node scripts/bundle-budget.mjs",
     "prepare": "husky"
   },
   "dependencies": {
