@@ -1,5 +1,5 @@
 import { DiyaButton } from "@/components/landing/DiyaButton";
-import { AccountMenu } from "./AccountMenu";
+import { AccountMenuSlot } from "./AccountMenuSlot";
 import { Wordmark } from "./Wordmark";
 
 export function SiteHeader() {
@@ -9,7 +9,7 @@ export function SiteHeader() {
       <div className="mx-auto flex w-full max-w-[90rem] flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 sm:px-8">
         <Wordmark />
         <nav aria-label="Main" className="flex items-center gap-2 sm:gap-4">
-          <AccountMenu />
+          <AccountMenuSlot />
           <DiyaButton href="/plan/new">Start planning</DiyaButton>
         </nav>
       </div>
