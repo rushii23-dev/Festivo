@@ -21,6 +21,7 @@ export function WizardProgress({
           const bar = (
             <span
               aria-hidden="true"
+              data-step-bar={done ? "done" : isCurrent ? "current" : "todo"}
               className={`block h-[3px] w-full motion-ok:transition-colors motion-ok:duration-500 ${
                 done ? "bg-gold" : isCurrent ? "bg-foreground" : "bg-hairline"
               }`}

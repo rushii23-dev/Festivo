@@ -25,7 +25,7 @@ function Figure({ label, value, note }: { label: string; value: string; note?: s
   return (
     <div className="grid min-w-0 gap-1 border-t border-hairline pt-3">
       <dt className="caps text-muted-foreground">{label}</dt>
-      <dd className="figure text-2xl leading-tight sm:text-3xl">{value}</dd>
+      <dd className="figure text-2xl leading-tight break-words sm:text-3xl">{value}</dd>
       {note ? <dd className="text-sm text-muted-foreground">{note}</dd> : null}
     </div>
   );
@@ -80,16 +80,16 @@ export function BudgetPanel({ plan, update }: PanelProps) {
         </Button>
       </PanelHeader>
 
-      <div className="grid items-center gap-8 border-y border-hairline py-8 md:grid-cols-[minmax(0,18rem)_1fr] md:gap-16 md:py-12">
+      <div className="grid items-center gap-8 border-y border-hairline py-8 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] md:gap-16 md:py-12">
         <BudgetDonut items={plan.budget} currency={plan.currency} />
-        <div className="grid gap-6">
+        <div className="@container grid min-w-0 gap-6">
           <StatusNote tone={health.tone} icon={health.icon} className="text-lg">
             {budgetHealthLabel(summary)}
             {summary.health === "over"
               ? `: ${money(summary.actual - summary.total)} more than your total`
               : null}
           </StatusNote>
-          <dl className="grid gap-x-6 gap-y-5 min-[440px]:grid-cols-2">
+          <dl className="grid gap-x-6 gap-y-5 min-[440px]:@min-[18rem]:grid-cols-2">
             <Figure label="Total budget" value={money(summary.total)} />
             <Figure
               label="Planned"

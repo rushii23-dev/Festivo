@@ -11,7 +11,7 @@ function Marker({ checked }: { checked: boolean }) {
       aria-hidden="true"
       className="flex size-6 shrink-0 items-center justify-center rounded-full border border-current"
     >
-      {checked ? <span className="size-2.5 rounded-full bg-current" /> : null}
+      {checked ? <span data-fill className="size-2.5 rounded-full bg-current" /> : null}
     </span>
   );
 }
@@ -40,7 +40,7 @@ export function StepEventType({ draft, errors, update }: StepProps) {
             const copy = OCCASION_GROUP_COPY[group];
             const checked = draft.group === group;
             return (
-              <label key={group} className={`${cardClass} p-5 sm:p-6`}>
+              <label key={group} data-choice-card className={`${cardClass} p-5 sm:p-6`}>
                 <input
                   type="radio"
                   name="group"
@@ -78,7 +78,11 @@ export function StepEventType({ draft, errors, update }: StepProps) {
             {occasions.map((occasion) => {
               const checked = draft.occasion === occasion.id;
               return (
-                <label key={occasion.id} className={`${cardClass} px-5 py-4`}>
+                <label
+                  key={occasion.id}
+                  data-choice-card
+                  className={`${cardClass} px-5 py-4`}
+                >
                   <input
                     type="radio"
                     name="occasion"

@@ -281,9 +281,63 @@
 
 /* Chips and cards hide their native input; show its focus ring on the visible box. */
 .choice:has(input:focus-visible),
-.choice-card:has(input:focus-visible) {
+[data-choice-card]:has(input:focus-visible) {
   outline: 3px solid var(--ring);
   outline-offset: 3px;
+}
+
+/*
+ * Forced colours (Windows High Contrast and similar) swap every colour for a small
+ * system palette and drop background fills. Whatever showed state through a fill
+ * or a border colour alone gets a system-colour equivalent here, so selection,
+ * progress and the active tab stay visible.
+ */
+@media (forced-colors: active) {
+  :focus-visible,
+  .choice:has(input:focus-visible),
+  [data-choice-card]:has(input:focus-visible) {
+    outline-color: Highlight !important;
+  }
+
+  /*
+   * Chosen chips and cards. Forced colours repaint borders and outlines in the
+   * system text colour, so the choice is marked by a heavy outline that the rest
+   * do not have, never by colour.
+   */
+  [data-choice-card] {
+    outline-style: none;
+  }
+  .choice:has(:checked),
+  [data-choice-card]:has(:checked) {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  /* Dots drawn as fills (radio markers) would vanish with the background. */
+  [data-fill] {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+
+  /* The wizard's progress bar: answered, current and still to come. */
+  [data-step-bar] {
+    forced-color-adjust: none;
+    background-color: GrayText;
+  }
+  [data-step-bar="done"] {
+    background-color: CanvasText;
+  }
+  [data-step-bar="current"] {
+    background-color: Highlight;
+  }
+
+  /* Only the active tab keeps its underline. */
+  [role="tab"] {
+    border-bottom-color: Canvas;
+  }
+  [role="tab"][data-state="active"] {
+    border-bottom-color: Highlight;
+  }
 }
 
 /* <main> receives focus programmatically after navigation; it is not a control. */
@@ -316,7 +370,7 @@
   clip-path: none;
 }
 
-/* Reduced motion: the OS setting and the in-site toggle both switch animation off. */
+/* Reduced motion: the device's setting switches animation off. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -420,6 +474,11 @@
 
 .marquee-track[data-direction="reverse"] {
   animation-direction: reverse;
+}
+
+/* Holds still under the pointer, so a title can be read. */
+.marquee-track:hover {
+  animation-play-state: paused;
 }
 
 :root[data-motion="reduce"] .marquee-track {
