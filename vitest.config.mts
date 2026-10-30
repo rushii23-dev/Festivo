@@ -71,6 +71,7 @@ export default defineConfig({
         // scenes and the canvas petals cannot run in jsdom. Playwright covers them.
         "app/layout.tsx",
         "components/landing/LandingMotion.tsx",
+        "components/landing/scenes.ts",
         "components/landing/PetalFall.tsx",
       ],
       reporter: ["text", "html", "lcov"],
