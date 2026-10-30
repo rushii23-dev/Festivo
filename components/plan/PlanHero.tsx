@@ -1,6 +1,11 @@
 import type { ReactNode } from "react";
 import { Photo } from "@/components/landing/Photo";
-import { PHOTOS, type SitePhoto } from "@/components/landing/photos";
+import {
+  ballroomMandap,
+  birthdayCandles,
+  festivalDrummers,
+  type SitePhoto,
+} from "@/components/landing/photos";
 import { formatMoney } from "@/lib/budget/format";
 import { occasionOf } from "@/lib/events/kind";
 import type { EventType } from "@/lib/schemas/common";
@@ -10,9 +15,9 @@ import { VIBE_LABELS } from "@/lib/wizard/labels";
 
 /** Each kind of celebration opens on its own photograph. */
 const HERO_PHOTOS: Record<EventType, SitePhoto> = {
-  wedding: PHOTOS.ballroomMandap,
-  birthday: PHOTOS.birthdayCandles,
-  community: PHOTOS.festivalDrummers,
+  wedding: ballroomMandap,
+  birthday: birthdayCandles,
+  community: festivalDrummers,
 };
 
 const shortDate = new Intl.DateTimeFormat("en-IN", {
