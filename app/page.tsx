@@ -2,14 +2,14 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { FestivoSeal } from "@/components/brand/FestivoSeal";
 import { ArchButton } from "@/components/landing/ArchButton";
+import { FinaleSection } from "@/components/landing/FinaleSection";
 import { LandingMotion } from "@/components/landing/LandingMotion";
 import { LightsButton } from "@/components/landing/LightsButton";
 import { Marquee } from "@/components/landing/Marquee";
-import { PetalFall } from "@/components/landing/PetalFall";
 import { Photo } from "@/components/landing/Photo";
 import { PHOTOS, type SitePhoto } from "@/components/landing/photos";
 import { SplitHeading } from "@/components/landing/SplitHeading";
-import { ToranButton } from "@/components/landing/ToranButton";
+import { TimelineSection } from "@/components/landing/TimelineSection";
 import { Button } from "@/components/ui/button";
 import {
   budgetMenu,
@@ -19,18 +19,9 @@ import {
   timelineChapters,
   vendorShowcase,
 } from "@/lib/landing/showcase";
-import type { TimelinePhase, VendorCategory } from "@/lib/schemas/plan";
+import type { VendorCategory } from "@/lib/schemas/plan";
 import { formatMoney } from "@/lib/budget/format";
 import { todayIso } from "@/lib/timeline/dates";
-
-const CHAPTER_PHOTOS: Record<TimelinePhase, SitePhoto> = {
-  "12+ weeks": PHOTOS.heroNewlyweds,
-  "8 weeks": PHOTOS.banquetTable,
-  "1 month": PHOTOS.henna,
-  "1 week": PHOTOS.marigoldGarlands,
-  "Day of": PHOTOS.diyas,
-  After: PHOTOS.diyas,
-};
 
 const VENDOR_PHOTOS: Partial<Record<VendorCategory, SitePhoto>> = {
   decorator: PHOTOS.marigoldsPetals,
@@ -60,25 +51,6 @@ const OCCASIONS = [
 ];
 
 const dark = "bg-[#292622] text-[#e2d6c3]";
-
-/** The finale's row of palace windows, stepping up to the centre. */
-const FINALE_WINDOWS: {
-  photo: SitePhoto;
-  place: "outer" | "inner" | "center";
-  position?: string;
-}[] = [
-  { photo: PHOTOS.henna, place: "outer", position: "60% 50%" },
-  { photo: PHOTOS.diyas, place: "inner" },
-  { photo: PHOTOS.heroNewlyweds, place: "center", position: "50% 60%" },
-  { photo: PHOTOS.marigoldGarlands, place: "inner" },
-  { photo: PHOTOS.birthdayCandles, place: "outer" },
-];
-
-const FINALE_SIZES = {
-  outer: "hidden w-[13vw] max-w-[11rem] sm:block",
-  inner: "w-[26vw] max-w-[14rem] sm:w-[17vw]",
-  center: "w-[38vw] max-w-[19rem] sm:w-[23vw]",
-};
 
 export default function HomePage() {
   const today = todayIso();
@@ -276,80 +248,7 @@ export default function HomePage() {
       </section>
 
       {/* 4. The timeline, chapter by chapter --------------------------------- */}
-      <section id="timeline" aria-labelledby="timeline-title" className="bg-muted">
-        <div className="mx-auto w-full max-w-[90rem] px-4 py-20 sm:px-8 lg:py-32">
-          <div className="grid items-end gap-6 lg:grid-cols-2">
-            <SplitHeading
-              id="timeline-title"
-              reveal="scroll"
-              lines={["Counted back", "from the big day"]}
-              className="text-headline"
-            />
-            <p className="max-w-[46ch] leading-relaxed lg:justify-self-end">
-              Every task lands on a real date between today and the celebration, grouped
-              by when it matters. Tick them off; download them to your calendar.
-            </p>
-          </div>
-
-          <div className="mt-14 grid gap-12 lg:mt-20 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16">
-            <div className="relative hidden lg:block">
-              <div className="sticky top-[12vh] aspect-[4/5] overflow-hidden bg-[#292622]">
-                {chapters.map((chapter, index) => (
-                  <div
-                    key={chapter.phase}
-                    data-chapter-photo={index}
-                    data-active={index === 0}
-                    className="absolute inset-0"
-                  >
-                    <Photo
-                      src={CHAPTER_PHOTOS[chapter.phase].src}
-                      alt={CHAPTER_PHOTOS[chapter.phase].alt}
-                      sizes="40vw"
-                      className="absolute inset-0"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <ol className="grid">
-              {chapters.map((chapter, index) => (
-                <li
-                  key={chapter.phase}
-                  data-chapter={index}
-                  className="border-t border-hairline py-10 lg:min-h-[56vh]"
-                >
-                  <div className="flex items-baseline gap-5">
-                    <span className="caps text-muted-foreground">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <h3 className="font-display text-title">{chapter.heading}</h3>
-                  </div>
-                  <Photo
-                    src={CHAPTER_PHOTOS[chapter.phase].src}
-                    alt={CHAPTER_PHOTOS[chapter.phase].alt}
-                    sizes="100vw"
-                    className="mt-6 aspect-[3/2] lg:hidden"
-                  />
-                  <ul className="mt-6">
-                    {chapter.tasks.map((task) => (
-                      <li
-                        key={task.title}
-                        className="flex items-baseline justify-between gap-6 border-t border-hairline py-3.5"
-                      >
-                        <span className="font-semibold">{task.title}</span>
-                        <span className="caps shrink-0 text-muted-foreground">
-                          By {task.due}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-      </section>
+      <TimelineSection chapters={chapters} />
 
       {/* 5. Vendors: who to call, what to ask -------------------------------- */}
       <section id="vendors" aria-labelledby="vendors-title">
@@ -467,52 +366,7 @@ export default function HomePage() {
       </section>
 
       {/* 8. Finale: the invitation to start, above a row of palace windows */}
-      <section
-        aria-labelledby="finale-title"
-        className="finale relative isolate overflow-hidden"
-      >
-        <PetalFall />
-        <div className="relative mx-auto grid w-full max-w-[90rem] justify-items-center px-4 pt-28 text-center sm:px-8 lg:pt-36">
-          <FestivoSeal className="h-16 text-gold" />
-          <SplitHeading
-            id="finale-title"
-            reveal="scroll"
-            lines={["Your celebration,", "beautifully planned"]}
-            className="mt-8 text-display"
-          />
-          <span aria-hidden="true" className="ornament-center mt-9">
-            <span />
-          </span>
-          <p className="mt-7 max-w-[44ch] text-lg leading-relaxed text-muted-foreground">
-            Six short questions, about a minute, and your plan is ready to edit, share and
-            print.
-          </p>
-          <div className="mt-10">
-            <ToranButton href="/plan/new">Start planning</ToranButton>
-          </div>
-
-          {/* Five windows stepping up to the centre, standing on a gold ledge */}
-          <ul
-            aria-hidden="true"
-            className="mt-20 flex w-full items-end justify-center gap-3 border-b border-gold/60 sm:gap-5 lg:mt-28 lg:gap-8"
-          >
-            {FINALE_WINDOWS.map((w) => (
-              <li key={w.photo.alt} data-reveal className={FINALE_SIZES[w.place]}>
-                <div className="rounded-t-full border border-gold/50 p-1.5 sm:p-2">
-                  <Photo
-                    src={w.photo.src}
-                    alt=""
-                    sizes="(min-width: 1024px) 20vw, 30vw"
-                    parallax={6}
-                    position={w.position}
-                    className="aspect-[3/4] w-full rounded-t-full"
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      <FinaleSection />
 
       <LandingMotion />
     </>
