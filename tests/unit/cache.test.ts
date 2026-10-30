@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LruCache, hashKey, stableStringify } from "@/lib/cache/lru";
+import { createSingleFlight } from "@/lib/cache/singleFlight";
 
 function setup(maxEntries = 2, ttlMs = 1000) {
   let time = 0;
@@ -75,5 +76,51 @@ describe("hashing", () => {
     expect(a).toBe(b);
     expect(a).toMatch(/^[0-9a-f]{64}$/);
     expect(hashKey({ guests: 201 })).not.toBe(hashKey({ guests: 200 }));
+  });
+});
+
+describe("single flight", () => {
+  const deferred = <T>() => {
+    let resolve!: (value: T) => void;
+    let reject!: (error: unknown) => void;
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+
+  it("runs one task per key while it is in flight, then forgets it", async () => {
+    const flights = createSingleFlight<string>();
+    const pending = deferred<string>();
+    let calls = 0;
+    const task = () => {
+      calls += 1;
+      return pending.promise;
+    };
+
+    const first = flights.run("k", task);
+    const second = flights.run("k", task);
+    expect([first.shared, second.shared]).toEqual([false, true]);
+    expect(flights.run("other", () => Promise.resolve("o")).shared).toBe(false);
+    pending.resolve("plan");
+    await expect(second.promise).resolves.toBe("plan");
+    expect(calls).toBe(1);
+
+    await Promise.resolve();
+    expect(flights.size).toBe(0);
+    expect(flights.run("k", () => Promise.resolve("again")).shared).toBe(false);
+  });
+
+  it("never hands out a failure after it settles", async () => {
+    const flights = createSingleFlight<string>();
+    const failing = flights.run("k", () => Promise.reject(new Error("upstream")));
+    await expect(failing.promise).rejects.toThrow("upstream");
+    await Promise.resolve();
+    const retry = flights.run("k", () => Promise.resolve("ok"));
+    expect(retry.shared).toBe(false);
+    await expect(retry.promise).resolves.toBe("ok");
+    flights.clear();
+    expect(flights.size).toBe(0);
   });
 });

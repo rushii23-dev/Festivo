@@ -6,6 +6,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { LruCache, hashKey } from "@/lib/cache/lru";
+import { createSingleFlight } from "@/lib/cache/singleFlight";
 import { generateStructured } from "@/lib/ai/parse";
 import {
   SYSTEM_PROMPT,
@@ -107,11 +108,16 @@ export function toErrorEvent(error: unknown): Extract<PlanEvent, { type: "error"
 
 const planCache = new LruCache<Plan>({ maxEntries: 200, ttlMs: 60 * 60 * 1000 });
 const ideasCache = new LruCache<Idea[]>({ maxEntries: 500, ttlMs: 60 * 60 * 1000 });
+/** Identical requests that arrive while the first is still running share its AI call. */
+const planFlights = createSingleFlight<Plan>();
+const ideasFlights = createSingleFlight<Idea[]>();
 
 /** Test-only. */
 export function clearPlanCaches(): void {
   planCache.clear();
   ideasCache.clear();
+  planFlights.clear();
+  ideasFlights.clear();
 }
 
 /** Minimal async queue so callbacks inside generation can feed a generator. */
@@ -189,7 +195,7 @@ export async function* streamPlan(
   const channel = createChannel<PlanEvent>();
   const announced = new Set<PlanSection>();
 
-  const work = (async () => {
+  const generate = async (): Promise<Plan> => {
     const draft = await generateStructured({
       provider,
       schema: PlanDraftSchema,
@@ -226,9 +232,30 @@ export async function* streamPlan(
       flexible,
     });
     planCache.set(key, plan);
-    channel.push({ type: "plan", plan, cached: false });
-  })()
-    .catch((error: unknown) => channel.push(toErrorEvent(error)))
+    return plan;
+  };
+
+  const flight = planFlights.run(key, generate);
+  if (flight.shared) {
+    // The same plan is already being generated: wait for it rather than call the AI again.
+    const plan = await flight.promise.catch(() => null);
+    if (plan) {
+      yield progress("finalize");
+      yield {
+        type: "plan",
+        plan: { ...plan, id: newId(), createdAt: now.toISOString() },
+        cached: true,
+      };
+      return;
+    }
+    // That request failed or was cancelled; this one still gets its own attempt.
+  }
+
+  const work = (flight.shared ? generate() : flight.promise)
+    .then(
+      (plan) => channel.push({ type: "plan", plan, cached: false }),
+      (error: unknown) => channel.push(toErrorEvent(error)),
+    )
     .finally(() => channel.close());
 
   yield* channel.drain();
@@ -290,32 +317,38 @@ export async function moreIdeas(
   const hit = ideasCache.get(key);
   if (hit) return hit;
 
-  const draft = await generateStructured({
-    provider,
-    schema: IdeasDraftSchema,
-    signal,
-    task: {
-      system: SYSTEM_PROMPT,
-      prompt: buildIdeasPrompt(plan, category, existing, plan.vibes),
-      schema: toProviderSchema(IdeasDraftSchema),
-      context: { kind: "ideas", plan, category, excludeTitles: existing },
-      maxOutputTokens: 1500,
-    },
-  });
-  const seen = new Set(existing.map((t) => t.toLowerCase()));
-  const fresh = draft.ideas.filter((idea) => {
-    const title = idea.title.toLowerCase();
-    if (idea.category !== category || seen.has(title)) return false;
-    seen.add(title);
-    return true;
-  });
-  const ideas = ideasFromDraft(
-    fresh,
-    uniqueIdFactory(
-      "idea",
-      plan.ideas.map((i) => i.id),
-    ),
-  );
-  ideasCache.set(key, ideas);
-  return ideas;
+  const generate = async (): Promise<Idea[]> => {
+    const draft = await generateStructured({
+      provider,
+      schema: IdeasDraftSchema,
+      signal,
+      task: {
+        system: SYSTEM_PROMPT,
+        prompt: buildIdeasPrompt(plan, category, existing, plan.vibes),
+        schema: toProviderSchema(IdeasDraftSchema),
+        context: { kind: "ideas", plan, category, excludeTitles: existing },
+        maxOutputTokens: 1500,
+      },
+    });
+    const seen = new Set(existing.map((t) => t.toLowerCase()));
+    const fresh = draft.ideas.filter((idea) => {
+      const title = idea.title.toLowerCase();
+      if (idea.category !== category || seen.has(title)) return false;
+      seen.add(title);
+      return true;
+    });
+    const ideas = ideasFromDraft(
+      fresh,
+      uniqueIdFactory(
+        "idea",
+        plan.ideas.map((i) => i.id),
+      ),
+    );
+    ideasCache.set(key, ideas);
+    return ideas;
+  };
+
+  const flight = ideasFlights.run(key, generate);
+  // A joined request that fails gets its own attempt, like a fresh one would.
+  return flight.shared ? flight.promise.catch(generate) : flight.promise;
 }
