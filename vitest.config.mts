@@ -57,10 +57,33 @@ export default defineConfig({
     ],
     coverage: {
       provider: "v8",
-      include: ["lib/**/*.ts"],
-      exclude: ["lib/**/*.d.ts", "lib/utils.ts"],
+      // The whole app: domain logic, components, hooks, pages, route handlers, proxy.
+      include: [
+        "lib/**/*.ts",
+        "components/**/*.{ts,tsx}",
+        "hooks/**/*.ts",
+        "app/**/*.{ts,tsx}",
+        "proxy.ts",
+      ],
+      exclude: [
+        "lib/**/*.d.ts",
+        "lib/utils.ts",
+        // Browser-only: the root HTML document (fonts, nonce script), the GSAP scroll
+        // scenes and the canvas petals cannot run in jsdom. Playwright covers them.
+        "app/layout.tsx",
+        "components/landing/LandingMotion.tsx",
+        "components/landing/PetalFall.tsx",
+      ],
       reporter: ["text", "html", "lcov"],
-      thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
+      // Ratchets just under what the code measures today (the brief asks for 80% on
+      // lib/), so a change that drops coverage fails CI.
+      thresholds: {
+        statements: 95,
+        branches: 86,
+        functions: 94,
+        lines: 96,
+        "lib/**/*.ts": { statements: 97, branches: 90, functions: 97, lines: 98 },
+      },
     },
   },
 });
