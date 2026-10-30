@@ -14,6 +14,8 @@ beforeEach(() => {
   vi.stubEnv("AI_PROVIDER", "mock");
   vi.stubEnv("MOCK_STREAM_DELAY_MS", "0");
   vi.stubEnv("GEMINI_API_KEY", "");
+  // Upstream failures fail fast; the retry test turns retries back on.
+  vi.stubEnv("GEMINI_RETRIES", "0");
   resetProvider();
   apiLimiter.reset();
   clearPlanCaches();

@@ -11,14 +11,39 @@ export interface GeminiOptions {
   model: string;
   /** Per-request timeout in milliseconds. */
   timeoutMs?: number;
+  /**
+   * Extra attempts, with exponential backoff and jitter, when the request fails
+   * before any text arrives: rate limits (429), timeouts (408) and server errors.
+   * A reply that breaks off mid-stream is not retried here; parsing repairs it once.
+   */
+  retries?: number;
 }
+
+/** Status codes worth another attempt: the request itself was fine. */
+export const RETRYABLE_STATUS = [408, 429, 500, 502, 503, 504];
 
 export function createGeminiProvider({
   apiKey,
   model,
   timeoutMs = 60_000,
+  retries = 2,
 }: GeminiOptions): AiProvider {
-  const client = new GoogleGenAI({ apiKey, httpOptions: { timeout: timeoutMs } });
+  const client = new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      timeout: timeoutMs,
+      ...(retries > 0
+        ? {
+            retryOptions: {
+              attempts: retries + 1,
+              initialDelay: 0.5,
+              maxDelay: 4,
+              httpStatusCodes: RETRYABLE_STATUS,
+            },
+          }
+        : {}),
+    },
+  });
 
   return {
     name: "gemini",

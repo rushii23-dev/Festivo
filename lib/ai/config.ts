@@ -11,12 +11,15 @@ const EnvSchema = z.object({
   GEMINI_MODEL: z.string().min(1).default("gemini-flash-latest"),
   /** Total artificial delay for mock streaming, so demo mode shows progress. */
   MOCK_STREAM_DELAY_MS: z.coerce.number().int().min(0).max(10_000).default(1200),
+  /** Retries for a Gemini request that fails before streaming starts (429, 5xx). */
+  GEMINI_RETRIES: z.coerce.number().int().min(0).max(5).default(2),
 });
 
 export interface AiConfig {
   provider: "mock" | "gemini";
   geminiApiKey?: string;
   geminiModel: string;
+  geminiRetries: number;
   mockDelayMs: number;
 }
 
@@ -43,6 +46,7 @@ export function readAiConfig(
     provider,
     ...(parsed.GEMINI_API_KEY ? { geminiApiKey: parsed.GEMINI_API_KEY } : {}),
     geminiModel: parsed.GEMINI_MODEL,
+    geminiRetries: parsed.GEMINI_RETRIES,
     mockDelayMs: parsed.MOCK_STREAM_DELAY_MS,
   };
 }

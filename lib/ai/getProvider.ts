@@ -12,7 +12,11 @@ export function getProvider(): AiProvider {
   const config = readAiConfig();
   cached =
     config.provider === "gemini" && config.geminiApiKey
-      ? createGeminiProvider({ apiKey: config.geminiApiKey, model: config.geminiModel })
+      ? createGeminiProvider({
+          apiKey: config.geminiApiKey,
+          model: config.geminiModel,
+          retries: config.geminiRetries,
+        })
       : createMockProvider({ delayMs: config.mockDelayMs });
   return cached;
 }
