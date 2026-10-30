@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 
 /** Route-level error boundary. Shows a generic message; details stay in the console. */
 export default function RouteError({
@@ -34,7 +34,9 @@ export default function RouteError({
         Your saved plans are safe. Try loading the page again.
       </p>
       <div>
-        <Button onClick={reset}>Try again</Button>
+        <button type="button" className={buttonVariants()} onClick={reset}>
+          Try again
+        </button>
       </div>
     </section>
   );
