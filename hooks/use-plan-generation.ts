@@ -30,11 +30,23 @@ export type GenerationState =
   | { status: "done"; plan: Plan };
 
 const NETWORK_ERROR = "We couldn't reach Festivo. Check your connection and try again.";
+const NETWORK_FAILURE: GenerationState = {
+  status: "error",
+  message: NETWORK_ERROR,
+  retryable: true,
+};
 
 interface ProgressLike {
   type: "progress";
   step: string;
   message: string;
+}
+
+interface StreamEnd {
+  type?: string;
+  plan?: unknown;
+  message?: string;
+  retryable?: boolean;
 }
 
 function isProgress(value: unknown): value is ProgressLike {
@@ -44,6 +56,71 @@ function isProgress(value: unknown): value is ProgressLike {
     (value as { type?: unknown }).type === "progress" &&
     typeof (value as { message?: unknown }).message === "string"
   );
+}
+
+function requestPlan(input: EventInput, signal: AbortSignal) {
+  return fetch("/api/plan", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      input,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    }),
+    signal,
+  });
+}
+
+/** A refused request: the server's message, retryable when it was busy or failed. */
+async function refusal(response: Response): Promise<GenerationState> {
+  const body = (await response.json().catch(() => null)) as {
+    error?: { message?: string };
+  } | null;
+  return {
+    status: "error",
+    message: body?.error?.message ?? NETWORK_ERROR,
+    retryable: response.status === 429 || response.status >= 500,
+  };
+}
+
+/** The state a final stream event leads to, or null for events that are not final. */
+function endState(event: StreamEnd): GenerationState | null {
+  if (event.type === "plan") {
+    const plan = PlanSchema.safeParse(event.plan);
+    return plan.success
+      ? { status: "done", plan: plan.data }
+      : {
+          status: "error",
+          message: "The plan came back incomplete. Please try again.",
+          retryable: true,
+        };
+  }
+  if (event.type === "error") {
+    return {
+      status: "error",
+      message: event.message ?? NETWORK_ERROR,
+      retryable: event.retryable ?? true,
+    };
+  }
+  return null;
+}
+
+/** Reports progress as stages arrive and resolves with the stream's final state. */
+async function followStream(
+  body: ReadableStream<Uint8Array>,
+  onProgress: (state: GenerationState) => void,
+): Promise<GenerationState> {
+  const reached: GenerationStage[] = [];
+  for await (const event of readNdjson(body)) {
+    if (isProgress(event)) {
+      const stage = GENERATION_STAGES.find((s) => s === event.step);
+      if (stage && !reached.includes(stage)) reached.push(stage);
+      onProgress({ status: "generating", message: event.message, reached: [...reached] });
+      continue;
+    }
+    const end = endState(event as StreamEnd);
+    if (end) return end;
+  }
+  return NETWORK_FAILURE;
 }
 
 /**
@@ -61,77 +138,20 @@ export function usePlanGeneration(onPlan: (plan: Plan) => void) {
       controller.current?.abort();
       const abort = new AbortController();
       controller.current = abort;
-      const reached: GenerationStage[] = [];
       setState({ status: "generating", message: "Reading your answers…", reached: [] });
 
       try {
-        const response = await fetch("/api/plan", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            input,
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          }),
-          signal: abort.signal,
-        });
-
-        if (!response.ok || !response.body) {
-          const body = (await response.json().catch(() => null)) as {
-            error?: { message?: string };
-          } | null;
-          setState({
-            status: "error",
-            message: body?.error?.message ?? NETWORK_ERROR,
-            retryable: response.status === 429 || response.status >= 500,
-          });
-          return;
-        }
-
-        for await (const event of readNdjson(response.body)) {
-          if (isProgress(event)) {
-            const stage = GENERATION_STAGES.find((s) => s === event.step);
-            if (stage && !reached.includes(stage)) reached.push(stage);
-            setState({
-              status: "generating",
-              message: event.message,
-              reached: [...reached],
-            });
-            continue;
-          }
-          const typed = event as {
-            type?: string;
-            plan?: unknown;
-            message?: string;
-            retryable?: boolean;
-          };
-          if (typed.type === "plan") {
-            const plan = PlanSchema.safeParse(typed.plan);
-            if (!plan.success) {
-              setState({
-                status: "error",
-                message: "The plan came back incomplete. Please try again.",
-                retryable: true,
-              });
-              return;
-            }
-            setState({ status: "done", plan: plan.data });
-            onPlan(plan.data);
-            return;
-          }
-          if (typed.type === "error") {
-            setState({
-              status: "error",
-              message: typed.message ?? NETWORK_ERROR,
-              retryable: typed.retryable ?? true,
-            });
-            return;
-          }
-        }
-        setState({ status: "error", message: NETWORK_ERROR, retryable: true });
+        const response = await requestPlan(input, abort.signal);
+        const end =
+          response.ok && response.body
+            ? await followStream(response.body, setState)
+            : await refusal(response);
+        setState(end);
+        if (end.status === "done") onPlan(end.plan);
       } catch (error) {
         if (abort.signal.aborted) return;
         console.error(error);
-        setState({ status: "error", message: NETWORK_ERROR, retryable: true });
+        setState(NETWORK_FAILURE);
       }
     },
     [onPlan],

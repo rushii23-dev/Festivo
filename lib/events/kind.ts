@@ -95,25 +95,37 @@ function mergeTasks(...lists: readonly (readonly TaskTemplate[])[]): TaskTemplat
   return [...byKey.values()];
 }
 
+/** Tasks this occasion and format leave out, such as venue tasks for online events. */
+function droppedTasks(kind: PlanKind): Set<string> {
+  const drop = new Set(profileOf(kind).dropTasks ?? []);
+  if (formatOf(kind) === "online") for (const key of IN_PERSON_ONLY_TASKS) drop.add(key);
+  return drop;
+}
+
+/** Tasks added by the answers: streaming, ticketing, children and extra days. */
+function extraTasks(kind: PlanKind): TaskTemplate[] {
+  const occasion = occasionOf(kind);
+  const days = kind.details?.days ?? 1;
+  return [
+    ...(formatOf(kind) === "in-person" ? [] : ONLINE_TASKS),
+    ...(kind.tickets && occasion.tickets ? TICKET_TASKS : []),
+    ...(kind.details?.kids && occasion.kids ? [KIDS_TASK] : []),
+    ...(days > 1 && occasion.multiDay ? [MULTI_DAY_TASK] : []),
+  ];
+}
+
 /** The task templates for this kind: the family's, adjusted for the occasion. */
 export function taskTemplatesFor(kind: PlanKind): TaskTemplate[] {
-  const occasion = occasionOf(kind);
-  const profile = profileOf(kind);
-  const format = formatOf(kind);
-  const drop = new Set(profile.dropTasks ?? []);
-  if (format === "online") for (const key of IN_PERSON_ONLY_TASKS) drop.add(key);
-
-  const extras: TaskTemplate[] = [];
-  if (format !== "in-person") extras.push(...ONLINE_TASKS);
-  if (kind.tickets && occasion.tickets) extras.push(...TICKET_TASKS);
-  if (kind.details?.kids && occasion.kids) extras.push(KIDS_TASK);
-  if ((kind.details?.days ?? 1) > 1 && occasion.multiDay) extras.push(MULTI_DAY_TASK);
-
-  const merged = mergeTasks(TASK_TEMPLATES[kind.eventType], profile.tasks ?? [], extras);
-  return merged
+  const drop = droppedTasks(kind);
+  const online = formatOf(kind) === "online";
+  return mergeTasks(
+    TASK_TEMPLATES[kind.eventType],
+    profileOf(kind).tasks ?? [],
+    extraTasks(kind),
+  )
     .filter((task) => !drop.has(task.key))
     .map((task) =>
-      format === "online" && task.key === "open"
+      online && task.key === "open"
         ? { ...task, title: "Go live", description: "Open the room a few minutes early." }
         : task,
     );

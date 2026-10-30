@@ -17,71 +17,59 @@ export interface PlanChange {
   after?: string;
 }
 
+/** A "changed" entry when the value differs, shown with `show`. */
+function changedValue<T>(
+  field: string,
+  before: T,
+  after: T,
+  show: (value: T) => string,
+): PlanChange[] {
+  return before === after
+    ? []
+    : [{ kind: "changed", field, before: show(before), after: show(after) }];
+}
+
+/** Entries added to or removed from a list, matched by id. */
+function membershipChanges(
+  field: string,
+  before: readonly { id: string; title: string }[],
+  after: readonly { id: string; title: string }[],
+): PlanChange[] {
+  const beforeIds = new Set(before.map((entry) => entry.id));
+  const afterIds = new Set(after.map((entry) => entry.id));
+  return [
+    ...after
+      .filter((entry) => !beforeIds.has(entry.id))
+      .map((entry): PlanChange => ({ kind: "added", field, after: entry.title })),
+    ...before
+      .filter((entry) => !afterIds.has(entry.id))
+      .map((entry): PlanChange => ({ kind: "removed", field, before: entry.title })),
+  ];
+}
+
+/** What a refine would change: date, budget, budget lines, ideas, tasks and summary. */
 export function diffPlans(before: Plan, after: Plan): PlanChange[] {
   const money = (n: number) => formatMoney(n, after.currency);
-  const changes: PlanChange[] = [];
-
-  if (before.date !== after.date) {
-    changes.push({
-      kind: "changed",
-      field: "Event date",
-      before: formatLongDate(before.date),
-      after: formatLongDate(after.date),
-    });
-  }
-  if (before.totalBudget !== after.totalBudget) {
-    changes.push({
-      kind: "changed",
-      field: "Total budget",
-      before: money(before.totalBudget),
-      after: money(after.totalBudget),
-    });
-  }
-  for (const item of after.budget) {
+  const budgetLines = after.budget.flatMap((item) => {
     const prior = before.budget.find((b) => b.category === item.category);
-    if (prior && prior.allocated !== item.allocated) {
-      changes.push({
-        kind: "changed",
-        field: BUDGET_CATEGORY_LABELS[item.category],
-        before: money(prior.allocated),
-        after: money(item.allocated),
-      });
-    }
-  }
-
-  const beforeIdeas = new Set(before.ideas.map((i) => i.id));
-  const afterIdeas = new Set(after.ideas.map((i) => i.id));
-  for (const idea of after.ideas) {
-    if (!beforeIdeas.has(idea.id))
-      changes.push({ kind: "added", field: "Idea", after: idea.title });
-  }
-  for (const idea of before.ideas) {
-    if (!afterIdeas.has(idea.id)) {
-      changes.push({ kind: "removed", field: "Idea", before: idea.title });
-    }
-  }
-
-  const beforeTasks = new Set(before.timeline.map((t) => t.id));
-  const afterTasks = new Set(after.timeline.map((t) => t.id));
-  for (const task of after.timeline) {
-    if (!beforeTasks.has(task.id))
-      changes.push({ kind: "added", field: "Task", after: task.title });
-  }
-  for (const task of before.timeline) {
-    if (!afterTasks.has(task.id)) {
-      changes.push({ kind: "removed", field: "Task", before: task.title });
-    }
-  }
-
-  if (before.summary !== after.summary) {
-    changes.push({
-      kind: "changed",
-      field: "Summary",
-      before: before.summary,
-      after: after.summary,
-    });
-  }
-  return changes;
+    return prior
+      ? changedValue(
+          BUDGET_CATEGORY_LABELS[item.category],
+          prior.allocated,
+          item.allocated,
+          money,
+        )
+      : [];
+  });
+  const asIs = (text: string) => text;
+  return [
+    ...changedValue("Event date", before.date, after.date, formatLongDate),
+    ...changedValue("Total budget", before.totalBudget, after.totalBudget, money),
+    ...budgetLines,
+    ...membershipChanges("Idea", before.ideas, after.ideas),
+    ...membershipChanges("Task", before.timeline, after.timeline),
+    ...changedValue("Summary", before.summary, after.summary, asIs),
+  ];
 }
 
 /** One sentence per change, for live regions and the copied summary. */
