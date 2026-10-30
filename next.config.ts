@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { securityHeaders } from "./lib/security/headers";
+import { API_CONTENT_SECURITY_POLICY, securityHeaders } from "./lib/security/headers";
 
 const isDev = process.env.NODE_ENV === "development";
 const isHttps = (process.env.NEXT_PUBLIC_SITE_URL ?? "").startsWith("https://");
@@ -19,7 +19,13 @@ const nextConfig: NextConfig = {
     },
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders({ isDev, isHttps }) }];
+    return [
+      { source: "/:path*", headers: securityHeaders({ isDev, isHttps }) },
+      {
+        source: "/api/:path*",
+        headers: [{ key: "Content-Security-Policy", value: API_CONTENT_SECURITY_POLICY }],
+      },
+    ];
   },
 };
 

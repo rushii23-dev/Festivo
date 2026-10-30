@@ -53,6 +53,13 @@ export function contentSecurityPolicy(
   return policy.join("; ");
 }
 
+/**
+ * API responses are JSON and never render: nothing may load, run or frame them.
+ * Applied to /api/* in next.config.ts (pages get the nonce policy from proxy.ts).
+ */
+export const API_CONTENT_SECURITY_POLICY =
+  "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+
 /** Static hardening headers for every response, including API routes. */
 export function securityHeaders({
   isHttps,
@@ -68,6 +75,10 @@ export function securityHeaders({
     },
     { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
     { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+    // Keeps this origin in its own agent cluster (process), away from same-site pages.
+    { key: "Origin-Agent-Cluster", value: "?1" },
+    // No Flash or PDF cross-domain policy files may grant other sites access.
+    { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
     ...(isHttps
       ? [
           {

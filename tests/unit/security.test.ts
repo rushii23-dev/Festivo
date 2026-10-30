@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { detectInjection, escapeForTag, wrapUserData } from "@/lib/security/promptGuard";
-import { clientKey, createRateLimiter } from "@/lib/security/rateLimit";
+import {
+  clientKey,
+  createRateLimiter,
+  normalizeIp,
+  trustedProxyHops,
+} from "@/lib/security/rateLimit";
 import { cleanDeep, cleanText, stripControlChars } from "@/lib/security/sanitize";
 
 describe("stripControlChars", () => {
@@ -133,6 +138,27 @@ describe("rate limiter", () => {
     expect(limiter.size).toBe(0);
   });
 
+  it("keeps a blocked client blocked while rotating addresses flood the map", () => {
+    const { limiter, advance } = setup(3, 0.1, 100);
+    for (let i = 0; i < 3; i++) limiter.take("abuser");
+    expect(limiter.take("abuser").allowed).toBe(false);
+
+    for (let i = 0; i < 5_000; i++) {
+      limiter.take(`rotating-${i}`);
+      advance(1);
+    }
+    expect(limiter.size).toBe(100);
+    // Still blocked: eviction only reclaims buckets that are not rate limited.
+    expect(limiter.take("abuser").allowed).toBe(false);
+  });
+
+  it("frees memory from the oldest bucket when every one is blocked", () => {
+    const { limiter } = setup(1, 0.01, 3);
+    for (const key of ["a", "b", "c", "d"]) limiter.take(key);
+    expect(limiter.size).toBe(3);
+    expect(limiter.take("a").allowed).toBe(true); // the oldest went, so it starts fresh
+  });
+
   it("rejects invalid settings", () => {
     expect(() => createRateLimiter({ capacity: 0, refillPerSecond: 1 })).toThrow(
       RangeError,
@@ -141,8 +167,20 @@ describe("rate limiter", () => {
 });
 
 describe("clientKey", () => {
-  it("uses the first forwarded address", () => {
-    expect(clientKey(new Headers({ "x-forwarded-for": "203.0.113.7, 10.0.0.1" }))).toBe(
+  it("trusts the address our proxy appended, never the one the client sent", () => {
+    // A client can send any X-Forwarded-For; the proxy appends the real address.
+    const spoofed = new Headers({ "x-forwarded-for": "6.6.6.6, 203.0.113.7" });
+    expect(clientKey(spoofed, 1)).toBe("203.0.113.7");
+    const rotated = new Headers({ "x-forwarded-for": "7.7.7.7, 203.0.113.7" });
+    expect(clientKey(rotated, 1)).toBe(clientKey(spoofed, 1));
+  });
+
+  it("counts extra trusted proxies from the right", () => {
+    const behindBalancer = new Headers({
+      "x-forwarded-for": "6.6.6.6, 203.0.113.7, 10.0.0.1",
+    });
+    expect(clientKey(behindBalancer, 2)).toBe("203.0.113.7");
+    expect(clientKey(new Headers({ "x-forwarded-for": "203.0.113.7" }), 3)).toBe(
       "203.0.113.7",
     );
   });
@@ -153,5 +191,37 @@ describe("clientKey", () => {
     expect(clientKey(new Headers({ "x-forwarded-for": "x".repeat(100) }))).toBe(
       "anonymous",
     );
+    expect(clientKey(new Headers({ "x-forwarded-for": "not-an-address" }))).toBe(
+      "anonymous",
+    );
+  });
+
+  it("reads the number of trusted proxies from the environment", () => {
+    expect(trustedProxyHops({})).toBe(1);
+    expect(trustedProxyHops({ TRUSTED_PROXY_HOPS: "2" })).toBe(2);
+    expect(trustedProxyHops({ TRUSTED_PROXY_HOPS: "0" })).toBe(1);
+    expect(trustedProxyHops({ TRUSTED_PROXY_HOPS: "lots" })).toBe(1);
+  });
+});
+
+describe("normalizeIp", () => {
+  it("keeps IPv4 and strips ports and IPv4-mapped prefixes", () => {
+    expect(normalizeIp("203.0.113.7")).toBe("203.0.113.7");
+    expect(normalizeIp(" 203.0.113.7:4431 ")).toBe("203.0.113.7");
+    expect(normalizeIp("::ffff:198.51.100.2")).toBe("198.51.100.2");
+  });
+
+  it("groups IPv6 by its /64 network, in any notation", () => {
+    const network = "2001:db8:85a3:0::/64";
+    expect(normalizeIp("2001:db8:85a3::8a2e:370:7334")).toBe(network);
+    expect(normalizeIp("2001:0DB8:85A3:0000:1111:2222:3333:4444")).toBe(network);
+    expect(normalizeIp("[2001:db8:85a3::1]:443")).toBe(network);
+    expect(normalizeIp("fe80::1%eth0")).toBe("fe80:0:0:0::/64");
+  });
+
+  it("rejects anything that is not an address", () => {
+    for (const bad of ["", "999.1.1.1", "1::2::3", "1:2:3:4:5:6:7:8:9", "localhost"]) {
+      expect(normalizeIp(bad), bad).toBeNull();
+    }
   });
 });

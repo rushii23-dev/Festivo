@@ -61,9 +61,15 @@ export function validationError(
 
 /**
  * Rejects cross-site browser requests (another site posting to our API with
- * a visitor's browser). Requests without an Origin header (curl, tests) pass.
+ * a visitor's browser). Browsers label every request with Sec-Fetch-Site and
+ * send Origin on POSTs; either one pointing elsewhere is refused. Requests with
+ * neither (curl, server-to-server, tests) pass to the rate limit.
  */
 export function checkOrigin(request: Request): Response | null {
+  const site = request.headers.get("sec-fetch-site");
+  if (site && site !== "same-origin" && site !== "none") {
+    return errorResponse(403, "forbidden", "This request is not allowed.");
+  }
   const origin = request.headers.get("origin");
   if (!origin) return null;
   const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
@@ -89,6 +95,40 @@ export function checkRateLimit(request: Request, cost = 1): Response | null {
 
 export type BodyResult = { ok: true; value: unknown } | { ok: false; response: Response };
 
+const TOO_LARGE = () => errorResponse(413, "too-large", "That request is too large.");
+
+/**
+ * Reads a body as UTF-8 text, stopping as soon as it passes `maxBytes`: a client
+ * that leaves out Content-Length (chunked upload) cannot make us buffer more.
+ * Returns null when the body is too large; throws on bytes that are not UTF-8.
+ */
+async function readCapped(
+  body: ReadableStream<Uint8Array> | null,
+  maxBytes: number,
+): Promise<string | null> {
+  if (!body) return "";
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+}
+
 export async function readJsonBody(
   request: Request,
   maxBytes: number,
@@ -101,20 +141,10 @@ export async function readJsonBody(
     };
   }
   const declared = Number(request.headers.get("content-length") ?? "0");
-  if (declared > maxBytes) {
-    return {
-      ok: false,
-      response: errorResponse(413, "too-large", "That request is too large."),
-    };
-  }
-  const text = await request.text();
-  if (new TextEncoder().encode(text).length > maxBytes) {
-    return {
-      ok: false,
-      response: errorResponse(413, "too-large", "That request is too large."),
-    };
-  }
+  if (declared > maxBytes) return { ok: false, response: TOO_LARGE() };
   try {
+    const text = await readCapped(request.body, maxBytes);
+    if (text === null) return { ok: false, response: TOO_LARGE() };
     return { ok: true, value: JSON.parse(text) };
   } catch {
     return {

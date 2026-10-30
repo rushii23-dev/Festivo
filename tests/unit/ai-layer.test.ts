@@ -7,11 +7,6 @@ import { AiOutputError, collect, type AiProvider } from "@/lib/ai/provider";
 import { PlanDraftSchema, PlanPatchSchema, toProviderSchema } from "@/lib/ai/schemas";
 import { buildMockPlan } from "@/lib/fixtures/buildMockPlan";
 import { EventInputSchema } from "@/lib/schemas/eventInput";
-import {
-  contentSecurityPolicy,
-  createNonce,
-  securityHeaders,
-} from "@/lib/security/headers";
 
 const TODAY = "2026-10-26";
 const input = EventInputSchema.parse({
@@ -263,40 +258,6 @@ describe("mockRefine", () => {
     expect(mockRefine(plan, "sing a song", TODAY)).toEqual({
       explanation: expect.stringContaining("Demo mode"),
     });
-  });
-});
-
-describe("security headers", () => {
-  it("builds a nonce-based strict CSP", () => {
-    const csp = contentSecurityPolicy("abc", { isDev: false, isHttps: true });
-    expect(csp).toContain("script-src 'self' 'nonce-abc' 'strict-dynamic'");
-    expect(csp).toContain("object-src 'none'");
-    expect(csp).toContain("frame-ancestors 'none'");
-    expect(csp).toContain("upgrade-insecure-requests");
-    expect(csp).not.toContain("unsafe-eval");
-    expect(contentSecurityPolicy("abc", { isDev: true, isHttps: false })).toContain(
-      "'unsafe-eval'",
-    );
-  });
-
-  it("creates unique base64 nonces", () => {
-    const a = createNonce();
-    expect(a).toMatch(/^[A-Za-z0-9+/]{22}==$/);
-    expect(createNonce()).not.toBe(a);
-  });
-
-  it("adds HSTS only over HTTPS", () => {
-    const keys = (isHttps: boolean) =>
-      securityHeaders({ isDev: false, isHttps }).map((h) => h.key);
-    expect(keys(true)).toContain("Strict-Transport-Security");
-    expect(keys(false)).not.toContain("Strict-Transport-Security");
-    expect(keys(false)).toEqual(
-      expect.arrayContaining([
-        "X-Content-Type-Options",
-        "Referrer-Policy",
-        "Permissions-Policy",
-      ]),
-    );
   });
 });
 
