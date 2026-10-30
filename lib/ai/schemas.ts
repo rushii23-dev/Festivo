@@ -3,6 +3,7 @@
  * the model writes content and rough numbers; code assigns IDs, computes
  * every date from `daysBefore`, and re-normalises the budget.
  */
+import "server-only";
 import { z } from "zod";
 import { BudgetCategorySchema, IsoDateSchema, textField } from "@/lib/schemas/common";
 import { LIMITS } from "@/lib/schemas/eventInput";

@@ -2,6 +2,7 @@
  * Turns streamed model text into validated data: extract JSON, validate with
  * Zod, and on failure ask the model once to repair its own answer.
  */
+import "server-only";
 import type { z } from "zod";
 import { buildRepairPrompt } from "./prompts";
 import { AiOutputError, type AiProvider, type StructuredTask } from "./provider";
@@ -47,7 +48,7 @@ export interface GenerateOptions<T> {
   provider: AiProvider;
   task: StructuredTask;
   schema: z.ZodType<T>;
-  signal?: AbortSignal;
+  signal?: AbortSignal | undefined;
   /** Called with the text received so far, for progress reporting. */
   onText?: (soFar: string) => void;
   /** Called once if the first reply was invalid and a repair is being attempted. */

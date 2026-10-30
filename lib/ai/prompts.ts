@@ -3,6 +3,7 @@
  * piece of user-typed text goes through wrapUserData so it is delimited,
  * cleaned, length-capped and escaped.
  */
+import "server-only";
 import { categoriesFor } from "@/lib/budget/categories";
 import { formatOf, occasionOf, vendorsFor } from "@/lib/events/kind";
 import type { EventInput, Tickets } from "@/lib/schemas/eventInput";
