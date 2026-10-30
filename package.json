@@ -2,6 +2,8 @@
   "name": "festivo",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "description": "A GenAI planning assistant for weddings, birthdays and community events: budgets, timelines, vendor checklists and personalized ideas.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
