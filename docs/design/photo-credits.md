@@ -17,10 +17,9 @@ Downloaded on 2026-10-28 at 1920px on the long edge.
 | `diyas.jpg`              | [Udayaditya Barua](https://unsplash.com/@nookscribe)    | [Photo](https://unsplash.com/photos/lit-oil-lamps-on-decorative-tray-xisPXJqwQkA)                            |
 | `banquet-table.jpg`      | [Dragon White Munthe](https://unsplash.com/@fotomagi)   | [Photo](https://unsplash.com/photos/festive-holiday-table-setting-with-golden-chairs-and-lights-9b1Jum6uw2g) |
 | `thali.jpg`              | [Zoshua Colah](https://unsplash.com/@zoshuacolah)       | [Photo](https://unsplash.com/photos/delicious-indian-meal-served-on-a-platter-4pT9e68P_mU)                   |
-| `birthday-cake.jpg`      | [Duncan Kidd](https://unsplash.com/@we_the_royal)       | [Photo](https://unsplash.com/photos/chocolate-birthday-cake-with-lit-candles-qSPxjNn7Uy8)                    |
 | `birthday-candles.jpg`   | [prosha amiri](https://unsplash.com/@proshaaaa)         | [Photo](https://unsplash.com/photos/brown-icing-covered-cake-with-lighted-candles-LpnfAOXoGGE)               |
 | `lights-under-trees.jpg` | [Matthew Buchanan](https://unsplash.com/@mthwbchn)      | [Photo](https://unsplash.com/photos/people-under-trees-with-string-lights-Xaz9hnAl7qg)                       |
 | `festival-drummers.jpg`  | [Aditya Sethia](https://unsplash.com/@aditya_sethia_97) | [Photo](https://unsplash.com/photos/a-group-of-men-standing-next-to-each-other-holding-drums-AWLBoEF0_Xg)    |
 | `holi.jpg`               | [Dibakar Roy](https://unsplash.com/@dibakar16roy)       | [Photo](https://unsplash.com/photos/crowd-celebrating-holi-festival-with-colored-powders-QROlcp4oPiU)        |
 
-`photo-shortlist.jpg` in this folder is the contact sheet the user approved.
+The contact sheet the user approved is kept outside the repository.

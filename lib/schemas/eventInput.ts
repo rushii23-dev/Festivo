@@ -100,7 +100,6 @@ export const DetailsSchema = z.strictObject({
     .max(LIMITS.daysMax, { error: `Festivo plans up to ${LIMITS.daysMax} days.` })
     .optional(),
 });
-export type Details = z.infer<typeof DetailsSchema>;
 
 export const EventInputSchema = z
   .strictObject({

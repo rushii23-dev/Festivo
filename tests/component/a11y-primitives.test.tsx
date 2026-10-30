@@ -2,7 +2,6 @@ import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AnnouncerProvider, useAnnounce } from "@/components/a11y/LiveRegion";
 import { SkipLink } from "@/components/a11y/SkipLink";
-import { VisuallyHidden } from "@/components/a11y/VisuallyHidden";
 
 function AnnounceButton({
   message,
@@ -29,13 +28,6 @@ describe("SkipLink", () => {
       "href",
       "#main",
     );
-  });
-});
-
-describe("VisuallyHidden", () => {
-  it("keeps text available to assistive tech", () => {
-    render(<VisuallyHidden className="x">Budget total</VisuallyHidden>);
-    expect(screen.getByText("Budget total")).toHaveClass("sr-only", "x");
   });
 });
 

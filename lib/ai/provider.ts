@@ -7,8 +7,6 @@ import "server-only";
 import type { EventInput } from "@/lib/schemas/eventInput";
 import type { IdeaCategory, Plan } from "@/lib/schemas/plan";
 
-export type TaskKind = "plan" | "refine" | "ideas" | "repair";
-
 /** Typed context alongside the prompt, so the mock provider can answer without parsing prose. */
 export type TaskContext =
   | { kind: "plan"; input: EventInput; today: string }

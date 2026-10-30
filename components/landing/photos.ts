@@ -6,7 +6,6 @@
 import type { StaticImageData } from "next/image";
 import ballroomMandapJpg from "@/public/images/ballroom-mandap.jpg";
 import banquetTableJpg from "@/public/images/banquet-table.jpg";
-import birthdayCakeJpg from "@/public/images/birthday-cake.jpg";
 import birthdayCandlesJpg from "@/public/images/birthday-candles.jpg";
 import brideJpg from "@/public/images/bride.jpg";
 import diyasJpg from "@/public/images/diyas.jpg";
@@ -33,11 +32,6 @@ export const ballroomMandap: SitePhoto = {
 export const banquetTable: SitePhoto = {
   src: banquetTableJpg,
   alt: "A long dinner table set with candles, glassware and golden chairs",
-};
-
-export const birthdayCake: SitePhoto = {
-  src: birthdayCakeJpg,
-  alt: "A chocolate birthday cake with lit candles glowing in the dark",
 };
 
 export const birthdayCandles: SitePhoto = {
@@ -107,7 +101,6 @@ export const thali: SitePhoto = {
 export const PHOTOS = {
   ballroomMandap,
   banquetTable,
-  birthdayCake,
   birthdayCandles,
   bride,
   diyas,

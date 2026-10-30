@@ -4,29 +4,11 @@ import type {
   Ceremony,
   Currency,
   DietaryNeed,
-  EventType,
   Format,
   Setting,
   Vibe,
 } from "@/lib/schemas/common";
 import type { StepId } from "./draft";
-
-export const EVENT_TYPE_COPY: Record<EventType, { title: string; description: string }> =
-  {
-    wedding: {
-      title: "Wedding",
-      description: "From the mehendi to the reception, with every function in one plan.",
-    },
-    birthday: {
-      title: "Birthday",
-      description: "A first birthday, a surprise fortieth, or a garden party for eighty.",
-    },
-    community: {
-      title: "Community event",
-      description:
-        "Street fairs, festivals, fundraisers and neighbourhood get-togethers.",
-    },
-  };
 
 export const VIBE_LABELS: Record<Vibe, string> = {
   elegant: "Elegant",

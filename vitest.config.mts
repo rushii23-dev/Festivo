@@ -67,7 +67,6 @@ export default defineConfig({
       ],
       exclude: [
         "lib/**/*.d.ts",
-        "lib/utils.ts",
         // Browser-only: the root HTML document (fonts, nonce script), the GSAP scroll
         // scenes and the canvas petals cannot run in jsdom. Playwright covers them.
         "app/layout.tsx",

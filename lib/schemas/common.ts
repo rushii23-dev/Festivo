@@ -12,12 +12,6 @@ export const EVENT_TYPES = ["wedding", "birthday", "community"] as const;
 export const EventTypeSchema = z.enum(EVENT_TYPES);
 export type EventType = z.infer<typeof EventTypeSchema>;
 
-export const EVENT_TYPE_LABELS: Record<EventType, string> = {
-  wedding: "Wedding",
-  birthday: "Birthday",
-  community: "Community event",
-};
-
 /** The groups people browse first, then the occasion inside the group. */
 export const OCCASION_GROUPS = ["life", "festival", "meetup", "work"] as const;
 export const OccasionGroupSchema = z.enum(OCCASION_GROUPS);
@@ -76,7 +70,6 @@ export type Format = z.infer<typeof FormatSchema>;
 
 export const TICKET_PRICING = ["free", "paid"] as const;
 export const TicketPricingSchema = z.enum(TICKET_PRICING);
-export type TicketPricing = z.infer<typeof TicketPricingSchema>;
 
 export const CURRENCIES = ["INR", "USD", "EUR", "GBP"] as const;
 export const CurrencySchema = z.enum(CURRENCIES);
@@ -170,7 +163,6 @@ export type Setting = z.infer<typeof SettingSchema>;
 
 /** A calendar date with no time zone, e.g. "2027-02-14". */
 export const IsoDateSchema = z.iso.date({ error: "Use a date like 2027-02-14." });
-export type IsoDate = z.infer<typeof IsoDateSchema>;
 
 /** Plain text field: trimmed, length-capped. Sanitising happens in lib/security. */
 export function textField(max: number, label: string) {

@@ -38,7 +38,6 @@ import { eventDateProblem } from "@/lib/timeline/resolveDate";
 
 /** "none": no registration; "free" or "paid": guests register for a ticket. */
 export const TICKET_CHOICES = ["none", "free", "paid"] as const;
-export type TicketChoice = (typeof TICKET_CHOICES)[number];
 
 export const WizardDraftSchema = z.object({
   eventType: EventTypeSchema.or(z.literal("")),

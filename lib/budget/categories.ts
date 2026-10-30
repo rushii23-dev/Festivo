@@ -24,7 +24,7 @@ export const BUDGET_CATEGORY_LABELS: Record<BudgetCategory, string> = {
 };
 
 /** Shares and categories depend on the occasion and format: see lib/events/kind. */
-export { budgetShares, categoriesFor } from "@/lib/events/kind";
+export { categoriesFor } from "@/lib/events/kind";
 
 /** Priority 1–5 scales a category's share; 3 leaves it unchanged. */
 export const PRIORITY_MULTIPLIER: Record<number, number> = {
