@@ -16,13 +16,8 @@ function Line({ term, children }: { term: string; children: ReactNode }) {
 
 const Empty = () => <span className="text-muted-foreground italic">Not yet</span>;
 
-/**
- * The answers so far, set like an invitation card beside the questions. It
- * repeats what the form already says, so it is a labelled aside that screen
- * reader users can skip.
- */
-export function PlanSoFar({ draft, today }: { draft: WizardDraft; today: string }) {
-  const occasion = draftOccasion(draft);
+/** The answers as a list of lines: when, where, who, budget, tickets, style. */
+function Details({ draft, today }: { draft: WizardDraft; today: string }) {
   const questions = draftQuestions(draft);
   const total = parseMoneyInput(draft.budgetTotal);
   const dateSet = draft.dateKind === "flexible" || Boolean(draft.date);
@@ -31,6 +26,40 @@ export function PlanSoFar({ draft, today }: { draft: WizardDraft; today: string 
     questions.formats.length > 1 ? FORMAT_COPY[draft.format].label : null,
     draft.location.trim() || null,
   ].filter(Boolean);
+  const people =
+    draft.group === "work" || draft.group === "meetup" ? "Attendees" : "Guests";
+
+  return (
+    <dl className="hidden lg:grid">
+      <Line term="When">
+        {dateSet ? describeDate(draft, today) : <Empty />}
+        {questions.multiDay && days > 1 ? `, ${days} days` : null}
+      </Line>
+      <Line term="Where">{where.length > 0 ? where.join(", ") : <Empty />}</Line>
+      <Line term={people}>
+        {draft.guestCount.trim() || <Empty />}
+        {questions.kids && draft.kids ? ", with children" : null}
+      </Line>
+      <Line term="Budget">{total ? formatMoney(total, draft.currency) : <Empty />}</Line>
+      {questions.tickets ? <Line term="Tickets">{describeTickets(draft)}</Line> : null}
+      <Line term="Style">
+        {draft.vibes.length > 0 ? (
+          draft.vibes.map((v) => VIBE_LABELS[v]).join(", ")
+        ) : (
+          <Empty />
+        )}
+      </Line>
+    </dl>
+  );
+}
+
+/**
+ * The answers so far, set like an invitation card beside the questions. It
+ * repeats what the form already says, so it is a labelled aside that screen
+ * reader users can skip.
+ */
+export function PlanSoFar({ draft, today }: { draft: WizardDraft; today: string }) {
+  const occasion = draftOccasion(draft);
   const short = [occasion?.label, draft.name.trim(), draft.location.trim()]
     .filter(Boolean)
     .join(" · ");
@@ -67,34 +96,7 @@ export function PlanSoFar({ draft, today }: { draft: WizardDraft; today: string 
           </p>
         </div>
 
-        <dl className="hidden lg:grid">
-          <Line term="When">
-            {dateSet ? describeDate(draft, today) : <Empty />}
-            {questions.multiDay && days > 1 ? `, ${days} days` : null}
-          </Line>
-          <Line term="Where">{where.length > 0 ? where.join(", ") : <Empty />}</Line>
-          <Line
-            term={
-              draft.group === "work" || draft.group === "meetup" ? "Attendees" : "Guests"
-            }
-          >
-            {draft.guestCount.trim() || <Empty />}
-            {questions.kids && draft.kids ? ", with children" : null}
-          </Line>
-          <Line term="Budget">
-            {total ? formatMoney(total, draft.currency) : <Empty />}
-          </Line>
-          {questions.tickets ? (
-            <Line term="Tickets">{describeTickets(draft)}</Line>
-          ) : null}
-          <Line term="Style">
-            {draft.vibes.length > 0 ? (
-              draft.vibes.map((v) => VIBE_LABELS[v]).join(", ")
-            ) : (
-              <Empty />
-            )}
-          </Line>
-        </dl>
+        <Details draft={draft} today={today} />
       </div>
     </aside>
   );

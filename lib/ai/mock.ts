@@ -5,6 +5,7 @@
  */
 import "server-only";
 import { buildMockPlan, fixtureFor, selectIdeas } from "@/lib/fixtures/buildMockPlan";
+import type { IdeaSeed } from "@/lib/fixtures/types";
 import { occasionOf } from "@/lib/events/kind";
 import type { Plan } from "@/lib/schemas/plan";
 import type { Vibe } from "@/lib/schemas/common";
@@ -19,7 +20,11 @@ const sleep = (ms: number, signal?: AbortSignal) =>
     const timer = setTimeout(resolve, ms);
     signal?.addEventListener("abort", () => {
       clearTimeout(timer);
-      reject(signal.reason);
+      reject(
+        signal.reason instanceof Error
+          ? signal.reason
+          : new DOMException("The request was cancelled.", "AbortError"),
+      );
     });
   });
 
@@ -74,109 +79,122 @@ function nextMonthDate(monthIndex: number, today: string, year?: number): string
   return diffDays(today, candidate) >= 14 ? candidate : `${thisYear + 1}-${month}-15`;
 }
 
+/** What one demo-mode rule sees, and where it writes its part of the patch. */
+interface RefineRule {
+  plan: Plan;
+  text: string;
+  today: string;
+  patch: Partial<PlanPatch>;
+  notes: string[];
+  fixture: ReturnType<typeof fixtureFor>;
+  shownTitles: Set<string>;
+}
+
+const asNewIdea = ({ category, title, description, costTier }: IdeaSeed) => ({
+  category,
+  title,
+  description,
+  costTier,
+});
+
+/** "Cut budget by 20%", "raise it by 10%". */
+function refineBudget({ plan, text, patch, notes }: RefineRule) {
+  const percent = /(\d{1,2})\s*%/.exec(text)?.[1];
+  if (!percent) return;
+  const cut = /\b(cut|reduce|lower|decrease|trim|less)\b/.test(text);
+  const raise = !cut && /\b(increase|raise|add|more|boost)\b/.test(text);
+  if (!cut && !raise) return;
+  const p = Number(percent) / 100;
+  patch.totalBudget = Math.round(plan.totalBudget * (cut ? 1 - p : 1 + p));
+  notes.push(
+    `${cut ? "lowers" : "raises"} the total budget by ${percent}% and scales every category to match`,
+  );
+}
+
+/** "Move the date to March (2027)". */
+function refineDate({ plan, text, today, patch, notes }: RefineRule) {
+  const monthIndex = MONTHS.findIndex((m) => text.includes(m));
+  if (monthIndex < 0 || !/\b(move|change|shift|push|date|reschedule)\b/.test(text))
+    return;
+  const year = /\b(20\d{2})\b/.exec(text)?.[1];
+  const date = nextMonthDate(monthIndex, today, year ? Number(year) : undefined);
+  if (diffDays(today, date) < 1 || date === plan.date) return;
+  patch.date = date;
+  notes.push(
+    `moves the event to the 15th of ${MONTHS[monthIndex]} and shifts every task with it`,
+  );
+}
+
+/** "Make it eco-friendly", "more traditional". */
+function refineVibe({ text, patch, notes, fixture, shownTitles }: RefineRule) {
+  const wantsEco = /\b(eco|green|sustainab|zero[- ]waste|plastic)\b/.test(text);
+  const target: Vibe | undefined = wantsEco
+    ? "eco-friendly"
+    : VIBES.find((v) => text.includes(v.split("-")[0] ?? v));
+  if (!target) return;
+  const fresh = fixture.ideas.filter(
+    (seed) => seed.vibes.includes(target) && !shownTitles.has(seed.title),
+  );
+  if (fresh.length === 0) return;
+  patch.addIdeas = fresh.slice(0, 4).map(asNewIdea);
+  notes.push(`adds ${patch.addIdeas.length} ${target} ideas`);
+}
+
+/** "Make it cheaper": drops unsaved splurges and suggests budget-friendly ideas. */
+function refineCheaper({ plan, text, patch, notes, fixture, shownTitles }: RefineRule) {
+  if (!/\b(cheaper|save money|budget[- ]friendly|affordable|frugal)\b/.test(text)) return;
+  const splurges = plan.ideas.filter((i) => i.costTier === 3 && !i.saved);
+  if (splurges.length > 0) {
+    patch.removeIdeaIds = splurges.map((i) => i.id);
+    notes.push(`removes ${splurges.length} splurge ideas you have not saved`);
+  }
+  const cheaper = fixture.ideas
+    .filter((seed) => seed.costTier === 1 && !shownTitles.has(seed.title))
+    .filter((seed) => !patch.addIdeas?.some((idea) => idea.title === seed.title))
+    .slice(0, 3);
+  if (cheaper.length === 0) return;
+  patch.addIdeas = [...(patch.addIdeas ?? []), ...cheaper.map(asNewIdea)];
+  notes.push(`adds ${cheaper.length} budget-friendly ideas`);
+}
+
+const REFINE_RULES = [refineBudget, refineDate, refineVibe, refineCheaper];
+
 /** Rule-based refine for demo mode: understands the common instructions. */
 export function mockRefine(plan: Plan, instruction: string, today: string): PlanPatch {
-  const text = instruction.toLowerCase();
-  const patch: Partial<PlanPatch> = {};
-  const notes: string[] = [];
-
-  const percent = /(\d{1,2})\s*%/.exec(text);
-  if (percent?.[1] && /\b(cut|reduce|lower|decrease|trim|less)\b/.test(text)) {
-    const p = Number(percent[1]) / 100;
-    patch.totalBudget = Math.round(plan.totalBudget * (1 - p));
-    notes.push(
-      `lowers the total budget by ${percent[1]}% and scales every category to match`,
-    );
-  } else if (percent?.[1] && /\b(increase|raise|add|more|boost)\b/.test(text)) {
-    const p = Number(percent[1]) / 100;
-    patch.totalBudget = Math.round(plan.totalBudget * (1 + p));
-    notes.push(
-      `raises the total budget by ${percent[1]}% and scales every category to match`,
-    );
-  }
-
-  const monthIndex = MONTHS.findIndex((m) => text.includes(m));
-  if (monthIndex >= 0 && /\b(move|change|shift|push|date|reschedule)\b/.test(text)) {
-    const year = /\b(20\d{2})\b/.exec(text)?.[1];
-    const date = nextMonthDate(monthIndex, today, year ? Number(year) : undefined);
-    if (diffDays(today, date) >= 1 && date !== plan.date) {
-      patch.date = date;
-      notes.push(
-        `moves the event to the 15th of ${MONTHS[monthIndex]} and shifts every task with it`,
-      );
-    }
-  }
-
-  const fixture = fixtureFor(plan);
-  const shownTitles = new Set(plan.ideas.map((i) => i.title));
-  const vibe = VIBES.find((v) => text.includes(v.split("-")[0] ?? v));
-  const wantsEco = /\b(eco|green|sustainab|zero[- ]waste|plastic)\b/.test(text);
-  const targetVibe: Vibe | undefined = wantsEco ? "eco-friendly" : vibe;
-  if (targetVibe) {
-    const fresh = fixture.ideas.filter(
-      (seed) => seed.vibes.includes(targetVibe) && !shownTitles.has(seed.title),
-    );
-    if (fresh.length > 0) {
-      patch.addIdeas = fresh
-        .slice(0, 4)
-        .map(({ category, title, description, costTier }) => ({
-          category,
-          title,
-          description,
-          costTier,
-        }));
-      notes.push(`adds ${patch.addIdeas.length} ${targetVibe} ideas`);
-    }
-  }
-
-  if (/\b(cheaper|save money|budget[- ]friendly|affordable|frugal)\b/.test(text)) {
-    const splurges = plan.ideas.filter((i) => i.costTier === 3 && !i.saved);
-    if (splurges.length > 0) {
-      patch.removeIdeaIds = splurges.map((i) => i.id);
-      notes.push(`removes ${splurges.length} splurge ideas you have not saved`);
-    }
-    const cheaper = fixture.ideas
-      .filter((seed) => seed.costTier === 1 && !shownTitles.has(seed.title))
-      .filter((seed) => !patch.addIdeas?.some((idea) => idea.title === seed.title))
-      .slice(0, 3);
-    if (cheaper.length > 0) {
-      patch.addIdeas = [
-        ...(patch.addIdeas ?? []),
-        ...cheaper.map(({ category, title, description, costTier }) => ({
-          category,
-          title,
-          description,
-          costTier,
-        })),
-      ];
-      notes.push(`adds ${cheaper.length} budget-friendly ideas`);
-    }
-  }
+  const rule: RefineRule = {
+    plan,
+    text: instruction.toLowerCase(),
+    today,
+    patch: {},
+    notes: [],
+    fixture: fixtureFor(plan),
+    shownTitles: new Set(plan.ideas.map((i) => i.title)),
+  };
+  for (const apply of REFINE_RULES) apply(rule);
 
   const explanation =
-    notes.length > 0
-      ? `This change ${notes.join(", and ")}.`
+    rule.notes.length > 0
+      ? `This change ${rule.notes.join(", and ")}.`
       : "Demo mode understands changes like “cut budget by 20%”, “move the date to March”, “make it eco-friendly” or “make it cheaper”. Add a Gemini key for any other request.";
-  return { explanation, ...patch };
+  return { explanation, ...rule.patch };
 }
 
 function mockIdeas(context: Extract<TaskContext, { kind: "ideas" }>): IdeasDraft {
   const { plan, category, excludeTitles } = context;
   const exclude = new Set(excludeTitles);
   const seeds = fixtureFor(plan).ideas.filter((s) => !exclude.has(s.title));
-  const picked = selectIdeas(
-    seeds,
+  const picked = selectIdeas(seeds, {
     category,
-    plan.vibes,
-    {
+    vibes: plan.vibes,
+    budget: {
       eventType: plan.eventType,
       currency: plan.currency,
       totalBudget: plan.totalBudget,
       guestCount: plan.guestCount,
       occasion: occasionOf(plan).id,
     },
-    3,
-  );
+    count: 3,
+  });
   return {
     ideas: picked.map(({ category: c, title, description, costTier }) => ({
       category: c,

@@ -51,6 +51,16 @@ interface BudgetContext {
   occasion?: Occasion | undefined;
 }
 
+export interface IdeaSelection {
+  category: IdeaCategory;
+  vibes: readonly Vibe[];
+  budget: BudgetContext;
+  /** How many to return (default IDEAS_PER_CATEGORY). */
+  count?: number;
+  /** Seed keys already shown. */
+  excludeKeys?: ReadonlySet<string>;
+}
+
 /**
  * Ranks idea seeds for a category: ideas written for the occasion first, then
  * more matching vibes, then ideas that fit the budget, then the fixture's own
@@ -58,11 +68,13 @@ interface BudgetContext {
  */
 export function selectIdeas(
   seeds: readonly IdeaSeed[],
-  category: IdeaCategory,
-  vibes: readonly Vibe[],
-  budget: BudgetContext,
-  count = IDEAS_PER_CATEGORY,
-  excludeKeys: ReadonlySet<string> = new Set(),
+  {
+    category,
+    vibes,
+    budget,
+    count = IDEAS_PER_CATEGORY,
+    excludeKeys = new Set(),
+  }: IdeaSelection,
 ): IdeaSeed[] {
   return seeds
     .map((seed, index) => ({ seed, index }))
@@ -146,7 +158,11 @@ export function buildMockPlan(
     "favors",
   ];
   const ideas = ideaCategories.flatMap((category) =>
-    selectIdeas(fixture.ideas, category, input.vibes, budgetContext).map(ideaFromSeed),
+    selectIdeas(fixture.ideas, {
+      category,
+      vibes: input.vibes,
+      budget: budgetContext,
+    }).map(ideaFromSeed),
   );
 
   const summary =

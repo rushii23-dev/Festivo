@@ -178,6 +178,141 @@ export const ONLINE_ACCESSIBILITY = [
   "large-print",
 ] as const;
 
+type SetError = (field: DraftField, message: string | undefined) => void;
+
+/** A number typed into a text field: how to read it and what to say when it is wrong. */
+interface NumberRule {
+  parse: (raw: string) => number | null;
+  /** Shown when the field is empty; leave out for optional fields. */
+  missing?: string;
+  /** Shown when the text is not a number. */
+  invalid: string;
+  /** The schema's own limits (minimum, maximum). */
+  schema: z.ZodType;
+}
+
+function numberProblem(raw: string, rule: NumberRule): string | undefined {
+  if (raw.trim() === "") return rule.missing;
+  const value = rule.parse(raw);
+  return value === null ? rule.invalid : firstMessage(rule.schema.safeParse(value));
+}
+
+function validateType(draft: WizardDraft, _today: string, set: SetError) {
+  if (draft.occasion) return;
+  if (draft.group) set("occasion", "Choose the occasion you're planning.");
+  else set("group", "Choose the kind of event you're planning.");
+}
+
+function validateDate(draft: WizardDraft, today: string, set: SetError) {
+  if (draft.dateKind !== "fixed") {
+    if (draft.month)
+      set("month", eventDateProblem(draftEventDate(draft), today) ?? undefined);
+    return;
+  }
+  if (!draft.date) {
+    set("date", "Pick a date, or choose “My date is flexible”.");
+    return;
+  }
+  const date = draftEventDate(draft);
+  set(
+    "date",
+    firstMessage(shape.date.safeParse(date)) ??
+      eventDateProblem(date, today) ??
+      undefined,
+  );
+}
+
+function validateBasics(draft: WizardDraft, today: string, set: SetError) {
+  const questions = draftQuestions(draft);
+  set("name", firstMessage(shape.name.safeParse(draft.name)));
+  validateDate(draft, today, set);
+  if (questions.multiDay) {
+    set(
+      "days",
+      numberProblem(draft.days, {
+        parse: parseGuestCount,
+        missing: "Use a whole number of days, like 2.",
+        invalid: "Use a whole number of days, like 2.",
+        schema: DetailsSchema.shape.days,
+      }),
+    );
+  }
+  set("location", firstMessage(shape.location.safeParse(draft.location)));
+  set(
+    "guestCount",
+    numberProblem(draft.guestCount, {
+      parse: parseGuestCount,
+      missing: "Enter how many guests you expect.",
+      invalid: "Use a whole number, like 120.",
+      schema: shape.guestCount,
+    }),
+  );
+  if (questions.age) {
+    set(
+      "ageTurning",
+      numberProblem(draft.ageTurning, {
+        parse: parseGuestCount,
+        invalid: "Use a whole number, like 7.",
+        schema: DetailsSchema.shape.ageTurning,
+      }),
+    );
+  }
+}
+
+function validateBudget(draft: WizardDraft, _today: string, set: SetError) {
+  set(
+    "budgetTotal",
+    numberProblem(draft.budgetTotal, {
+      parse: parseMoneyInput,
+      missing: "Enter your total budget.",
+      invalid: "Use numbers only, like 250000.",
+      schema: BudgetInputSchema.shape.total,
+    }),
+  );
+  if (!draftQuestions(draft).tickets || draft.tickets === "none") return;
+  if (draft.tickets === "paid") {
+    set(
+      "ticketPrice",
+      numberProblem(draft.ticketPrice, {
+        parse: parseMoneyInput,
+        missing: "Enter a ticket price.",
+        invalid: "Use numbers only, like 499.",
+        schema: TicketsSchema.shape.price,
+      }),
+    );
+  }
+  set(
+    "capacity",
+    numberProblem(draft.capacity, {
+      parse: parseGuestCount,
+      invalid: "Use a whole number, like 80.",
+      schema: TicketsSchema.shape.capacity,
+    }),
+  );
+}
+
+function validateVibe(draft: WizardDraft, _today: string, set: SetError) {
+  set("vibes", firstMessage(shape.vibes.safeParse(draft.vibes)));
+}
+
+function validateConstraints(draft: WizardDraft, _today: string, set: SetError) {
+  const { mustHaves, mustAvoid } = ConstraintsSchema.shape;
+  set("mustHaves", firstMessage(mustHaves.safeParse(draft.mustHaves)));
+  set("mustAvoid", firstMessage(mustAvoid.safeParse(draft.mustAvoid)));
+}
+
+const STEP_VALIDATORS: Record<
+  StepId,
+  (draft: WizardDraft, today: string, set: SetError) => void
+> = {
+  type: validateType,
+  basics: validateBasics,
+  budget: validateBudget,
+  vibe: validateVibe,
+  constraints: validateConstraints,
+  review: () => {},
+};
+
 /** Validates one step. Errors are keyed by field, in the step's field order. */
 export function validateStep(
   step: StepId,
@@ -185,106 +320,9 @@ export function validateStep(
   today: string,
 ): FieldErrors {
   const errors: FieldErrors = {};
-  const set = (field: DraftField, message: string | undefined) => {
+  STEP_VALIDATORS[step](draft, today, (field, message) => {
     if (message && !errors[field]) errors[field] = message;
-  };
-
-  switch (step) {
-    case "type":
-      if (!draft.occasion) {
-        set(
-          draft.group ? "occasion" : "group",
-          draft.group
-            ? "Choose the occasion you're planning."
-            : "Choose the kind of event you're planning.",
-        );
-      }
-      break;
-
-    case "basics": {
-      set("name", firstMessage(shape.name.safeParse(draft.name)));
-      if (draft.dateKind === "fixed") {
-        if (!draft.date) set("date", "Pick a date, or choose “My date is flexible”.");
-        else {
-          const parsed = shape.date.safeParse(draftEventDate(draft));
-          set(
-            "date",
-            firstMessage(parsed) ??
-              eventDateProblem(draftEventDate(draft), today) ??
-              undefined,
-          );
-        }
-      } else if (draft.month) {
-        set("month", eventDateProblem(draftEventDate(draft), today) ?? undefined);
-      }
-      const questions = draftQuestions(draft);
-      if (questions.multiDay) {
-        const days = parseGuestCount(draft.days);
-        if (days === null) set("days", "Use a whole number of days, like 2.");
-        else set("days", firstMessage(DetailsSchema.shape.days.safeParse(days)));
-      }
-      set("location", firstMessage(shape.location.safeParse(draft.location)));
-      const guests = parseGuestCount(draft.guestCount);
-      if (draft.guestCount.trim() === "")
-        set("guestCount", "Enter how many guests you expect.");
-      else if (guests === null) set("guestCount", "Use a whole number, like 120.");
-      else set("guestCount", firstMessage(shape.guestCount.safeParse(guests)));
-      if (questions.age && draft.ageTurning.trim() !== "") {
-        const age = parseGuestCount(draft.ageTurning);
-        if (age === null) set("ageTurning", "Use a whole number, like 7.");
-        else
-          set("ageTurning", firstMessage(DetailsSchema.shape.ageTurning.safeParse(age)));
-      }
-      break;
-    }
-
-    case "budget": {
-      const total = parseMoneyInput(draft.budgetTotal);
-      if (draft.budgetTotal.trim() === "") set("budgetTotal", "Enter your total budget.");
-      else if (total === null) set("budgetTotal", "Use numbers only, like 250000.");
-      else {
-        set("budgetTotal", firstMessage(BudgetInputSchema.shape.total.safeParse(total)));
-      }
-      if (draftQuestions(draft).tickets && draft.tickets !== "none") {
-        if (draft.tickets === "paid") {
-          const price = parseMoneyInput(draft.ticketPrice);
-          if (draft.ticketPrice.trim() === "")
-            set("ticketPrice", "Enter a ticket price.");
-          else if (price === null) set("ticketPrice", "Use numbers only, like 499.");
-          else
-            set("ticketPrice", firstMessage(TicketsSchema.shape.price.safeParse(price)));
-        }
-        if (draft.capacity.trim() !== "") {
-          const capacity = parseGuestCount(draft.capacity);
-          if (capacity === null) set("capacity", "Use a whole number, like 80.");
-          else
-            set(
-              "capacity",
-              firstMessage(TicketsSchema.shape.capacity.safeParse(capacity)),
-            );
-        }
-      }
-      break;
-    }
-
-    case "vibe":
-      set("vibes", firstMessage(shape.vibes.safeParse(draft.vibes)));
-      break;
-
-    case "constraints":
-      set(
-        "mustHaves",
-        firstMessage(ConstraintsSchema.shape.mustHaves.safeParse(draft.mustHaves)),
-      );
-      set(
-        "mustAvoid",
-        firstMessage(ConstraintsSchema.shape.mustAvoid.safeParse(draft.mustAvoid)),
-      );
-      break;
-
-    case "review":
-      break;
-  }
+  });
   return errors;
 }
 

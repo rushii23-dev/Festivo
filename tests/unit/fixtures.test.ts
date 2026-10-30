@@ -2,7 +2,8 @@ import { vendorsFor } from "@/lib/events/kind";
 import { describe, expect, it } from "vitest";
 import { FIXTURES, buildMockPlan, selectIdeas } from "@/lib/fixtures/buildMockPlan";
 import { categoriesFor } from "@/lib/budget/categories";
-import { EVENT_TYPES, type EventType } from "@/lib/schemas/common";
+import { OCCASION_INFO } from "@/lib/events/occasions";
+import { EVENT_TYPES, OCCASIONS, type EventType } from "@/lib/schemas/common";
 import { EventInputSchema, type EventInputDraft } from "@/lib/schemas/eventInput";
 import { IDEA_CATEGORIES, PlanSchema } from "@/lib/schemas/plan";
 
@@ -128,15 +129,19 @@ describe("personalisation", () => {
       totalBudget: 40_000,
       guestCount: 25,
     } as const;
-    const first = selectIdeas(FIXTURES.birthday.ideas, "food", [], budget, 2);
-    const more = selectIdeas(
-      FIXTURES.birthday.ideas,
-      "food",
-      [],
+    const first = selectIdeas(FIXTURES.birthday.ideas, {
+      category: "food",
+      vibes: [],
       budget,
-      3,
-      new Set(first.map((s) => s.key)),
-    );
+      count: 2,
+    });
+    const more = selectIdeas(FIXTURES.birthday.ideas, {
+      category: "food",
+      vibes: [],
+      budget,
+      count: 3,
+      excludeKeys: new Set(first.map((s) => s.key)),
+    });
     expect(more.some((s) => first.includes(s))).toBe(false);
     expect(more.length).toBe(3);
   });
@@ -148,6 +153,33 @@ describe("personalisation", () => {
           FIXTURES[type].ideas.filter((i) => i.category === category).length,
         ).toBeGreaterThanOrEqual(3);
       }
+    }
+  });
+});
+
+describe("every occasion", () => {
+  it("gets a valid demo plan whose summary names the event and the place", () => {
+    for (const occasion of OCCASIONS) {
+      const info = OCCASION_INFO[occasion];
+      const plan = buildMockPlan(
+        EventInputSchema.parse({
+          eventType: info.eventType,
+          occasion,
+          name: `Our ${info.label}`,
+          date: { kind: "fixed", date: "2027-03-20" },
+          location: "Kochi",
+          guestCount: 60,
+          budget: { total: 200_000, currency: "INR" },
+        }),
+        { id: `plan-${occasion}`, today: TODAY, now },
+      );
+      expect(PlanSchema.safeParse(plan).success, occasion).toBe(true);
+      expect(plan.summary, occasion).toContain(`Our ${info.label}`);
+      expect(plan.summary, occasion).toContain("Kochi");
+      expect(
+        plan.budget.reduce((sum, b) => sum + b.allocated, 0),
+        occasion,
+      ).toBe(200_000);
     }
   });
 });
