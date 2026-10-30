@@ -8,6 +8,9 @@ const isHttps = (process.env.NEXT_PUBLIC_SITE_URL ?? "").startsWith("https://");
 // nonce-based CSP in proxy.ts needs every page rendered per request, and the
 // Next.js docs note PPR cannot carry per-request nonces.
 const nextConfig: NextConfig = {
+  // The Docker image runs the self-contained server (`node server.js`); local runs,
+  // Playwright and Vercel keep `next start` and their own output.
+  ...(process.env.NEXT_OUTPUT === "standalone" ? { output: "standalone" as const } : {}),
   poweredByHeader: false,
   reactStrictMode: true,
   turbopack: {

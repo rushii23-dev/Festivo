@@ -1,0 +1,13 @@
+# Only what the build needs goes into the image's build context.
+# Every dot-entry (git, env files, editor and tool folders) stays out.
+.*
+node_modules
+coverage
+playwright-report
+test-results
+blob-report
+tests
+docs
+*.md
+*.zip
+Dockerfile
