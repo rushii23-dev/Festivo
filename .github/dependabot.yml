@@ -1,0 +1,27 @@
+# Weekly update pull requests, so security patches land without anyone having to
+# remember to check. CI (type-aware lint, the coverage ratchet, the bundle budget,
+# the client-bundle secret scan, Playwright with axe) decides whether each is safe.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      development:
+        dependency-type: development
+      production:
+        dependency-type: production
+    ignore:
+      # Major versions (Next.js, React, Zod) are migrations, taken by hand.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
