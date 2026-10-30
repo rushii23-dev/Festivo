@@ -52,7 +52,6 @@ export const PrioritySchema = z.int().min(1).max(5);
 export const BudgetInputSchema = z.strictObject({
   total: z
     .number({ error: "Enter a budget amount." })
-    .finite()
     .min(LIMITS.budgetMin, { error: "Budget must be more than zero." })
     .max(LIMITS.budgetMax, { error: "That budget is too large to plan with." }),
   currency: CurrencySchema,
@@ -73,7 +72,6 @@ export const TicketsSchema = z.strictObject({
   /** Price per ticket, in the budget's currency; only for paid tickets. */
   price: z
     .number({ error: "Enter a ticket price." })
-    .finite()
     .min(1, { error: "A paid ticket costs more than zero." })
     .max(LIMITS.budgetMax, { error: "That ticket price is too large." })
     .optional(),

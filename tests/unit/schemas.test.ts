@@ -71,6 +71,8 @@ describe("EventInputSchema", () => {
     ["guestCount", { guestCount: 12.5 }],
     ["budget.total", { budget: { total: 0, currency: "INR" } }],
     ["budget.total", { budget: { total: 2e9, currency: "INR" } }],
+    ["budget.total", { budget: { total: Infinity, currency: "INR" } }],
+    ["budget.total", { budget: { total: Number.NaN, currency: "INR" } }],
     ["budget.currency", { budget: { total: 100, currency: "JPY" } }],
     [
       "budget.priorities.venue",

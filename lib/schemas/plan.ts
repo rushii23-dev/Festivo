@@ -89,7 +89,7 @@ const IdSchema = z
   .min(1)
   .max(64)
   .regex(/^[\w-]+$/, { error: "IDs use letters, numbers, - and _ only." });
-const MoneySchema = z.number().finite().min(0).max(LIMITS.budgetMax);
+const MoneySchema = z.number().min(0).max(LIMITS.budgetMax);
 
 export const BudgetItemSchema = z.strictObject({
   category: BudgetCategorySchema,
