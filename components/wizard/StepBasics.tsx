@@ -3,12 +3,14 @@ import {
   Choice,
   Field,
   Fieldset,
+  TextField,
   controlClass,
   describedBy,
 } from "@/components/ui/field";
 import { LIMITS } from "@/lib/schemas/eventInput";
 import { addDays } from "@/lib/timeline/dates";
 import { MAX_DAYS_AHEAD } from "@/lib/timeline/resolveDate";
+import { countsAttendees } from "@/lib/wizard/describe";
 import { draftQuestions, upcomingMonths } from "@/lib/wizard/draft";
 import { FORMAT_COPY } from "@/lib/wizard/labels";
 import type { StepProps } from "./types";
@@ -20,38 +22,95 @@ const NAME_HINTS: Partial<Record<string, string>> = {
   hackathon: "For example, Build for Pune 2027.",
 };
 
-export function StepBasics({ draft, errors, update, today }: StepProps) {
-  const months = useMemo(() => upcomingMonths(today), [today]);
+/** Step 2: the name, when, how people join, where, how many, and occasion extras. */
+export function StepBasics(props: StepProps) {
+  const { draft, errors, update } = props;
   const questions = draftQuestions(draft);
   const online = draft.format === "online";
-  const nameHint = NAME_HINTS[draft.occasion];
+  const audience = countsAttendees(draft);
 
   return (
     <div className="grid gap-6">
-      <Field
+      <TextField
         id="event-name"
         name="name"
         label="Event name"
         required
-        hint={nameHint}
+        hint={NAME_HINTS[draft.occasion]}
         error={errors.name}
-      >
-        <input
-          id="event-name"
-          type="text"
-          autoComplete="off"
-          maxLength={LIMITS.nameMax}
-          value={draft.name}
-          onChange={(e) => update({ name: e.target.value })}
-          aria-invalid={errors.name ? true : undefined}
-          aria-describedby={describedBy("event-name", {
-            hint: nameHint,
-            error: errors.name,
-          })}
-          className={controlClass}
+        maxLength={LIMITS.nameMax}
+        value={draft.name}
+        onValueChange={(name) => update({ name })}
+      />
+      <DateQuestions {...props} />
+      {questions.multiDay ? (
+        <TextField
+          id="event-days"
+          name="days"
+          label="How many days?"
+          hint="Enter 1 for a single day."
+          error={errors.days}
+          className="max-w-[14rem]"
+          numeric
+          value={draft.days}
+          onValueChange={(days) => update({ days })}
         />
-      </Field>
+      ) : null}
+      {questions.formats.length > 1 ? <FormatQuestion {...props} /> : null}
 
+      <div className="grid gap-6 @md:grid-cols-2">
+        <TextField
+          id="event-location"
+          name="location"
+          label={online ? "City or time zone" : "City or place"}
+          required
+          hint={
+            online
+              ? "Where most guests are, so times suit them."
+              : "Helps us suggest local food, vendors and customs."
+          }
+          error={errors.location}
+          autoComplete="address-level2"
+          maxLength={LIMITS.locationMax}
+          value={draft.location}
+          onValueChange={(location) => update({ location })}
+        />
+        <TextField
+          id="event-guests"
+          name="guestCount"
+          label={audience ? "Expected attendees" : "Number of guests"}
+          required
+          hint={`A rough number is fine, up to ${LIMITS.guestsMax.toLocaleString("en-IN")}.`}
+          error={errors.guestCount}
+          numeric
+          value={draft.guestCount}
+          onValueChange={(guestCount) => update({ guestCount })}
+        />
+      </div>
+
+      {questions.age ? (
+        <TextField
+          id="event-age"
+          name="ageTurning"
+          label="Age being celebrated"
+          hint="Optional. It shapes the ideas, the cake and the activities."
+          error={errors.ageTurning}
+          className="max-w-[14rem]"
+          numeric
+          value={draft.ageTurning}
+          onValueChange={(ageTurning) => update({ ageTurning })}
+        />
+      ) : null}
+      {questions.kids ? <KidsQuestion {...props} /> : null}
+    </div>
+  );
+}
+
+/** A set date, or a flexible one with an optional preferred month. */
+function DateQuestions({ draft, errors, update, today }: StepProps) {
+  const months = useMemo(() => upcomingMonths(today), [today]);
+  return (
+    <>
       <Fieldset id="date-kind" name="dateKind" legend="When is it?" required>
         <div className="flex flex-wrap gap-3">
           <Choice
@@ -74,25 +133,18 @@ export function StepBasics({ draft, errors, update, today }: StepProps) {
       </Fieldset>
 
       {draft.dateKind === "fixed" ? (
-        <Field
+        <TextField
           id="event-date"
           name="date"
           label="Event date"
           required
           error={errors.date}
-        >
-          <input
-            id="event-date"
-            type="date"
-            min={today}
-            max={addDays(today, MAX_DAYS_AHEAD)}
-            value={draft.date}
-            onChange={(e) => update({ date: e.target.value })}
-            aria-invalid={errors.date ? true : undefined}
-            aria-describedby={describedBy("event-date", { error: errors.date })}
-            className={controlClass}
-          />
-        </Field>
+          type="date"
+          min={today}
+          max={addDays(today, MAX_DAYS_AHEAD)}
+          value={draft.date}
+          onValueChange={(date) => update({ date })}
+        />
       ) : (
         <Field
           id="event-month"
@@ -121,159 +173,54 @@ export function StepBasics({ draft, errors, update, today }: StepProps) {
           </select>
         </Field>
       )}
+    </>
+  );
+}
 
-      {questions.multiDay ? (
-        <Field
-          id="event-days"
-          name="days"
-          label="How many days?"
-          hint="Enter 1 for a single day."
-          error={errors.days}
-          className="max-w-[14rem]"
-        >
-          <input
-            id="event-days"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            value={draft.days}
-            onChange={(e) => update({ days: e.target.value })}
-            aria-invalid={errors.days ? true : undefined}
-            aria-describedby={describedBy("event-days", {
-              hint: true,
-              error: errors.days,
-            })}
-            className={controlClass}
+/** In person, online or hybrid, for occasions that can run more than one way. */
+function FormatQuestion({ draft, update }: StepProps) {
+  return (
+    <Fieldset id="event-format" name="format" legend="How will people join?" required>
+      <div className="flex flex-wrap gap-3">
+        {draftQuestions(draft).formats.map((format) => (
+          <Choice
+            key={format}
+            type="radio"
+            name="format"
+            value={format}
+            label={FORMAT_COPY[format].label}
+            checked={draft.format === format}
+            onChange={() => update({ format })}
           />
-        </Field>
-      ) : null}
-
-      {questions.formats.length > 1 ? (
-        <Fieldset id="event-format" name="format" legend="How will people join?" required>
-          <div className="flex flex-wrap gap-3">
-            {questions.formats.map((format) => (
-              <Choice
-                key={format}
-                type="radio"
-                name="format"
-                value={format}
-                label={FORMAT_COPY[format].label}
-                checked={draft.format === format}
-                onChange={() => update({ format })}
-              />
-            ))}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {FORMAT_COPY[draft.format].hint}
-          </p>
-        </Fieldset>
-      ) : null}
-
-      <div className="grid gap-6 @md:grid-cols-2">
-        <Field
-          id="event-location"
-          name="location"
-          label={online ? "City or time zone" : "City or place"}
-          required
-          hint={
-            online
-              ? "Where most guests are, so times suit them."
-              : "Helps us suggest local food, vendors and customs."
-          }
-          error={errors.location}
-        >
-          <input
-            id="event-location"
-            type="text"
-            autoComplete="address-level2"
-            maxLength={LIMITS.locationMax}
-            value={draft.location}
-            onChange={(e) => update({ location: e.target.value })}
-            aria-invalid={errors.location ? true : undefined}
-            aria-describedby={describedBy("event-location", {
-              hint: true,
-              error: errors.location,
-            })}
-            className={controlClass}
-          />
-        </Field>
-        <Field
-          id="event-guests"
-          name="guestCount"
-          label={
-            draft.group === "work" || draft.group === "meetup"
-              ? "Expected attendees"
-              : "Number of guests"
-          }
-          required
-          hint={`A rough number is fine, up to ${LIMITS.guestsMax.toLocaleString("en-IN")}.`}
-          error={errors.guestCount}
-        >
-          <input
-            id="event-guests"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            value={draft.guestCount}
-            onChange={(e) => update({ guestCount: e.target.value })}
-            aria-invalid={errors.guestCount ? true : undefined}
-            aria-describedby={describedBy("event-guests", {
-              hint: true,
-              error: errors.guestCount,
-            })}
-            className={controlClass}
-          />
-        </Field>
+        ))}
       </div>
+      <p className="text-sm text-muted-foreground">{FORMAT_COPY[draft.format].hint}</p>
+    </Fieldset>
+  );
+}
 
-      {questions.age ? (
-        <Field
-          id="event-age"
-          name="ageTurning"
-          label="Age being celebrated"
-          hint="Optional. It shapes the ideas, the cake and the activities."
-          error={errors.ageTurning}
-          className="max-w-[14rem]"
-        >
-          <input
-            id="event-age"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            value={draft.ageTurning}
-            onChange={(e) => update({ ageTurning: e.target.value })}
-            aria-invalid={errors.ageTurning ? true : undefined}
-            aria-describedby={describedBy("event-age", {
-              hint: true,
-              error: errors.ageTurning,
-            })}
-            className={controlClass}
-          />
-        </Field>
-      ) : null}
-
-      {questions.kids ? (
-        <Fieldset id="event-kids" name="kids" legend="Will children be there?">
-          <div className="flex flex-wrap gap-3">
-            <Choice
-              type="radio"
-              name="kids"
-              value="yes"
-              label="Yes"
-              checked={draft.kids}
-              onChange={() => update({ kids: true })}
-            />
-            <Choice
-              type="radio"
-              name="kids"
-              value="no"
-              label="No, adults only"
-              checked={!draft.kids}
-              onChange={() => update({ kids: false })}
-            />
-          </div>
-        </Fieldset>
-      ) : null}
-    </div>
+/** Asked of family occasions, so the plan can add activities and food for children. */
+function KidsQuestion({ draft, update }: StepProps) {
+  return (
+    <Fieldset id="event-kids" name="kids" legend="Will children be there?">
+      <div className="flex flex-wrap gap-3">
+        <Choice
+          type="radio"
+          name="kids"
+          value="yes"
+          label="Yes"
+          checked={draft.kids}
+          onChange={() => update({ kids: true })}
+        />
+        <Choice
+          type="radio"
+          name="kids"
+          value="no"
+          label="No, adults only"
+          checked={!draft.kids}
+          onChange={() => update({ kids: false })}
+        />
+      </div>
+    </Fieldset>
   );
 }

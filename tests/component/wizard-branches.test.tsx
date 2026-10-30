@@ -8,13 +8,10 @@ import { useState, type ComponentType } from "react";
 import { describe, expect, it } from "vitest";
 import { StepBasics } from "@/components/wizard/StepBasics";
 import { StepBudget } from "@/components/wizard/StepBudget";
-import {
-  ReviewSummary,
-  describeDate,
-  describeTickets,
-} from "@/components/wizard/StepReview";
+import { ReviewSummary } from "@/components/wizard/StepReview";
 import type { StepProps } from "@/components/wizard/types";
 import { addDays, todayIso } from "@/lib/timeline/dates";
+import { describeDate, describeTickets } from "@/lib/wizard/describe";
 import { DEFAULT_DRAFT, upcomingMonths, type WizardDraft } from "@/lib/wizard/draft";
 
 const today = todayIso(new Date(), "UTC");

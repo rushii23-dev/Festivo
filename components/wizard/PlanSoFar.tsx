@@ -1,54 +1,49 @@
-import type { ReactNode } from "react";
 import { FestivoSeal } from "@/components/brand/FestivoSeal";
-import { formatMoney, parseMoneyInput } from "@/lib/budget/format";
+import {
+  countsAttendees,
+  describeGuests,
+  describeTickets,
+  describeTotal,
+  describeWhen,
+  describeWhere,
+  listOr,
+} from "@/lib/wizard/describe";
 import { draftOccasion, draftQuestions, type WizardDraft } from "@/lib/wizard/draft";
-import { FORMAT_COPY, VIBE_LABELS } from "@/lib/wizard/labels";
-import { describeDate, describeTickets } from "./StepReview";
+import { VIBE_LABELS } from "@/lib/wizard/labels";
 
-function Line({ term, children }: { term: string; children: ReactNode }) {
+/** One answer; "Not yet" until there is something to show. */
+function Line({ term, value }: { term: string; value: string | null }) {
   return (
     <div className="grid gap-1 border-t border-hairline py-4 first:border-t-0">
       <dt className="caps text-[0.6875rem] text-muted-foreground">{term}</dt>
-      <dd className="min-w-0 break-words">{children}</dd>
+      <dd className="min-w-0 break-words">
+        {value ?? <span className="text-muted-foreground italic">Not yet</span>}
+      </dd>
     </div>
   );
 }
 
-const Empty = () => <span className="text-muted-foreground italic">Not yet</span>;
-
 /** The answers as a list of lines: when, where, who, budget, tickets, style. */
 function Details({ draft, today }: { draft: WizardDraft; today: string }) {
-  const questions = draftQuestions(draft);
-  const total = parseMoneyInput(draft.budgetTotal);
-  const dateSet = draft.dateKind === "flexible" || Boolean(draft.date);
-  const days = Number(draft.days);
-  const where = [
-    questions.formats.length > 1 ? FORMAT_COPY[draft.format].label : null,
-    draft.location.trim() || null,
-  ].filter(Boolean);
-  const people =
-    draft.group === "work" || draft.group === "meetup" ? "Attendees" : "Guests";
-
   return (
     <dl className="hidden lg:grid">
-      <Line term="When">
-        {dateSet ? describeDate(draft, today) : <Empty />}
-        {questions.multiDay && days > 1 ? `, ${days} days` : null}
-      </Line>
-      <Line term="Where">{where.length > 0 ? where.join(", ") : <Empty />}</Line>
-      <Line term={people}>
-        {draft.guestCount.trim() || <Empty />}
-        {questions.kids && draft.kids ? ", with children" : null}
-      </Line>
-      <Line term="Budget">{total ? formatMoney(total, draft.currency) : <Empty />}</Line>
-      {questions.tickets ? <Line term="Tickets">{describeTickets(draft)}</Line> : null}
-      <Line term="Style">
-        {draft.vibes.length > 0 ? (
-          draft.vibes.map((v) => VIBE_LABELS[v]).join(", ")
-        ) : (
-          <Empty />
+      <Line term="When" value={describeWhen(draft, today)} />
+      <Line term="Where" value={describeWhere(draft)} />
+      <Line
+        term={countsAttendees(draft) ? "Attendees" : "Guests"}
+        value={describeGuests(draft)}
+      />
+      <Line term="Budget" value={describeTotal(draft)} />
+      {draftQuestions(draft).tickets ? (
+        <Line term="Tickets" value={describeTickets(draft)} />
+      ) : null}
+      <Line
+        term="Style"
+        value={listOr(
+          draft.vibes.map((v) => VIBE_LABELS[v]),
+          null,
         )}
-      </Line>
+      />
     </dl>
   );
 }

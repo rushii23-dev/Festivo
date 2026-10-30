@@ -1,23 +1,19 @@
 import { Check, LoaderCircle, RotateCcw } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { BUDGET_CATEGORY_LABELS } from "@/lib/budget/categories";
-import { formatMoney, parseMoneyInput } from "@/lib/budget/format";
-import type { BudgetCategory } from "@/lib/schemas/common";
-import { formatLongDate } from "@/lib/timeline/dates";
 import {
-  draftOccasion,
-  draftQuestions,
-  upcomingMonths,
-  type WizardDraft,
-} from "@/lib/wizard/draft";
+  describeDate,
+  describePriorities,
+  describeTickets,
+  describeTotal,
+  listOr,
+} from "@/lib/wizard/describe";
+import { draftOccasion, draftQuestions, type WizardDraft } from "@/lib/wizard/draft";
 import {
   ACCESSIBILITY_LABELS,
   CEREMONY_LABELS,
   DIETARY_LABELS,
   FORMAT_COPY,
-  PRIORITY_LABELS,
-  TICKET_COPY,
   SETTING_LABELS,
   VIBE_LABELS,
 } from "@/lib/wizard/labels";
@@ -26,6 +22,12 @@ import {
   STAGE_LABELS,
   type GenerationState,
 } from "@/hooks/use-plan-generation";
+
+interface ReviewProps {
+  draft: WizardDraft;
+  today: string;
+  onEdit: (step: number) => void;
+}
 
 function Section({
   title,
@@ -60,112 +62,99 @@ function Row({ term, children }: { term: string; children: ReactNode }) {
   );
 }
 
-const listOr = (values: string[], empty: string) =>
-  values.length > 0 ? values.join(", ") : empty;
-
-export function describeTickets(draft: WizardDraft): string {
-  if (draft.tickets === "none") return TICKET_COPY.none;
-  const price = parseMoneyInput(draft.ticketPrice);
-  return [
-    draft.tickets === "paid" && price
-      ? formatMoney(price, draft.currency)
-      : TICKET_COPY.free,
-    draft.capacity ? `${draft.capacity} spots` : "no limit",
-    ...(draft.approval ? ["you approve each guest"] : []),
-  ].join(", ");
-}
-
-export function describeDate(draft: WizardDraft, today: string): string {
-  if (draft.dateKind === "fixed")
-    return draft.date ? formatLongDate(draft.date) : "Not set";
-  if (!draft.month) return "Flexible";
-  const label =
-    upcomingMonths(today).find((m) => m.value === draft.month)?.label ?? draft.month;
-  return `Flexible, around ${label}`;
-}
-
-export function ReviewSummary({
-  draft,
-  today,
-  onEdit,
-}: {
-  draft: WizardDraft;
-  today: string;
-  onEdit: (step: number) => void;
-}) {
-  const total = parseMoneyInput(draft.budgetTotal);
-  const questions = draftQuestions(draft);
-  const priorities = Object.entries(draft.priorities)
-    .filter(([, value]) => value !== 3)
-    .map(
-      ([key, value]) =>
-        `${BUDGET_CATEGORY_LABELS[key as BudgetCategory]}: ${PRIORITY_LABELS[value ?? 3]}`,
-    );
-
+/** Every answer, grouped by step, each group with a button back to that step. */
+export function ReviewSummary(props: ReviewProps) {
   return (
     <div className="grid gap-4">
-      <Section title="Occasion" step={0} onEdit={onEdit}>
-        <Row term="Celebrating">{draftOccasion(draft)?.label ?? "Not set"}</Row>
+      <Section title="Occasion" step={0} onEdit={props.onEdit}>
+        <Row term="Celebrating">{draftOccasion(props.draft)?.label ?? "Not set"}</Row>
       </Section>
-      <Section title="Basics" step={1} onEdit={onEdit}>
-        <Row term="Name">{draft.name || "Not set"}</Row>
-        <Row term="Date">{describeDate(draft, today)}</Row>
-        {questions.multiDay ? <Row term="Days">{draft.days || "1"}</Row> : null}
-        {questions.formats.length > 1 ? (
-          <Row term="Format">{FORMAT_COPY[draft.format].label}</Row>
-        ) : null}
-        <Row term="Place">{draft.location || "Not set"}</Row>
-        <Row term="Guests">{draft.guestCount || "Not set"}</Row>
-        {questions.age && draft.ageTurning ? (
-          <Row term="Turning">{draft.ageTurning}</Row>
-        ) : null}
-        {questions.kids ? <Row term="Children">{draft.kids ? "Yes" : "No"}</Row> : null}
-      </Section>
-      <Section title="Budget" step={2} onEdit={onEdit}>
-        <Row term="Total">{total ? formatMoney(total, draft.currency) : "Not set"}</Row>
-        {questions.tickets ? <Row term="Tickets">{describeTickets(draft)}</Row> : null}
-        <Row term="Priorities">
-          {listOr(priorities, "Balanced across every category")}
-        </Row>
-      </Section>
-      <Section title="Vibe and style" step={3} onEdit={onEdit}>
-        <Row term="Styles">
+      <BasicsReview {...props} />
+      <BudgetReview {...props} />
+      <StyleReview {...props} />
+      <NeedsReview {...props} />
+    </div>
+  );
+}
+
+function BasicsReview({ draft, today, onEdit }: ReviewProps) {
+  const questions = draftQuestions(draft);
+  return (
+    <Section title="Basics" step={1} onEdit={onEdit}>
+      <Row term="Name">{draft.name || "Not set"}</Row>
+      <Row term="Date">{describeDate(draft, today)}</Row>
+      {questions.multiDay ? <Row term="Days">{draft.days || "1"}</Row> : null}
+      {questions.formats.length > 1 ? (
+        <Row term="Format">{FORMAT_COPY[draft.format].label}</Row>
+      ) : null}
+      <Row term="Place">{draft.location || "Not set"}</Row>
+      <Row term="Guests">{draft.guestCount || "Not set"}</Row>
+      {questions.age && draft.ageTurning ? (
+        <Row term="Turning">{draft.ageTurning}</Row>
+      ) : null}
+      {questions.kids ? <Row term="Children">{draft.kids ? "Yes" : "No"}</Row> : null}
+    </Section>
+  );
+}
+
+function BudgetReview({ draft, onEdit }: ReviewProps) {
+  return (
+    <Section title="Budget" step={2} onEdit={onEdit}>
+      <Row term="Total">{describeTotal(draft) ?? "Not set"}</Row>
+      {draftQuestions(draft).tickets ? (
+        <Row term="Tickets">{describeTickets(draft)}</Row>
+      ) : null}
+      <Row term="Priorities">
+        {listOr(describePriorities(draft), "Balanced across every category")}
+      </Row>
+    </Section>
+  );
+}
+
+function StyleReview({ draft, onEdit }: ReviewProps) {
+  return (
+    <Section title="Vibe and style" step={3} onEdit={onEdit}>
+      <Row term="Styles">
+        {listOr(
+          draft.vibes.map((v) => VIBE_LABELS[v]),
+          "No preference",
+        )}
+      </Row>
+      {draftQuestions(draft).ceremonies ? (
+        <Row term="Functions">
           {listOr(
-            draft.vibes.map((v) => VIBE_LABELS[v]),
-            "No preference",
+            draft.ceremonies.map((c) => CEREMONY_LABELS[c]),
+            "Not chosen",
           )}
         </Row>
-        {questions.ceremonies ? (
-          <Row term="Functions">
-            {listOr(
-              draft.ceremonies.map((c) => CEREMONY_LABELS[c]),
-              "Not chosen",
-            )}
-          </Row>
-        ) : null}
-      </Section>
-      <Section title="Needs and limits" step={4} onEdit={onEdit}>
-        {questions.venue ? (
-          <Row term="Dietary">
-            {listOr(
-              draft.dietary.map((d) => DIETARY_LABELS[d]),
-              "None",
-            )}
-          </Row>
-        ) : null}
-        <Row term="Accessibility">
+      ) : null}
+    </Section>
+  );
+}
+
+/** Dietary needs and setting only apply to events with a venue. */
+function NeedsReview({ draft, onEdit }: ReviewProps) {
+  const venue = draftQuestions(draft).venue;
+  return (
+    <Section title="Needs and limits" step={4} onEdit={onEdit}>
+      {venue ? (
+        <Row term="Dietary">
           {listOr(
-            draft.accessibility.map((a) => ACCESSIBILITY_LABELS[a]),
+            draft.dietary.map((d) => DIETARY_LABELS[d]),
             "None",
           )}
         </Row>
-        {questions.venue ? (
-          <Row term="Setting">{SETTING_LABELS[draft.setting]}</Row>
-        ) : null}
-        <Row term="Must-haves">{draft.mustHaves || "None"}</Row>
-        <Row term="Must-avoids">{draft.mustAvoid || "None"}</Row>
-      </Section>
-    </div>
+      ) : null}
+      <Row term="Accessibility">
+        {listOr(
+          draft.accessibility.map((a) => ACCESSIBILITY_LABELS[a]),
+          "None",
+        )}
+      </Row>
+      {venue ? <Row term="Setting">{SETTING_LABELS[draft.setting]}</Row> : null}
+      <Row term="Must-haves">{draft.mustHaves || "None"}</Row>
+      <Row term="Must-avoids">{draft.mustAvoid || "None"}</Row>
+    </Section>
   );
 }
 

@@ -45,8 +45,8 @@ interface FieldProps {
   label: ReactNode;
   hint?: ReactNode | undefined;
   error?: string | undefined;
-  required?: boolean;
-  className?: string;
+  required?: boolean | undefined;
+  className?: string | undefined;
   children: ReactNode;
 }
 
@@ -76,6 +76,72 @@ export function Field({
       {children}
       {error ? <ErrorText id={ids.error}>{error}</ErrorText> : null}
     </div>
+  );
+}
+
+type TextFieldProps = Omit<FieldProps, "children"> &
+  Omit<ComponentProps<"input">, "id" | "name" | "value" | "onChange" | "className"> & {
+    value: string;
+    onValueChange: (value: string) => void;
+    /** Shows the number keyboard on phones; the value stays text, so drafts keep what was typed. */
+    numeric?: boolean;
+    /** A short unit shown inside the start of the input, such as a currency symbol. */
+    prefix?: string;
+  };
+
+/** A Field holding one text input, with aria-invalid and aria-describedby wired. */
+export function TextField({
+  id,
+  name,
+  label,
+  hint,
+  error,
+  required,
+  className,
+  value,
+  onValueChange,
+  numeric = false,
+  prefix,
+  ...input
+}: TextFieldProps) {
+  const control = (
+    <input
+      id={id}
+      type="text"
+      autoComplete="off"
+      {...(numeric ? { inputMode: "numeric" as const } : {})}
+      {...input}
+      value={value}
+      onChange={(e) => onValueChange(e.target.value)}
+      aria-invalid={error ? true : undefined}
+      aria-describedby={describedBy(id, { hint, error })}
+      className={cn(controlClass, prefix && "pl-10")}
+    />
+  );
+  return (
+    <Field
+      id={id}
+      name={name}
+      label={label}
+      hint={hint}
+      error={error}
+      required={required}
+      className={className}
+    >
+      {prefix ? (
+        <div className="relative">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-4 flex items-center font-bold text-muted-foreground"
+          >
+            {prefix}
+          </span>
+          {control}
+        </div>
+      ) : (
+        control
+      )}
+    </Field>
   );
 }
 
