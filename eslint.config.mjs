@@ -34,8 +34,60 @@ const eslintConfig = defineConfig([
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       "react/no-danger": "error",
-      "no-console": ["warn", { allow: ["warn", "error"] }],
+      // console.warn/error are operational signals on the server; console.log is debris.
+      "no-console": ["error", { allow: ["warn", "error"] }],
+
+      // Correctness beyond the recommended sets.
+      eqeqeq: ["error", "always", { null: "ignore" }],
+      "no-implicit-coercion": "error",
+      "no-param-reassign": "error",
+      "no-else-return": "error",
+      "no-lonely-if": "error",
+      "object-shorthand": "error",
+      "prefer-template": "error",
+      "default-case-last": "error",
+
+      // Maintainability ceilings, set at what the code measures after its last
+      // refactor so any change that makes a function harder to follow fails lint.
+      // Complexity counts every `?.`, `??` and `&&` in JSX, hence 20 rather than 10.
+      complexity: ["error", 20],
+      "max-depth": ["error", 4],
+      "max-params": ["error", 5],
+      "max-nested-callbacks": ["error", 4],
+      "max-lines": ["error", { max: 400, skipBlankLines: true, skipComments: true }],
     },
+  },
+  {
+    // Type-aware rules: they read the TypeScript program, so they catch what
+    // syntax alone cannot (a promise nobody awaits, a switch that misses a case).
+    files: ["**/*.{ts,tsx}"],
+    languageOptions: {
+      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+    },
+    rules: {
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-misused-promises": [
+        "error",
+        { checksVoidReturn: { attributes: false } },
+      ],
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/switch-exhaustiveness-check": [
+        "error",
+        { considerDefaultExhaustiveForUnions: true },
+      ],
+      "@typescript-eslint/no-unnecessary-type-assertion": "error",
+      "@typescript-eslint/no-deprecated": "error",
+      "@typescript-eslint/only-throw-error": "error",
+      "@typescript-eslint/prefer-promise-reject-errors": "error",
+      "@typescript-eslint/no-base-to-string": "error",
+      "@typescript-eslint/restrict-plus-operands": "error",
+    },
+  },
+  {
+    // Catalogues of occasions and planning profiles are data, not logic; tests
+    // enumerate scenarios, so their length is their nature.
+    files: ["lib/events/occasions.ts", "lib/events/profiles.ts", "tests/**"],
+    rules: { "max-lines": "off", "max-nested-callbacks": "off" },
   },
   prettier,
   globalIgnores([

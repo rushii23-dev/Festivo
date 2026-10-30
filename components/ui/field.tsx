@@ -43,8 +43,8 @@ interface FieldProps {
   /** Draft field name; the wizard uses it to focus the first invalid field. */
   name: string;
   label: ReactNode;
-  hint?: ReactNode;
-  error?: string;
+  hint?: ReactNode | undefined;
+  error?: string | undefined;
   required?: boolean;
   className?: string;
   children: ReactNode;
@@ -83,8 +83,8 @@ interface FieldsetProps {
   id: string;
   name: string;
   legend: ReactNode;
-  hint?: ReactNode;
-  error?: string;
+  hint?: ReactNode | undefined;
+  error?: string | undefined;
   required?: boolean;
   /** Hide the legend visually when the step heading already asks the question. */
   legendHidden?: boolean;

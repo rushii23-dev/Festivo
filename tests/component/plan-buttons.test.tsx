@@ -48,9 +48,13 @@ describe.each(BUTTONS)("%s", (_, Button, delay) => {
     fireEvent.click(link());
     fireEvent.click(link()); // a second click while pressed is ignored
     expect(link()).toHaveAttribute("data-pressed", "true");
-    act(() => vi.advanceTimersByTime(delay - 1));
+    act(() => {
+      vi.advanceTimersByTime(delay - 1);
+    });
     expect(push).not.toHaveBeenCalled();
-    act(() => vi.advanceTimersByTime(1));
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
     expect(push).toHaveBeenCalledExactlyOnceWith("/plan/new");
   });
 

@@ -10,7 +10,7 @@ export interface IcsOptions {
   calendarName: string;
   eventTitle: string;
   eventDate: string;
-  location?: string;
+  location?: string | undefined;
   tasks: readonly TimelineTask[];
   /** Used for DTSTAMP; injectable for tests. */
   now?: Date;

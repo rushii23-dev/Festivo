@@ -39,7 +39,7 @@ function FreeText({
   label: string;
   hint: string;
   value: string;
-  error?: string;
+  error?: string | undefined;
   onChange: (value: string) => void;
 }) {
   const countId = `${id}-count`;

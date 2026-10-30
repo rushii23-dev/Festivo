@@ -51,7 +51,7 @@ interface MoneyInputProps {
   onCommit: (value: number | undefined) => void;
   /** Allow clearing the field (commits `undefined`). */
   optional?: boolean;
-  hint?: ReactNode;
+  hint?: ReactNode | undefined;
   disabled?: boolean;
   className?: string;
 }
@@ -184,7 +184,7 @@ export function TaskCheck({
   checked: boolean;
   onChange: (checked: boolean) => void;
   /** Bumped when the task is ticked, to play the petal burst once. */
-  cheer?: number;
+  cheer?: number | undefined;
 }) {
   return (
     <span className="relative mt-0.5 inline-flex size-6 shrink-0">

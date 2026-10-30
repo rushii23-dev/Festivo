@@ -7,12 +7,12 @@ interface PhotoProps {
   alt: string;
   sizes: string;
   /** Preload above-the-fold photos (Next 16 replaced `priority` with `preload`). */
-  preload?: boolean;
+  preload?: boolean | undefined;
   /** Drift distance in percent while scrolling (LandingMotion). 0 = still. */
   parallax?: number;
   className?: string;
   /** CSS object-position, e.g. "50% 30%". */
-  position?: string;
+  position?: string | undefined;
 }
 
 /**
@@ -42,10 +42,10 @@ export function Photo({
           alt={alt}
           fill
           sizes={sizes}
-          preload={preload}
+          preload={preload ?? false}
           placeholder="blur"
           className="object-cover"
-          style={position ? { objectPosition: position } : undefined}
+          {...(position ? { style: { objectPosition: position } } : {})}
         />
       </span>
     </span>

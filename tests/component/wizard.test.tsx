@@ -218,7 +218,9 @@ describe("Wizard persistence", () => {
 
     // A reload starts from defaults in memory, then rehydrates from storage.
     const saved = localStorage.getItem(STORE_KEY) ?? "";
-    act(() => usePlanStore.setState({ draft: { ...DEFAULT_DRAFT }, step: 0 }));
+    act(() => {
+      usePlanStore.setState({ draft: { ...DEFAULT_DRAFT }, step: 0 });
+    });
     act(() => storage.flush());
     localStorage.setItem(STORE_KEY, saved);
     await act(() => usePlanStore.persist.rehydrate());
@@ -263,7 +265,7 @@ describe("Wizard generation", () => {
 
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("/api/plan");
-    expect(JSON.parse(String(init.body))).toMatchObject({
+    expect(JSON.parse(init.body as string)).toMatchObject({
       input: { name: "Maya turns 7", guestCount: 25 },
     });
   });

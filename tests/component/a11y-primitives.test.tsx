@@ -48,7 +48,9 @@ describe("AnnouncerProvider", () => {
       </AnnouncerProvider>,
     );
     act(() => screen.getByRole("button").click());
-    act(() => vi.advanceTimersByTime(60));
+    act(() => {
+      vi.advanceTimersByTime(60);
+    });
     expect(screen.getByRole("status")).toHaveTextContent("Plan saved");
 
     rerender(
@@ -57,7 +59,9 @@ describe("AnnouncerProvider", () => {
       </AnnouncerProvider>,
     );
     act(() => screen.getByRole("button").click());
-    act(() => vi.advanceTimersByTime(60));
+    act(() => {
+      vi.advanceTimersByTime(60);
+    });
     expect(screen.getByRole("alert")).toHaveTextContent("Could not save");
     vi.useRealTimers();
   });

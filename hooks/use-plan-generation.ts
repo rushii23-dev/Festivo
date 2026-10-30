@@ -39,8 +39,8 @@ interface ProgressLike {
 
 function isProgress(value: unknown): value is ProgressLike {
   return (
-    !!value &&
     typeof value === "object" &&
+    value !== null &&
     (value as { type?: unknown }).type === "progress" &&
     typeof (value as { message?: unknown }).message === "string"
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, LockKeyhole } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { useAnnounce } from "@/components/a11y/LiveRegion";
 import { Button } from "@/components/ui/button";
 import { Field, controlClass, describedBy } from "@/components/ui/field";
@@ -27,7 +27,7 @@ export function CreateAccount({ onCreate }: { onCreate: (profile: Profile) => vo
     setErrors((current) => ({ ...current, [field]: undefined }));
   };
 
-  const onSubmit = (event: FormEvent) => {
+  const onSubmit = (event: SubmitEvent) => {
     event.preventDefault();
     const result = validateProfile(values);
     if (result.ok) return onCreate(result.profile);

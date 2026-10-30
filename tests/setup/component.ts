@@ -10,16 +10,17 @@ afterEach(() => {
 
 /** jsdom has no matchMedia; tests opt into specific media results via `mockMatchMedia`. */
 export function mockMatchMedia(matches: Record<string, boolean> = {}) {
-  const impl = (query: string): MediaQueryList => ({
-    matches: matches[query] ?? false,
-    media: query,
-    onchange: null,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    dispatchEvent: vi.fn(() => false),
-  });
+  const impl = (query: string) =>
+    ({
+      matches: matches[query] ?? false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(() => false),
+      // The pre-2018 listener API, which GSAP still calls.
+      ...{ addListener: vi.fn(), removeListener: vi.fn() },
+    }) as unknown as MediaQueryList;
   Object.defineProperty(window, "matchMedia", { configurable: true, value: impl });
 }
 

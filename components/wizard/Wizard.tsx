@@ -8,7 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
-  type FormEvent,
+  type SubmitEvent,
   type ReactNode,
 } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -76,7 +76,7 @@ function focusField(field: DraftField) {
 }
 
 /** `name` personalises the first question once the planner has an account. */
-export function Wizard({ name }: { name?: string } = {}) {
+export function Wizard({ name }: { name?: string | undefined } = {}) {
   const hydrated = useHydratedStore();
   const router = useRouter();
   const announce = useAnnounce();
@@ -195,7 +195,7 @@ export function Wizard({ name }: { name?: string } = {}) {
     void generation.start(result.input);
   };
 
-  const onSubmit = (event: FormEvent) => {
+  const onSubmit = (event: SubmitEvent) => {
     event.preventDefault();
     if (isReview) return generate();
     const found = validateStep(current.id, draft, today);
