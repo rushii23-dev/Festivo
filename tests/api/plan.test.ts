@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/plan/route";
+import { resetProvider } from "@/lib/ai/getProvider";
 import { planToDraft } from "@/lib/ai/mock";
 import { buildMockPlan } from "@/lib/fixtures/buildMockPlan";
 import { EventInputSchema } from "@/lib/schemas/eventInput";
@@ -117,6 +118,34 @@ describe("POST /api/plan (mock provider)", () => {
     expect((await request(huge)).status).toBe(413);
   });
 
+  it("stops reading a chunked body with no length once it passes the limit", async () => {
+    let pulled = 0;
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        controller.enqueue(new TextEncoder().encode(" ".repeat(4096)));
+      },
+    });
+    const chunked = new Request("http://localhost:3000/api/plan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: endless,
+      duplex: "half",
+    } as RequestInit);
+    expect(chunked.headers.get("content-length")).toBeNull();
+    expect((await POST(chunked)).status).toBe(413);
+    expect(pulled).toBeLessThan(10); // 16 KB limit: it stopped, it did not drain
+  });
+
+  it("rejects bodies that are not valid UTF-8", async () => {
+    const bad = new Request("http://localhost:3000/api/plan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: new Uint8Array([0x7b, 0x22, 0xff, 0xfe, 0x22, 0x7d]),
+    });
+    expect((await POST(bad)).status).toBe(400);
+  });
+
   it("rejects cross-site requests", async () => {
     const response = await request(
       { input: birthdayInput },
@@ -136,6 +165,21 @@ describe("POST /api/plan (mock provider)", () => {
     expect(same.status).toBe(200);
   });
 
+  it("refuses what the browser labels as another site, even without Origin", async () => {
+    for (const site of ["cross-site", "same-site"]) {
+      const response = await request(
+        { input: birthdayInput },
+        { "sec-fetch-site": site },
+      );
+      expect(response.status, site).toBe(403);
+    }
+    const own = await request(
+      { input: birthdayInput },
+      { "sec-fetch-site": "same-origin" },
+    );
+    expect(own.status).toBe(200);
+  });
+
   it("rate limits each client with 429 and Retry-After", async () => {
     const ip = { "x-forwarded-for": "203.0.113.9" };
     const statuses: number[] = [];
@@ -148,6 +192,16 @@ describe("POST /api/plan (mock provider)", () => {
       (await request({ input: birthdayInput }, { "x-forwarded-for": "198.51.100.1" }))
         .status,
     ).toBe(200);
+  });
+
+  it("cannot be dodged by rotating a forged X-Forwarded-For", async () => {
+    const statuses: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      // The client forges the first entry; the proxy appends the real address.
+      const forged = { "x-forwarded-for": `10.9.8.${i}, 203.0.113.44` };
+      statuses.push((await request({ input: birthdayInput }, forged)).status);
+    }
+    expect(statuses).toEqual([200, 200, 200, 200, 429]);
   });
 });
 
@@ -220,6 +274,52 @@ describe("POST /api/plan (Gemini via MSW)", () => {
     expect(text).toContain('"code":"provider"');
     expect(text).not.toContain("upstream failure");
     expect(text).not.toContain(GEMINI_KEY);
+  });
+
+  it("shares one AI call between identical requests that arrive together", async () => {
+    useGemini();
+    const gemini = geminiReplies(server, [validDraft]);
+    const [first, second] = await Promise.all([
+      request().then(readEvents),
+      request().then(readEvents),
+    ]);
+    expect(gemini.calls()).toBe(1);
+    const [leader, follower] = [lastPlan(first), lastPlan(second)];
+    expect([leader.cached, follower.cached]).toEqual([false, true]);
+    expect(follower.plan.id).not.toBe(leader.plan.id);
+    expect(follower.plan.title).toBe(leader.plan.title);
+  });
+
+  it("gives a joined request its own attempt when the first one fails", async () => {
+    useGemini();
+    const gemini = geminiReplies(server, [{ status: 500 }, validDraft]);
+    const [first, second] = await Promise.all([
+      request().then(readEvents),
+      request().then(readEvents),
+    ]);
+    expect(first.at(-1)).toMatchObject({ type: "error", code: "provider" });
+    expect(lastPlan(second).plan.title).toBe(birthdayInput.name);
+    expect(gemini.calls()).toBe(2);
+  });
+
+  it("retries a transient upstream failure before giving up", async () => {
+    useGemini();
+    vi.stubEnv("GEMINI_RETRIES", "1");
+    resetProvider();
+    const gemini = geminiReplies(server, [{ status: 503 }, validDraft]);
+    const events = await readEvents(await request());
+    expect(gemini.calls()).toBe(2);
+    expect(lastPlan(events).plan.title).toBe(birthdayInput.name);
+  });
+
+  it("does not retry a request the provider rejected", async () => {
+    useGemini();
+    vi.stubEnv("GEMINI_RETRIES", "2");
+    resetProvider();
+    const gemini = geminiReplies(server, [{ status: 400 }]);
+    const text = await (await request()).text();
+    expect(text).toContain('"code":"provider"');
+    expect(gemini.calls()).toBe(1);
   });
 
   it("falls back to demo mode when no key is configured", async () => {
