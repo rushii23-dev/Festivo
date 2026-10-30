@@ -28,12 +28,32 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run lint
-      - run: npm run format:check
-      - run: npm run typecheck
-      - run: npm run test:coverage
-      - run: npm audit --audit-level=high
+
+      - name: Lint (type-aware rules, jsx-a11y strict, complexity ceilings)
+        run: npm run lint
+      - name: Formatting
+        run: npm run format:check
+      - name: Types (strict, exact optional properties)
+        run: npm run typecheck
+      - name: Unit, API and component tests with coverage ratchet
+        run: npm run test:coverage
+
+      - name: Production dependencies have no known vulnerabilities
+        run: npm audit --omit=dev
+      - name: Build tooling has no high or critical vulnerabilities
+        run: npm audit --audit-level=high
+
       - run: npm run build
+      - name: First-load JavaScript budget per route
+        run: npm run bundle:check
+      - name: No secrets or server-only settings in the browser bundle
+        run: |
+          if grep -rEl "AIza[0-9A-Za-z_-]{30,}|GEMINI_API_KEY|generativelanguage\.googleapis" .next/static; then
+            echo "::error::Server-only configuration leaked into the client bundle"
+            exit 1
+          fi
+          echo "Client bundle is clean."
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -61,3 +81,23 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  docker:
+    name: Container image
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build the production image
+        run: docker build --tag festivo:ci .
+      - name: The image runs as a non-root user and serves the home page
+        run: |
+          test "$(docker image inspect festivo:ci --format '{{.Config.User}}')" = "nextjs"
+          docker run --detach --name festivo --publish 8080:8080 festivo:ci
+          for i in $(seq 1 30); do
+            curl --silent --fail http://localhost:8080/ > /dev/null && break
+            sleep 1
+          done
+          curl --silent --fail --head http://localhost:8080/ | grep -i "content-security-policy"
+          docker rm --force festivo
