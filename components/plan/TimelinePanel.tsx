@@ -9,7 +9,7 @@ import {
   TriangleAlert,
   Undo2,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useAnnounce } from "@/components/a11y/LiveRegion";
 import { Button } from "@/components/ui/button";
 import { Choice, Fieldset } from "@/components/ui/field";
@@ -18,18 +18,17 @@ import {
   addTask,
   deleteTask,
   restoreTask,
-  setTaskDone,
   updateTask,
   type TaskInput,
 } from "@/lib/plan/edit";
-import { prefersReducedMotionNow } from "@/lib/prefs/store";
-import type { Plan, TimelineTask } from "@/lib/schemas/plan";
+import type { TimelineTask } from "@/lib/schemas/plan";
 import { parseIsoDate } from "@/lib/timeline/dates";
 import { groupByPhase, runSheet } from "@/lib/timeline/generate";
-import { downloadCalendar } from "./client";
-import type { PanelProps, UpdatePlan } from "./PlanDashboard";
+import { downloadCalendar } from "./calendar";
+import type { PanelProps } from "./PlanDashboard";
 import { PanelHeader, StatusNote, TaskCheck } from "./parts";
 import { TaskForm } from "./TaskForm";
+import { useTaskToggle } from "./useTaskToggle";
 
 const dueFormat = new Intl.DateTimeFormat("en-IN", {
   weekday: "short",
@@ -38,36 +37,6 @@ const dueFormat = new Intl.DateTimeFormat("en-IN", {
   timeZone: "UTC",
 });
 const formatDue = (iso: string) => dueFormat.format(parseIsoDate(iso));
-
-/**
- * Ticks a task and says so. When motion is allowed, petals pop out of the box;
- * the announcement happens either way.
- */
-export function useTaskToggle(plan: Plan, update: UpdatePlan) {
-  const announce = useAnnounce();
-  const [cheering, setCheering] = useState<Record<string, number>>({});
-  const toggle = useCallback(
-    (task: TimelineTask, done: boolean) => {
-      update((p) => setTaskDone(p, task.id, done));
-      const left =
-        plan.timeline.filter((t) => !t.done && t.id !== task.id).length + (done ? 0 : 1);
-      if (done) {
-        announce(
-          left === 0
-            ? `Done: ${task.title}. That was the last task. Everything is ready.`
-            : `Done: ${task.title}. ${left} ${left === 1 ? "task" : "tasks"} to go.`,
-        );
-        if (!prefersReducedMotionNow()) {
-          setCheering((c) => ({ ...c, [task.id]: (c[task.id] ?? 0) + 1 }));
-        }
-      } else {
-        announce(`${task.title} marked as not done.`);
-      }
-    },
-    [announce, plan.timeline, update],
-  );
-  return { toggle, cheering };
-}
 
 const toInput = (task: TimelineTask): TaskInput => ({
   title: task.title,

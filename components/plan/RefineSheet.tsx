@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Check,
-  LoaderCircle,
-  Minus,
-  Plus,
-  Sparkles,
-  Undo2,
-  WandSparkles,
-} from "lucide-react";
+import { Check, LoaderCircle, Minus, Plus, Sparkles, Undo2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useAnnounce } from "@/components/a11y/LiveRegion";
 import { Button } from "@/components/ui/button";
@@ -24,6 +16,7 @@ import { describeChange, type PlanChange } from "@/lib/plan/diff";
 import { PlanSchema, type Plan } from "@/lib/schemas/plan";
 import { usePlanStore } from "@/lib/store/planStore";
 import { postJson, userTimeZone } from "./client";
+import { RefineButton } from "./triggers";
 
 interface RefineResponse {
   explanation: string;
@@ -69,10 +62,17 @@ function ChangeList({ changes }: { changes: PlanChange[] }) {
 }
 
 /** "Refine with AI": ask for a change, preview what would change, then accept or reject. */
-export function RefineSheet({ plan }: { plan: Plan }) {
+export function RefineSheet({
+  plan,
+  defaultOpen = false,
+}: {
+  plan: Plan;
+  /** Opens on mount, when the sheet was asked for while its code was loading. */
+  defaultOpen?: boolean;
+}) {
   const announce = useAnnounce();
   const savePlan = usePlanStore((s) => s.savePlan);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [instruction, setInstruction] = useState("");
   const [inputError, setInputError] = useState<string | null>(null);
   const [state, setState] = useState<State>({ status: "idle" });
@@ -152,10 +152,7 @@ export function RefineSheet({ plan }: { plan: Plan }) {
       }}
     >
       <SheetTrigger asChild>
-        <Button variant="photo">
-          <WandSparkles aria-hidden="true" />
-          Refine with AI
-        </Button>
+        <RefineButton />
       </SheetTrigger>
       <SheetContent data-event={plan.eventType} aria-describedby="refine-description">
         <div className="grid gap-6 p-6 pt-8 sm:p-8">

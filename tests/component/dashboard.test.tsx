@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { AnnouncerProvider } from "@/components/a11y/LiveRegion";
 import { PlanDashboard } from "@/components/plan/PlanDashboard";
 import { scaleBudget } from "@/lib/budget/rebalance";
@@ -19,6 +19,19 @@ vi.mock("next/navigation", () => ({
 
 // Every panel stays mounted, so jsdom re-renders a large tree on each keystroke.
 vi.setConfig({ testTimeout: 20_000 });
+
+// The hidden tabs and dialogs are lazy chunks (tests/component/deferred.test.tsx covers
+// their loading). Load them once here so slow runs never race a panel appearing.
+beforeAll(async () => {
+  await Promise.all([
+    import("@/components/plan/BudgetPanel"),
+    import("@/components/plan/TimelinePanel"),
+    import("@/components/plan/VendorsPanel"),
+    import("@/components/plan/IdeasPanel"),
+    import("@/components/plan/RefineSheet"),
+    import("@/components/plan/ShareMenu"),
+  ]);
+});
 
 const today = todayIso(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone);
 const plan = buildMockPlan(
@@ -98,7 +111,8 @@ describe("Plan dashboard shell", () => {
     );
     await user.click(screen.getByRole("tab", { name: "Ideas" }));
     expect(window.location.hash).toBe("#ideas");
-    expect(screen.getByRole("heading", { level: 2, name: "Ideas" })).toBeVisible();
+    // Tabs behind Overview load in their own chunk.
+    expect(await screen.findByRole("heading", { level: 2, name: "Ideas" })).toBeVisible();
   });
 
   it("explains when a plan is not in this browser", async () => {
@@ -262,7 +276,7 @@ describe("Refine with AI", () => {
     vi.stubGlobal("fetch", fetchMock);
     const user = renderDashboard();
     await user.click(await screen.findByRole("button", { name: "Refine with AI" }));
-    const dialog = screen.getByRole("dialog", { name: "Refine with AI" });
+    const dialog = await screen.findByRole("dialog", { name: "Refine with AI" });
     const input = within(dialog).getByRole("textbox", { name: "What should change?" });
     await waitFor(() => expect(input).toHaveFocus());
 
@@ -275,7 +289,7 @@ describe("Refine with AI", () => {
       within(dialog).getByText("Total budget: ₹40,000 to ₹34,000"),
     ).toBeInTheDocument();
     const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    const body = JSON.parse(String(init.body)) as unknown;
+    const body = JSON.parse(init.body as string) as unknown;
     expect(body).toMatchObject({
       instruction: "Cut the budget by 15%",
       plan: { id: plan.id },

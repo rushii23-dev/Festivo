@@ -15,6 +15,8 @@ export const inDays = (days: number) => {
 export async function settleAnimations(page: Page) {
   // Screens that load saved data show a busy skeleton first; their entrance starts after it.
   await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  // Deferred parts of a screen (hidden tabs, the Refine sheet) show stand-ins until loaded.
+  await expect(page.locator("[data-deferred]")).toHaveCount(0);
   await page.evaluate(() =>
     Promise.all(
       document
@@ -136,4 +138,12 @@ export async function completeWizard(page: Page, s: Scenario) {
   await choose(page, "checkbox", "Vegetarian");
   await next(page);
   await expect(page.getByRole("heading", { name: "Review and generate" })).toBeVisible();
+}
+
+/** Runs the wizard for a scenario and waits for its dashboard. */
+export async function generatePlan(page: Page, s: Scenario) {
+  await completeWizard(page, s);
+  await page.getByRole("button", { name: "Generate my plan" }).click();
+  await page.waitForURL(/\/plan\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(s.name);
 }

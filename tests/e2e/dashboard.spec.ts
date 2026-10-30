@@ -1,20 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
-import {
-  completeWizard,
-  expectNoAxeViolations,
-  scenarios,
-  type Scenario,
-} from "./helpers";
+import { expectNoAxeViolations, generatePlan, scenarios, type Scenario } from "./helpers";
 
 const TABS = ["Overview", "Budget", "Timeline", "Vendors", "Ideas"] as const;
-
-async function generatePlan(page: Page, scenario: Scenario) {
-  await completeWizard(page, scenario);
-  await page.getByRole("button", { name: "Generate my plan" }).click();
-  await page.waitForURL(/\/plan\/[0-9a-f-]{36}$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(scenario.name);
-}
 
 const activePanel = (page: Page) => page.getByRole("tabpanel");
 

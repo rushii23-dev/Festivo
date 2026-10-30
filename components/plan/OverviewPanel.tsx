@@ -12,7 +12,7 @@ import { nextTasks } from "@/lib/timeline/generate";
 import { bookingProgress } from "@/lib/vendors/catalog";
 import type { PanelProps } from "./PlanDashboard";
 import { Garland, PanelHeader, StatusNote, TaskCheck } from "./parts";
-import { useTaskToggle } from "./TimelinePanel";
+import { useTaskToggle } from "./useTaskToggle";
 
 export const HEALTH_STYLE: Record<
   BudgetHealth,

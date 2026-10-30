@@ -1,6 +1,4 @@
-/** Browser-only helpers for the dashboard: API calls and file downloads. */
-import type { Plan } from "@/lib/schemas/plan";
-import { buildIcs, icsFileName } from "@/lib/timeline/ics";
+/** Browser-only helpers for the dashboard: API calls and the visitor's time zone. */
 
 const NETWORK_ERROR = "We couldn't reach Festivo. Check your connection and try again.";
 
@@ -10,14 +8,14 @@ export type ApiResult<T> = { ok: true; data: T } | { ok: false; message: string 
 export async function postJson<T>(
   url: string,
   body: unknown,
-  signal?: AbortSignal,
+  signal?: AbortSignal | undefined,
 ): Promise<ApiResult<T>> {
   try {
     const response = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
-      signal,
+      signal: signal ?? null,
     });
     const json = (await response.json().catch(() => null)) as
       (T & { error?: { message?: string } }) | null;
@@ -33,27 +31,4 @@ export async function postJson<T>(
 
 export function userTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
-}
-
-/** Saves the timeline as an .ics file through a temporary object URL. */
-export function downloadCalendar(plan: Plan): string {
-  const ics = buildIcs({
-    calendarName: plan.title,
-    eventTitle: plan.title,
-    eventDate: plan.date,
-    location: plan.location,
-    tasks: plan.timeline,
-  });
-  const url = URL.createObjectURL(
-    new Blob([ics], { type: "text/calendar;charset=utf-8" }),
-  );
-  const fileName = icsFileName(plan.title);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  return fileName;
 }

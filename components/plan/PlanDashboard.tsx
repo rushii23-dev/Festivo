@@ -14,15 +14,10 @@ import {
 import type { Plan } from "@/lib/schemas/plan";
 import { usePlanStore } from "@/lib/store/planStore";
 import { todayIso } from "@/lib/timeline/dates";
-import { BudgetPanel } from "./BudgetPanel";
 import { userTimeZone } from "./client";
-import { IdeasPanel } from "./IdeasPanel";
+import { DeferredPanel, DeferredRefineSheet, DeferredShareMenu } from "./deferred";
 import { OverviewPanel } from "./OverviewPanel";
 import { PlanHero } from "./PlanHero";
-import { RefineSheet } from "./RefineSheet";
-import { ShareMenu } from "./ShareMenu";
-import { TimelinePanel } from "./TimelinePanel";
-import { VendorsPanel } from "./VendorsPanel";
 
 export type UpdatePlan = (edit: (plan: Plan) => Plan) => void;
 
@@ -93,8 +88,8 @@ function Dashboard({ plan }: { plan: Plan }) {
         today={today}
         actions={
           <>
-            <RefineSheet plan={plan} />
-            <ShareMenu plan={plan} today={today} />
+            <DeferredRefineSheet plan={plan} />
+            <DeferredShareMenu plan={plan} today={today} />
           </>
         }
       />
@@ -118,16 +113,16 @@ function Dashboard({ plan }: { plan: Plan }) {
           <OverviewPanel {...props} onNavigate={setTab} />
         </TabsContent>
         <TabsContent value="budget">
-          <BudgetPanel {...props} />
+          <DeferredPanel name="budget" {...props} />
         </TabsContent>
         <TabsContent value="timeline">
-          <TimelinePanel {...props} />
+          <DeferredPanel name="timeline" {...props} />
         </TabsContent>
         <TabsContent value="vendors">
-          <VendorsPanel {...props} />
+          <DeferredPanel name="vendors" {...props} />
         </TabsContent>
         <TabsContent value="ideas">
-          <IdeasPanel {...props} />
+          <DeferredPanel name="ideas" {...props} />
         </TabsContent>
       </Tabs>
     </div>
