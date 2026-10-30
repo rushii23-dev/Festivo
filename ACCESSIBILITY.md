@@ -25,7 +25,7 @@ Run them with `npm run lint`, `npm test` and `npm run test:e2e`.
 
 ### Structure (1.3.1, 2.4.1, 2.4.2, 2.4.6, 3.1.1)
 
-- Landmarks on every page: `header`, `nav` ("Main"), `main`, `footer`; one `h1` per page and
+- Landmarks on every page: `header`, `main`, `footer`; one `h1` per page and
   headings in order.
 - A skip link is the first Tab stop and jumps to `main` (`components/a11y/SkipLink.tsx`).
 - Every page has its own title (`Plan a new event | Festivo`, `Your plan | Festivo`,

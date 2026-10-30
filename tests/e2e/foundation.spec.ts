@@ -42,7 +42,6 @@ test.describe("page structure", () => {
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.getByRole("banner")).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
     await expect(page.getByRole("main")).toBeVisible();
     await expect(page.getByRole("contentinfo")).toBeVisible();
     await expect(page.locator("h1")).toHaveCount(1);
@@ -106,7 +105,11 @@ test.describe("keyboard", () => {
 
   test("focus moves to main after client-side navigation", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("banner").getByRole("link", { name: "Start planning" }).click();
+    await page
+      .getByRole("main")
+      .getByRole("link", { name: "Start planning" })
+      .first()
+      .click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       "Create your account",
     );

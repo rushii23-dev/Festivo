@@ -2,7 +2,6 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentType } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ArchButton } from "@/components/landing/ArchButton";
-import { DiyaButton } from "@/components/landing/DiyaButton";
 import { LightsButton } from "@/components/landing/LightsButton";
 import { ToranButton } from "@/components/landing/ToranButton";
 import { PRESS_MS } from "@/components/landing/usePressToGo";
@@ -19,7 +18,6 @@ type PlanButton = ComponentType<{ href: string; children: string }>;
 /** [name, component, how long its click animation plays]. */
 const BUTTONS: [string, PlanButton, number][] = [
   ["ArchButton", ArchButton, PRESS_MS],
-  ["DiyaButton", DiyaButton, PRESS_MS],
   ["LightsButton", LightsButton, PRESS_MS],
   ["ToranButton", ToranButton, 640],
 ];

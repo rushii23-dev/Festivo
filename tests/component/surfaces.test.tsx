@@ -71,15 +71,12 @@ describe("landing page", () => {
 });
 
 describe("site chrome", () => {
-  it("the header names the site and offers the planner", () => {
+  it("the header names the site and leaves the call to action to the page", () => {
     render(<SiteHeader />);
     const banner = screen.getByRole("banner");
-    expect(within(banner).getByRole("navigation", { name: "Main" })).toBeInTheDocument();
-    expect(within(banner).getByRole("link", { name: "Start planning" })).toHaveAttribute(
-      "href",
-      "/plan/new",
-    );
-    expect(within(banner).getAllByRole("link")[0]).toHaveAttribute("href", "/");
+    expect(within(banner).getAllByRole("link")).toHaveLength(1);
+    expect(within(banner).getByRole("link")).toHaveAttribute("href", "/");
+    expect(within(banner).queryByRole("link", { name: "Start planning" })).toBeNull();
   });
 
   it("the planner page starts with the account screen", async () => {

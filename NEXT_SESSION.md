@@ -122,8 +122,6 @@ endless animations (ideas marquee, finale petals). The user earlier rejected a s
    - **Palace arch** (`ArchButton`): hero (`tone="photo"`) and the plan-not-found page (dark
      window on parchment). Hover lights it from below like a lamp; a click sends out rings of
      light and petals.
-   - **Diya** (`DiyaButton`): the header. The lamp's flame lights and flickers on hover and
-     flares on click.
    - **String of lights** (`LightsButton`): "Start your plan" over the dinner-under-lights
      photo. Bulbs light one by one on hover and twinkle on click.
    - **Marigold toran** (`ToranButton`): the finale. The garland sways on hover; on click
@@ -333,7 +331,7 @@ components/
   plan/                 PlanDashboard, PlanHero, Overview/Budget(+BudgetDonut)/
                         Timeline(+TaskForm)/Vendors/Ideas panels, RefineSheet, ShareMenu, parts
   landing/              Photo, photos (registry), SplitHeading, Marquee, LandingMotion,
-                        PetalFall, ArchButton, DiyaButton, LightsButton, ToranButton,
+                        PetalFall, ArchButton, LightsButton, ToranButton,
                         usePressToGo
 hooks/                  use-hydrated-store, use-hydrated-profile, use-plan-generation
 lib/
