@@ -1,7 +1,8 @@
 # Festivo: handoff for the next session
 
-Last updated: 2026-10-29 (evening). Everything below is committed and pushed to
-<https://github.com/rushii23-dev/Festivo> (`main`, local and remote in sync).
+Last updated: 2026-10-30. The 2026-10-30 hardening work (see "What changed on 2026-10-30")
+was left uncommitted for the user to approve; everything before it is committed and pushed to
+<https://github.com/rushii23-dev/Festivo> (`main`).
 
 Read this first, then `docs/BRIEF.md` (the original brief, the spec) and
 `docs/design/research.md` (design references). This file says where we are against the brief,
@@ -26,24 +27,77 @@ what the user likes and dislikes, and how we work.
 
 ## Status at a glance
 
-| Phase | What                                                                                        | Status  |
-| ----- | ------------------------------------------------------------------------------------------- | ------- |
-| 1     | Foundation: scaffold, tooling, tokens, fonts, a11y base, CI                                 | ✅ Done |
-| —     | Design research (twomuch.studio, Refero Styles, then amritpalace.com)                       | ✅ Done |
-| 2     | Domain logic: schemas, budget, timeline, .ics, cache, rate limit, sanitize, fixtures        | ✅ Done |
-| 3     | AI layer: providers, prompts, parse + repair, `/api/plan`, `/api/refine`, `/api/ideas`, CSP | ✅ Done |
-| 4     | Wizard: 6 steps, validation, focus, persistence, streamed generation                        | ✅ Done |
-| 5     | Dashboard at `/plan/[id]`: 5 tabs, refine sheet, export                                     | ✅ Done |
-| 6     | Landing page, brand (seal + wordmark), editorial redesign of every page                     | ✅ Done |
-| 6b    | Device-only account, 36 occasions after Luma, adaptive wizard, animated planning buttons    | ✅ Done |
-| 7     | Hardening: e2e per brief, Lighthouse, bundle analysis, audits                               | ❌ Next |
-| 8     | Docs + deployment: README, ARCHITECTURE/SECURITY/ACCESSIBILITY.md, Dockerfile               | ❌ Next |
+| Phase | What                                                                                        | Status                               |
+| ----- | ------------------------------------------------------------------------------------------- | ------------------------------------ |
+| 1     | Foundation: scaffold, tooling, tokens, fonts, a11y base, CI                                 | ✅ Done                              |
+| —     | Design research (twomuch.studio, Refero Styles, then amritpalace.com)                       | ✅ Done                              |
+| 2     | Domain logic: schemas, budget, timeline, .ics, cache, rate limit, sanitize, fixtures        | ✅ Done                              |
+| 3     | AI layer: providers, prompts, parse + repair, `/api/plan`, `/api/refine`, `/api/ideas`, CSP | ✅ Done                              |
+| 4     | Wizard: 6 steps, validation, focus, persistence, streamed generation                        | ✅ Done                              |
+| 5     | Dashboard at `/plan/[id]`: 5 tabs, refine sheet, export                                     | ✅ Done                              |
+| 6     | Landing page, brand (seal + wordmark), editorial redesign of every page                     | ✅ Done                              |
+| 6b    | Device-only account, 36 occasions after Luma, adaptive wizard, animated planning buttons    | ✅ Done                              |
+| 7     | Hardening: e2e per brief, bundle analysis and budgets, audits, a11y and security passes     | ✅ Done (Lighthouse not run)         |
+| 8     | Docs + deployment: README, ARCHITECTURE/SECURITY/ACCESSIBILITY.md, Dockerfile, CodeQL       | ✅ Done (Docker build untested here) |
 
-Last full check (2026-10-29, evening): lint clean, Prettier clean, typecheck clean, **507
-Vitest tests** (unit, API, component) passing, Playwright on desktop and mobile through Edge
-(see "Running Playwright on this machine"). See "Known issues" for the coverage-run timeouts.
+Last full check (2026-10-30): lint clean (type-aware rules and ceilings), Prettier clean,
+typecheck clean, `npm audit` 0, **556 Vitest tests** passing with coverage 96.4% statements /
+88.1% branches / 95.2% functions / 97.1% lines over the whole app (98.6 / 92.3 / 98.2 / 99.3 on
+`lib/`), **77 Playwright tests** passing on desktop and mobile through Edge (7 skipped by design),
+bundle budgets met (`/` 147 KB, `/plan/new` 197 KB, `/plan/[id]` 222 KB gzipped).
 
-## What changed on 2026-10-29 (this session)
+## What changed on 2026-10-30 (quality pass against Project FanFare)
+
+The user asked for every judging criterion to be "the best", better than their other project
+<https://github.com/rushii23-dev/Project-FanFare>, with a score comparison.
+
+1. **Efficiency.** Landing first-load JS 214 → 147 KB gzipped (the brief's 150 KB target), new
+   plan 218 → 197 KB, dashboard 254 → 222 KB. How: the header's account menu loads after
+   hydration (`components/layout/AccountMenuSlot.tsx`); the error boundary uses
+   `components/ui/button-variants.ts` instead of the Button (drops the class merger); photos are
+   named exports so client pages ship only their placeholders; the wizard and plan store load
+   while the account form shows (`components/onboarding/Onboarding.tsx`); the dashboard's hidden
+   tabs, Refine sheet and share menu are lazy chunks with identical stand-ins that remember a
+   click (`components/plan/deferred.tsx`, `triggers.tsx`). The dashboard's main view stays in the
+   first load on purpose (deferring it would delay the hero photo). `npm run bundle:check`
+   (`scripts/bundle-budget.mjs`) enforces per-route budgets in CI. Identical in-flight AI
+   requests now share one call (`lib/cache/singleFlight.ts`).
+2. **Security.** Rate-limit key read from the right of X-Forwarded-For (`TRUSTED_PROXY_HOPS`),
+   IPv6 grouped by /64, eviction never frees a blocked client; bodies capped while streaming
+   (chunked uploads) with strict UTF-8; `Sec-Fetch-Site` cross-site refusal; API responses get
+   `default-src 'none'`; Origin-Agent-Cluster and X-Permitted-Cross-Domain-Policies headers;
+   Gemini retries transient failures (`GEMINI_RETRIES`); every `lib/ai` module is
+   `server-only`; the shadcn CLI devDependency was removed (its CSS import was unused), so
+   `npm audit` reports 0. CodeQL and Dependabot (npm, actions, docker) added.
+3. **Code quality.** ESLint gained type-aware rules (floating promises, exhaustive switches,
+   deprecations…) and ceilings (complexity 20, depth 4, 5 params, 400 lines; data catalogues and
+   tests exempt). `validateStep`, `mockRefine`, `PlanSoFar`, `selectIdeas` were refactored to
+   fit; the landing page's timeline and finale moved to `components/landing/TimelineSection.tsx`
+   and `FinaleSection.tsx`. `tsconfig` adds `exactOptionalPropertyTypes` and
+   `noImplicitReturns`. Deprecated `FormEvent` and zod `.finite()` replaced.
+4. **Accessibility.** Fixed an invisible keyboard focus on the wizard's event cards (the CSS
+   targeted a class no element had; now `[data-choice-card]`). Forced-colours support (selection,
+   radio dots, progress bar, active tab). The 404 page has its own title. Budget figures stack at
+   200% text. New `tests/e2e/accessibility.spec.ts`: forced colours, 200% text (desktop), visible
+   focus, page titles, reduced-motion axe scan.
+5. **Docs and deploy.** README rewritten for judges; `ARCHITECTURE.md`, `SECURITY.md` (threat
+   model), `ACCESSIBILITY.md`, MIT `LICENSE` (same holder as FanFare), multi-stage non-root
+   `Dockerfile` + `.dockerignore` (standalone output only when `NEXT_OUTPUT=standalone`), CI
+   jobs for the bundle budget, a client-bundle secret scan and a Docker build.
+
+6. **Testing.** Coverage now spans the whole app (components, hooks, pages, routes,
+   `proxy.ts`), ratcheted at 95/86/94/96 with `lib/` held at 97/90/97/98; only the root layout,
+   GSAP scenes and canvas petals are excluded (browser-only, covered by Playwright). New suites:
+   `tests/component/surfaces.test.tsx`, `wizard-branches.test.tsx`, `deferred.test.tsx`,
+   `tests/unit/proxy.test.ts`, `headers.test.ts`, plus API tests for chunked bodies, UTF-8,
+   Sec-Fetch-Site, forged X-Forwarded-For, single flight and retries. The unused `label`,
+   `radio-group` and `switch` primitives were deleted.
+
+**Open decision for the user:** WCAG 2.2.2 (Pause, Stop, Hide) wants a pause control on the two
+endless animations (ideas marquee, finale petals). The user earlier rejected a site-wide
+"reduce motion" switch, so this was not added without asking.
+
+## What changed on 2026-10-29
 
 1. **Account before planning** (`components/onboarding/`, `lib/profile/`,
    `lib/store/profileStore.ts`). "Start planning" opens a sign-up screen (name, optional
@@ -296,18 +350,16 @@ tests/  unit/ api/ component/ e2e/ setup/
 docs/   BRIEF.md, design/ (research, photo credits, font options, hero studies)
 ```
 
-## Next steps (Phases 7 and 8 from the brief)
+## Next steps
 
-**Phase 7, hardening:** Playwright e2e exactly as the brief lists (landing → wizard → generate
-→ edit budget → tick task → export .ics, ×3 event types), axe on every page, keyboard-only,
-reduced-motion emulation; Lighthouse mobile (Perf ≥ 90, A11y 100, BP 100, SEO ≥ 95), with
-attention to the hero LCP (the ballroom photo is preloaded) and the landing JS budget
-(< 150KB gzipped); bundle analyzer numbers; contrast audit; 200% text zoom.
-
-**Phase 8, docs + deploy:** README (problem statement, feature → judging-criteria table,
-Mermaid architecture, setup, env, scripts, tests, screenshots, Cloud Run + Vercel steps),
-ARCHITECTURE.md, SECURITY.md (threat model + every mitigation), ACCESSIBILITY.md, a
-multi-stage non-root Dockerfile with `output: "standalone"` (not set yet).
+1. **Commit** the 2026-10-30 work as small logical commits once the user approves (efficiency,
+   security, lint gates and refactors, accessibility, tests, docs and deploy), then push only
+   when they say so. `.pw-edge.config.ts` must not be committed.
+2. Ask about the **pause control** for the marquee and petals (WCAG 2.2.2).
+3. After the first push, check the GitHub Actions tab: the new `docker` and CodeQL jobs have
+   never run.
+4. Optional: a Lighthouse mobile run (needs the `lighthouse` npm package; ask first), and a
+   manual NVDA / VoiceOver pass.
 
 Possible design follow-ups the user may ask for: richer photo for the growing window (would
 need a new Unsplash download, with permission), the remaining dark bands (ideas marquee, the
@@ -316,9 +368,6 @@ and wizard for the same "clean and rich" standard.
 
 ## Known issues and loose ends
 
-- **Coverage run times out on two slow component tests** (`tests/component/dashboard.test.tsx`:
-  "Timeline panel … with undo" and "Ideas panel …") at the 20s limit; they pass without
-  coverage. This machine was very slow at the time; speed them up or raise their timeout.
 - **CI on GitHub not checked.** `.github/workflows/ci.yml` runs on pushes now that the repo has
   a remote; the GitHub CLI is not installed here, so look at the repo's Actions tab.
 - Gemini untested with a real key (decision 3).
@@ -327,7 +376,10 @@ and wizard for the same "clean and rich" standard.
 - The `magic` MCP server fails to connect (API key); not needed.
 - The bride photo is still used on the "Weddings" card (section 7); the user only removed it
   from the hero.
-- Lighthouse has not been run since photography and GSAP arrived.
+- Lighthouse has not been run since photography and GSAP arrived (bundle budgets are enforced
+  instead; a Lighthouse pass would need its npm package).
+- The Dockerfile and the CI "Container image" job were not run here (no Docker on this machine).
+- WCAG 2.2.2: no pause control on the marquee and petals yet (see the open decision above).
 - Git author name is the email address (`rushipvt23@gmail.com`); offer to set a display name.
 - **The dashboard hero photo still follows the three families**, so a book club or hackathon
   plan shows the festival drummers. Make it follow the occasion (or drop it) if the user
