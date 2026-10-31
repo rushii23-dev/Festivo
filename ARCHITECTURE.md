@@ -114,6 +114,7 @@ Every mitigation is listed, with its file and test, in [SECURITY.md](SECURITY.md
 
 ```
 app/                 pages, error boundary, route handlers (api/plan, api/refine, api/ideas)
+app/styles/          stylesheets by concern: accessibility, print, landing, buttons, onboarding
 proxy.ts             per-request nonce CSP (Next.js 16 middleware)
 components/          a11y · brand · landing · layout · onboarding · plan · ui · wizard
 hooks/               store hydration, streamed plan generation

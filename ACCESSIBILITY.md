@@ -76,7 +76,7 @@ Run them with `npm run lint`, `npm test` and `npm run test:e2e`.
 Forced colours drop background fills and repaint borders and outlines in the system text colour.
 Festivo marks state with things that survive that: a heavy outline that only the chosen card or
 chip has, radio dots and progress segments painted in system colours, and an underline only on
-the active tab (`@media (forced-colors: active)` in `app/globals.css`).
+the active tab (`@media (forced-colors: active)` in `app/styles/accessibility.css`).
 
 ### Motion (2.3.1, 2.3.3)
 
