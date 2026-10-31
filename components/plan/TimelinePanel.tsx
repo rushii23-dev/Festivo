@@ -29,6 +29,37 @@ const toInput = (task: TimelineTask): TaskInput => ({
 
 type View = "all" | "run-sheet";
 
+/** Switches between every task by phase and the event day's run sheet. */
+function ViewChoice({ view, onChange }: { view: View; onChange: (view: View) => void }) {
+  return (
+    <Fieldset
+      id="timeline-view"
+      name="timelineView"
+      legend="Show"
+      className="print:hidden"
+    >
+      <div className="flex flex-wrap gap-2">
+        <Choice
+          type="radio"
+          name="timeline-view"
+          value="all"
+          checked={view === "all"}
+          onChange={() => onChange("all")}
+          label="All tasks by phase"
+        />
+        <Choice
+          type="radio"
+          name="timeline-view"
+          value="run-sheet"
+          checked={view === "run-sheet"}
+          onChange={() => onChange("run-sheet")}
+          label="Day-of run sheet"
+        />
+      </div>
+    </Fieldset>
+  );
+}
+
 /** The plan's tasks by phase or as the day's run sheet, with add, edit, delete and undo. */
 export function TimelinePanel(props: PanelProps) {
   const { plan, today } = props;
@@ -83,31 +114,7 @@ export function TimelinePanel(props: PanelProps) {
         </Button>
       </PanelHeader>
 
-      <Fieldset
-        id="timeline-view"
-        name="timelineView"
-        legend="Show"
-        className="print:hidden"
-      >
-        <div className="flex flex-wrap gap-2">
-          <Choice
-            type="radio"
-            name="timeline-view"
-            value="all"
-            checked={view === "all"}
-            onChange={() => setView("all")}
-            label="All tasks by phase"
-          />
-          <Choice
-            type="radio"
-            name="timeline-view"
-            value="run-sheet"
-            checked={view === "run-sheet"}
-            onChange={() => setView("run-sheet")}
-            label="Day-of run sheet"
-          />
-        </div>
-      </Fieldset>
+      <ViewChoice view={view} onChange={setView} />
 
       {edits.deleted ? (
         <div className="flex flex-wrap items-center gap-3 border border-dashed border-input px-4 py-2">

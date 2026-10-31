@@ -13,6 +13,13 @@ import { PlanSchema } from "@/lib/schemas/plan";
 import { DEFAULT_QUESTIONS } from "@/lib/vendors/catalog";
 
 const TODAY = "2026-10-26";
+
+/** A fixture entry the test relies on; fails loudly if the fixture changes. */
+function fixture<T>(value: T | undefined): T {
+  if (value === undefined)
+    throw new Error("The fixture is missing an entry this test needs.");
+  return value;
+}
 const input = EventInputSchema.parse({
   eventType: "community",
   name: "Green Street Fair",
@@ -158,37 +165,40 @@ describe("applyPatch", () => {
   });
 
   it("adds and removes tasks and ideas, but never removes saved ideas", () => {
-    const [saved, removable] = plan.ideas;
+    const saved = fixture(plan.ideas[0]);
+    const removable = fixture(plan.ideas[1]);
+    const duplicate = fixture(plan.ideas[2]);
+    const firstTask = fixture(plan.timeline[0]);
     const withSaved = {
       ...plan,
-      ideas: plan.ideas.map((i) => (i.id === saved?.id ? { ...i, saved: true } : i)),
+      ideas: plan.ideas.map((i) => (i.id === saved.id ? { ...i, saved: true } : i)),
     };
     const next = applyPatch(
       withSaved,
       {
         explanation: "x",
-        removeIdeaIds: [saved?.id ?? "", removable?.id ?? ""],
+        removeIdeaIds: [saved.id, removable.id],
         addIdeas: [
           { category: "food", title: "Fresh idea", description: "New.", costTier: 1 },
           {
             category: "food",
-            title: plan.ideas[2]?.title ?? "",
+            title: duplicate.title,
             description: "Duplicate.",
             costTier: 1,
           },
         ],
-        removeTaskIds: [plan.timeline[0]?.id ?? ""],
+        removeTaskIds: [firstTask.id],
         addTasks: [{ title: "Book a photographer", description: "", daysBefore: 20 }],
         summary: "New summary.",
       },
       TODAY,
     );
     const ids = next.ideas.map((i) => i.id);
-    expect(ids).toContain(saved?.id);
-    expect(ids).not.toContain(removable?.id);
+    expect(ids).toContain(saved.id);
+    expect(ids).not.toContain(removable.id);
     expect(next.ideas.filter((i) => i.title === "Fresh idea")).toHaveLength(1);
-    expect(next.ideas.filter((i) => i.title === plan.ideas[2]?.title)).toHaveLength(1);
-    expect(next.timeline.map((t) => t.id)).not.toContain(plan.timeline[0]?.id);
+    expect(next.ideas.filter((i) => i.title === duplicate.title)).toHaveLength(1);
+    expect(next.timeline.map((t) => t.id)).not.toContain(firstTask.id);
     expect(next.timeline.find((t) => t.title === "Book a photographer")?.dueDate).toBe(
       "2027-01-10",
     );

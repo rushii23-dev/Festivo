@@ -49,8 +49,12 @@ const eslintConfig = defineConfig([
 
       // Maintainability ceilings, set at what the code measures after its last
       // refactor so any change that makes a function harder to follow fails lint.
-      // Complexity counts every `?.`, `??` and `&&` in JSX, hence 20 rather than 10.
-      complexity: ["error", 20],
+      // Complexity counts every `?.`, `??` and `&&` in JSX, hence 12 rather than 10.
+      complexity: ["error", 12],
+      "max-lines-per-function": [
+        "error",
+        { max: 100, skipBlankLines: true, skipComments: true },
+      ],
       "max-depth": ["error", 4],
       "max-params": ["error", 5],
       "max-nested-callbacks": ["error", 4],
@@ -87,7 +91,11 @@ const eslintConfig = defineConfig([
     // Catalogues of occasions and planning profiles are data, not logic; tests
     // enumerate scenarios, so their length is their nature.
     files: ["lib/events/occasions.ts", "lib/events/profiles.ts", "tests/**"],
-    rules: { "max-lines": "off", "max-nested-callbacks": "off" },
+    rules: {
+      "max-lines": "off",
+      "max-lines-per-function": "off",
+      "max-nested-callbacks": "off",
+    },
   },
   prettier,
   globalIgnores([

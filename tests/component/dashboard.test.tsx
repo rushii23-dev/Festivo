@@ -223,26 +223,30 @@ describe("Timeline panel", () => {
 
   it("validates, adds, and deletes a task with undo", async () => {
     const user = renderDashboard("#timeline");
-    await user.click(await screen.findByRole("button", { name: "Add a task" }));
-    const title = screen.getByRole("textbox", { name: /^Task/ });
+    // Queries stay inside the panel: role lookups across the whole dashboard are slow.
+    const panel = within(await screen.findByRole("tabpanel"));
+    await user.click(await panel.findByRole("button", { name: "Add a task" }));
+    const title = panel.getByRole("textbox", { name: /^Task/ });
     expect(title).toHaveFocus();
 
-    await user.click(screen.getByRole("button", { name: "Add task" }));
+    await user.click(panel.getByRole("button", { name: "Add task" }));
     expect(title).toHaveAttribute("aria-invalid", "true");
     expect(title).toHaveFocus();
 
-    await user.type(title, "Collect the balloons");
-    await user.click(screen.getByRole("button", { name: "Add task" }));
+    // Pasted rather than typed: the test is about validation, adding and undo.
+    await user.click(title);
+    await user.paste("Collect the balloons");
+    await user.click(panel.getByRole("button", { name: "Add task" }));
     expect(
-      screen.getByRole("checkbox", { name: "Collect the balloons" }),
+      panel.getByRole("checkbox", { name: "Collect the balloons" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add a task" })).toHaveFocus();
+    expect(panel.getByRole("button", { name: "Add a task" })).toHaveFocus();
 
-    await user.click(screen.getByRole("button", { name: "Delete Collect the balloons" }));
-    expect(screen.queryByRole("checkbox", { name: "Collect the balloons" })).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Undo" }));
+    await user.click(panel.getByRole("button", { name: "Delete Collect the balloons" }));
+    expect(panel.queryByRole("checkbox", { name: "Collect the balloons" })).toBeNull();
+    await user.click(panel.getByRole("button", { name: "Undo" }));
     expect(
-      screen.getByRole("checkbox", { name: "Collect the balloons" }),
+      panel.getByRole("checkbox", { name: "Collect the balloons" }),
     ).toBeInTheDocument();
   });
 
