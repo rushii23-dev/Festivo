@@ -16,6 +16,8 @@ import { EventInputSchema } from "@/lib/schemas/eventInput";
 import type { Plan, TimelineTask } from "@/lib/schemas/plan";
 import { addDays, todayIso } from "@/lib/timeline/dates";
 
+// Panels render real lists; under a full parallel run they need more than 5 s.
+vi.setConfig({ testTimeout: 20_000 });
 afterEach(() => vi.unstubAllGlobals());
 
 const today = todayIso(new Date(), "UTC");
@@ -78,10 +80,12 @@ describe("timeline panel", () => {
     expect(latest().timeline.find((t) => t.id === task.id)?.title).toBe(
       "Order the birthday cake",
     );
-    await vi.waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: "Edit Order the birthday cake" }),
-      ).toHaveFocus(),
+    await vi.waitFor(
+      () =>
+        expect(
+          screen.getByRole("button", { name: "Edit Order the birthday cake" }),
+        ).toHaveFocus(),
+      { timeout: 5_000 },
     );
   });
 
