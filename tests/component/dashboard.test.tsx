@@ -359,23 +359,25 @@ describe("Ideas panel", () => {
     const user = renderDashboard("#ideas");
     const idea = plan.ideas[0]!;
     await screen.findByRole("heading", { level: 2, name: "Ideas" });
-    const save = await screen.findByRole("button", { name: `Save ${idea.title}` });
+    // Queries stay inside the panel: role lookups across the whole dashboard are slow.
+    const panel = within(screen.getByRole("tabpanel"));
+    const save = await panel.findByRole("button", { name: `Save ${idea.title}` });
     await user.click(save);
     expect(save).toHaveAttribute("aria-pressed", "true");
     expect(stored().ideas[0]?.saved).toBe(true);
 
-    await user.click(screen.getByRole("button", { name: `Dismiss ${idea.title}` }));
-    expect(screen.queryByRole("heading", { name: idea.title })).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Show dismissed (1)" }));
+    await user.click(panel.getByRole("button", { name: `Dismiss ${idea.title}` }));
+    expect(panel.queryByRole("heading", { name: idea.title })).toBeNull();
+    await user.click(panel.getByRole("button", { name: "Show dismissed (1)" }));
     expect(
-      screen.getByRole("button", { name: `Restore ${idea.title}` }),
+      panel.getByRole("button", { name: `Restore ${idea.title}` }),
     ).toBeInTheDocument();
 
     await user.click(
-      screen.getByRole("button", { name: "More like this for Food & drinks" }),
+      panel.getByRole("button", { name: "More like this for Food & drinks" }),
     );
     expect(
-      await screen.findByRole("heading", { name: "Mango lassi bar" }),
+      await panel.findByRole("heading", { name: "Mango lassi bar" }),
     ).toBeInTheDocument();
     expect(stored().ideas.some((i) => i.title === "Mango lassi bar")).toBe(true);
   });
