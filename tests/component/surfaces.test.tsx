@@ -70,6 +70,26 @@ describe("landing page", () => {
   });
 });
 
+describe("pausing moving content", () => {
+  it("marks the ideas and the finale as paused, and plays them again", async () => {
+    render(<HomePage />);
+    const user = userEvent.setup();
+    for (const [name, selector] of [
+      ["Pause ideas", "#ideas"],
+      ["Pause petals", "section.finale"],
+    ] as const) {
+      const button = screen.getByRole("button", { name });
+      const region = document.querySelector(selector);
+      expect(button).toHaveAttribute("aria-pressed", "false");
+      await user.click(button);
+      expect(button).toHaveAttribute("aria-pressed", "true");
+      expect(region).toHaveAttribute("data-paused");
+      await user.click(button);
+      expect(region).not.toHaveAttribute("data-paused");
+    }
+  });
+});
+
 describe("site chrome", () => {
   it("the header names the site and leaves the call to action to the page", () => {
     render(<SiteHeader />);

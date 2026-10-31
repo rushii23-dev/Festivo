@@ -39,8 +39,9 @@
   animation-direction: reverse;
 }
 
-/* Holds still under the pointer, so a title can be read. */
-.marquee-track:hover {
+/* Holds still under the pointer, so a title can be read, and stops on Pause. */
+.marquee-track:hover,
+[data-motion-region][data-paused] .marquee-track {
   animation-play-state: paused;
 }
 

@@ -83,20 +83,34 @@ export function PetalFall() {
       frame = requestAnimationFrame(draw);
     };
 
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry?.isIntersecting && !running) {
+    // Runs while the finale is on screen and not paused (PauseMotion); a pause
+    // also clears the canvas, so nothing is left hanging mid-air.
+    const region = el.closest<HTMLElement>("[data-motion-region]");
+    const paused = () => region?.hasAttribute("data-paused") ?? false;
+    let visible = false;
+    const sync = () => {
+      const run = visible && !paused();
+      if (run && !running) {
         running = true;
         frame = requestAnimationFrame(draw);
-      } else if (!entry?.isIntersecting && running) {
+      } else if (!run && running) {
         running = false;
         cancelAnimationFrame(frame);
       }
+      if (paused()) ctx.clearRect(0, 0, width, height);
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = Boolean(entry?.isIntersecting);
+      sync();
     });
     observer.observe(el);
+    const pauseWatch = new MutationObserver(sync);
+    if (region) pauseWatch.observe(region, { attributeFilter: ["data-paused"] });
     window.addEventListener("resize", resize);
 
     return () => {
       observer.disconnect();
+      pauseWatch.disconnect();
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", resize);
     };

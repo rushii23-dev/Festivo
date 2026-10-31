@@ -1,4 +1,5 @@
 import { FestivoSeal } from "@/components/brand/FestivoSeal";
+import { PauseMotion } from "./PauseMotion";
 import { PetalFall } from "./PetalFall";
 import { Photo } from "./Photo";
 import { PHOTOS, type SitePhoto } from "./photos";
@@ -29,9 +30,13 @@ export function FinaleSection() {
   return (
     <section
       aria-labelledby="finale-title"
+      data-motion-region
       className="finale relative isolate overflow-hidden"
     >
       <PetalFall />
+      <div className="absolute top-4 right-4 z-10 sm:top-6 sm:right-6">
+        <PauseMotion label="Pause petals" tone="light" />
+      </div>
       <div className="relative mx-auto grid w-full max-w-[90rem] justify-items-center px-4 pt-28 text-center sm:px-8 lg:pt-36">
         <FestivoSeal className="h-16 text-gold" />
         <SplitHeading

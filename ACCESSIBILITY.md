@@ -78,7 +78,7 @@ Festivo marks state with things that survive that: a heavy outline that only the
 chip has, radio dots and progress segments painted in system colours, and an underline only on
 the active tab (`@media (forced-colors: active)` in `app/styles/accessibility.css`).
 
-### Motion (2.3.1, 2.3.3)
+### Motion (2.2.2, 2.3.1, 2.3.3)
 
 - The device's reduced-motion setting is read before first paint (`public/prefs-init.js`),
   then followed live (`lib/prefs/store.ts`). Under it there is no smooth scrolling, no
@@ -88,6 +88,9 @@ the active tab (`@media (forced-colors: active)` in `app/styles/accessibility.cs
 - Native scrolling, keyboard scrolling and anchor links always work: nothing is scroll-jacked.
 - Nothing flashes. The marquee and the falling petals are decorative; the marquee's titles are
   read once by screen readers (its looping copy is hidden), and it holds still under the pointer.
+- Each moving section has its own **Pause** button (`components/landing/PauseMotion.tsx`), a
+  toggle with `aria-pressed`: it stops the marquee and stops and clears the petals. It is shown
+  only while motion is on, since nothing moves otherwise (`tests/e2e/accessibility.spec.ts`).
 
 ### Size and reflow (1.4.4, 1.4.10, 2.5.8)
 
@@ -105,9 +108,5 @@ the active tab (`@media (forced-colors: active)` in `app/styles/accessibility.cs
 
 - Testing is automated plus keyboard runs. A manual pass with NVDA, JAWS and VoiceOver is
   recommended before a public launch; please report anything we missed.
-- **Pause, Stop, Hide (2.2.2).** When the device allows motion, the ideas marquee and the
-  finale's falling petals keep moving for as long as they are on screen, and there is no
-  control to pause them (both stop entirely under reduced motion, and the marquee holds still
-  under the pointer). Meeting 2.2.2 fully needs a small pause control on those two sections.
 - On a phone, doubling the text size (roughly 400% zoom) can make the dashboard scroll
   sideways; the 320-pixel reflow that WCAG requires is met.

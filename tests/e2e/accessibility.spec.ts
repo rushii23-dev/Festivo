@@ -173,3 +173,35 @@ test.describe("reduced motion", () => {
     await expect(page.locator("#wizard-step-title")).toBeFocused();
   });
 });
+
+test.describe("moving content can be paused (2.2.2)", () => {
+  test("the ideas marquee and the finale petals each have a Pause button", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const ideas = page.locator("#ideas");
+    const pauseIdeas = ideas.getByRole("button", { name: "Pause ideas" });
+    await pauseIdeas.scrollIntoViewIfNeeded();
+    await expect(pauseIdeas).toBeVisible();
+    await pauseIdeas.click();
+    await expect(pauseIdeas).toHaveAttribute("aria-pressed", "true");
+    await expect
+      .poll(() => style(ideas.locator(".marquee-track").first(), "animation-play-state"))
+      .toBe("paused");
+
+    const pausePetals = page.getByRole("button", { name: "Pause petals" });
+    await pausePetals.scrollIntoViewIfNeeded();
+    await pausePetals.click();
+    await expect(pausePetals).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator("section.finale")).toHaveAttribute("data-paused", "");
+  });
+
+  test("there is nothing to pause when the device asks for reduced motion", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Pause ideas" })).toBeHidden();
+    await expect(page.getByRole("button", { name: "Pause petals" })).toBeHidden();
+  });
+});

@@ -1,4 +1,5 @@
 import { Marquee } from "./Marquee";
+import { PauseMotion } from "./PauseMotion";
 import { DARK_TONE } from "./tone";
 
 /** Landing section 6: idea titles drifting past in two rows. */
@@ -7,8 +8,12 @@ export function IdeasSection({ ideas }: { ideas: string[] }) {
     <section
       id="ideas"
       aria-labelledby="ideas-title"
-      className={`py-20 lg:py-28 ${DARK_TONE}`}
+      data-motion-region
+      className={`relative py-20 lg:py-28 ${DARK_TONE}`}
     >
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+        <PauseMotion label="Pause ideas" tone="dark" />
+      </div>
       <h2 id="ideas-title" className="caps px-4 text-center">
         Ideas, picked for your style and your budget
       </h2>
