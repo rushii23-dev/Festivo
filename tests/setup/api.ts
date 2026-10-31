@@ -16,6 +16,7 @@ beforeEach(() => {
   vi.stubEnv("GEMINI_API_KEY", "");
   // Upstream failures fail fast; the retry test turns retries back on.
   vi.stubEnv("GEMINI_RETRIES", "0");
+  vi.stubEnv("GEMINI_FALLBACK_MODEL", "");
   resetProvider();
   apiLimiter.reset();
   clearPlanCaches();

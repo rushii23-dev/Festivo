@@ -274,18 +274,23 @@ export async function refinePlan(
   instruction: string,
   { provider, today, signal }: ServiceOptions,
 ): Promise<RefineResult> {
-  const patch = await generateStructured({
-    provider,
-    schema: PlanPatchSchema,
-    signal,
-    task: {
-      system: SYSTEM_PROMPT,
-      prompt: buildRefinePrompt(plan, instruction, today),
-      schema: toProviderSchema(PlanPatchSchema),
-      context: { kind: "refine", plan, instruction, today },
-      maxOutputTokens: 4096,
-    },
-  });
+  const ask = (pastDate?: string) =>
+    generateStructured({
+      provider,
+      schema: PlanPatchSchema,
+      signal,
+      task: {
+        system: SYSTEM_PROMPT,
+        prompt: buildRefinePrompt(plan, instruction, today, pastDate),
+        schema: toProviderSchema(PlanPatchSchema),
+        context: { kind: "refine", plan, instruction, today },
+        maxOutputTokens: 4096,
+      },
+    });
+  let patch = await ask();
+  // Models sometimes add a date nobody asked for. Ask once more, naming it; if the
+  // planner really asked for a past date, applyPatch refuses it in plain words.
+  if (patch.date && patch.date <= today) patch = await ask(patch.date);
   const updated = applyPatch(plan, patch, today);
   return {
     explanation: patch.explanation,

@@ -8,11 +8,13 @@ import { z } from "zod";
 const EnvSchema = z.object({
   AI_PROVIDER: z.enum(["mock", "gemini"]).optional(),
   GEMINI_API_KEY: z.string().min(1).optional(),
-  GEMINI_MODEL: z.string().min(1).default("gemini-flash-latest"),
+  GEMINI_MODEL: z.string().min(1).default("gemini-2.5-flash"),
   /** Total artificial delay for mock streaming, so demo mode shows progress. */
   MOCK_STREAM_DELAY_MS: z.coerce.number().int().min(0).max(10_000).default(1200),
   /** Retries for a Gemini request that fails before streaming starts (429, 5xx). */
   GEMINI_RETRIES: z.coerce.number().int().min(0).max(5).default(2),
+  /** Tried when the main model is overloaded or failing; empty turns it off. */
+  GEMINI_FALLBACK_MODEL: z.string().default("gemini-2.5-flash-lite"),
 });
 
 export interface AiConfig {
@@ -20,6 +22,8 @@ export interface AiConfig {
   geminiApiKey?: string;
   geminiModel: string;
   geminiRetries: number;
+  /** Absent when it is turned off or the same as the main model. */
+  geminiFallbackModel?: string;
   mockDelayMs: number;
 }
 
@@ -47,6 +51,10 @@ export function readAiConfig(
     ...(parsed.GEMINI_API_KEY ? { geminiApiKey: parsed.GEMINI_API_KEY } : {}),
     geminiModel: parsed.GEMINI_MODEL,
     geminiRetries: parsed.GEMINI_RETRIES,
+    ...(parsed.GEMINI_FALLBACK_MODEL &&
+    parsed.GEMINI_FALLBACK_MODEL !== parsed.GEMINI_MODEL
+      ? { geminiFallbackModel: parsed.GEMINI_FALLBACK_MODEL }
+      : {}),
     mockDelayMs: parsed.MOCK_STREAM_DELAY_MS,
   };
 }

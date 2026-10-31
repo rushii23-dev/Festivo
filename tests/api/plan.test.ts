@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/plan/route";
+import { MAIN_MODEL_COOLDOWN_MS, createGeminiProvider } from "@/lib/ai/gemini";
 import { resetProvider } from "@/lib/ai/getProvider";
+import { collect, type StructuredTask } from "@/lib/ai/provider";
 import { planToDraft } from "@/lib/ai/mock";
 import { buildMockPlan } from "@/lib/fixtures/buildMockPlan";
+import { clearPlanCaches } from "@/lib/plan/service";
 import { EventInputSchema } from "@/lib/schemas/eventInput";
 import { PlanSchema } from "@/lib/schemas/plan";
 import { server } from "../setup/api";
@@ -310,6 +313,64 @@ describe("POST /api/plan (Gemini via MSW)", () => {
     const events = await readEvents(await request());
     expect(gemini.calls()).toBe(2);
     expect(lastPlan(events).plan.title).toBe(birthdayInput.name);
+  });
+
+  it("moves to the fallback model when the main one is overloaded", async () => {
+    useGemini();
+    vi.stubEnv("GEMINI_FALLBACK_MODEL", "gemini-backup");
+    resetProvider();
+    const gemini = geminiReplies(server, [{ status: 503 }, validDraft]);
+    const events = await readEvents(await request());
+    expect(gemini.calls()).toBe(2);
+    expect(gemini.urls[1]).toContain("gemini-backup");
+    expect(lastPlan(events).plan.title).toBe(birthdayInput.name);
+
+    // For the next few minutes the overloaded model is skipped entirely.
+    clearPlanCaches();
+    await readEvents(await request());
+    expect(gemini.calls()).toBe(3);
+    expect(gemini.urls[2]).toContain("gemini-backup");
+  });
+
+  it("tries the main model again once the cooldown has passed", async () => {
+    let clock = 0;
+    const provider = createGeminiProvider({
+      apiKey: GEMINI_KEY,
+      model: "gemini-main",
+      retries: 0,
+      fallbackModel: "gemini-backup",
+      now: () => clock,
+    });
+    const gemini = geminiReplies(server, [{ status: 503 }, "{}", "{}", "{}"]);
+    const task: StructuredTask = {
+      system: "s",
+      prompt: "p",
+      schema: { type: "object" },
+      context: {
+        kind: "plan",
+        input: EventInputSchema.parse(birthdayInput),
+        today: "2026-10-26",
+      },
+    };
+    await collect(provider.stream(task));
+    await collect(provider.stream(task));
+    clock += MAIN_MODEL_COOLDOWN_MS + 1;
+    await collect(provider.stream(task));
+    expect(gemini.urls.map((url) => /models\/([^:]+)/.exec(url)?.[1])).toEqual([
+      "gemini-main",
+      "gemini-backup",
+      "gemini-backup",
+      "gemini-main",
+    ]);
+  });
+
+  it("does not try the fallback model for a request the provider rejected", async () => {
+    useGemini();
+    vi.stubEnv("GEMINI_FALLBACK_MODEL", "gemini-backup");
+    resetProvider();
+    const gemini = geminiReplies(server, [{ status: 400 }]);
+    expect(await (await request()).text()).toContain('"code":"provider"');
+    expect(gemini.calls()).toBe(1);
   });
 
   it("does not retry a request the provider rejected", async () => {

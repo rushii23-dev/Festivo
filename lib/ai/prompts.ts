@@ -105,10 +105,12 @@ export function planSnapshot(plan: Plan): string {
   });
 }
 
+/** `pastDate`: a date the model's previous answer set that is not after today. */
 export function buildRefinePrompt(
   plan: Plan,
   instruction: string,
   today: string,
+  pastDate?: string,
 ): string {
   return [
     "Update the plan below according to the user's request.",
@@ -117,10 +119,16 @@ export function buildRefinePrompt(
     `Current plan: ${wrapUserData("current_plan", planSnapshot(plan), 12_000)}`,
     `Request: ${wrapUserData("request", instruction, 300)}`,
     "Return a patch: always an explanation; include only the fields that change.",
+    "Leave out date unless the request moves the event; a new date must be after today.",
     "If the total budget changes, also return the full new budget list summing to it.",
     "removeIdeaIds and removeTaskIds must be IDs from the current plan.",
     "New tasks use daysBefore relative to the (new) event date.",
     "If the request is unrelated to planning this event, return only an explanation saying so.",
+    ...(pastDate
+      ? [
+          `Your previous answer set the date to ${pastDate}, which is not after today. Leave date out unless the request moves the event to a later date.`,
+        ]
+      : []),
   ].join("\n");
 }
 

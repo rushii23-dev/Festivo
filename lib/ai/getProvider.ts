@@ -16,6 +16,7 @@ export function getProvider(): AiProvider {
           apiKey: config.geminiApiKey,
           model: config.geminiModel,
           retries: config.geminiRetries,
+          fallbackModel: config.geminiFallbackModel,
         })
       : createMockProvider({ delayMs: config.mockDelayMs });
   return cached;

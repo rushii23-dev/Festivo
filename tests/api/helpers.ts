@@ -78,11 +78,13 @@ export function geminiReplies(
 ) {
   const bodies: Record<string, unknown>[] = [];
   const headers: Headers[] = [];
+  const urls: string[] = [];
   let call = 0;
   server.use(
     http.post(GEMINI_STREAM, async ({ request }) => {
       bodies.push((await request.json()) as Record<string, unknown>);
       headers.push(request.headers);
+      urls.push(request.url);
       const reply = replies[Math.min(call++, replies.length - 1)];
       if (reply === undefined) return HttpResponse.json({}, { status: 500 });
       if (typeof reply === "object") {
@@ -100,5 +102,5 @@ export function geminiReplies(
       return geminiSse(reply);
     }),
   );
-  return { bodies, headers, calls: () => call };
+  return { bodies, headers, urls, calls: () => call };
 }

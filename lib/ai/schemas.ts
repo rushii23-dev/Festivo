@@ -68,7 +68,9 @@ export const PlanPatchSchema = z.strictObject({
   /** One or two sentences shown above the diff preview. */
   explanation: Text(300, "Explanation"),
   totalBudget: Money.min(1).optional(),
-  date: IsoDateSchema.optional(),
+  date: IsoDateSchema.optional().describe(
+    "Only when the request moves the event: the new date, after today.",
+  ),
   budget: z.array(DraftBudgetItemSchema).max(15).optional(),
   addIdeas: z.array(DraftIdeaSchema).max(6).optional(),
   removeIdeaIds: z.array(z.string().max(64)).max(20).optional(),
@@ -82,8 +84,9 @@ export type PlanPatch = z.infer<typeof PlanPatchSchema>;
  * Keywords left out of the schema sent to the provider. Gemini rejects the plan
  * schema with 400 INVALID_ARGUMENT once its length and count limits are included
  * (too many constraint states), and patterns and formats add to the same budget.
- * The prompt states the limits in words, and Zod still enforces every one of them
- * when parsing the reply, asking the model to repair anything that breaks them.
+ * Each limit is restated in the field's description instead, which the model
+ * follows without the cost, and Zod still enforces every one of them when parsing
+ * the reply, asking the model to repair anything that breaks them.
  */
 const PROVIDER_DROPPED_KEYWORDS = new Set([
   "$schema",
@@ -98,21 +101,38 @@ const PROVIDER_DROPPED_KEYWORDS = new Set([
 
 const isSchema = (value: unknown) => typeof value === "object" && value !== null;
 
+/** The dropped limits of one schema node, in words, e.g. "At most 300 characters." */
+function limitsInWords(node: Record<string, unknown>): string[] {
+  const { maxLength, minItems, maxItems } = node;
+  const words: string[] = [];
+  if (typeof maxLength === "number") words.push(`At most ${maxLength} characters.`);
+  if (typeof minItems === "number" && minItems === maxItems) {
+    words.push(`Exactly ${minItems} items.`);
+  } else {
+    if (typeof minItems === "number" && minItems > 1)
+      words.push(`At least ${minItems} items.`);
+    if (typeof maxItems === "number") words.push(`At most ${maxItems} items.`);
+  }
+  return words;
+}
+
 /** JSON Schema for the provider's structured-output mode. */
 export function toProviderSchema(schema: z.ZodType): Record<string, unknown> {
   const strip = (node: unknown): unknown => {
     if (Array.isArray(node)) return node.map(strip);
-    if (node && typeof node === "object") {
-      return Object.fromEntries(
-        Object.entries(node as Record<string, unknown>)
-          // A property that happens to be named like a keyword is kept.
-          .filter(
-            ([key, value]) => !PROVIDER_DROPPED_KEYWORDS.has(key) || isSchema(value),
-          )
-          .map(([key, value]) => [key, strip(value)]),
-      );
-    }
-    return node;
+    if (!isSchema(node)) return node;
+    const record = node as Record<string, unknown>;
+    const kept = Object.fromEntries(
+      Object.entries(record)
+        // A property that happens to be named like a keyword is kept.
+        .filter(([key, value]) => !PROVIDER_DROPPED_KEYWORDS.has(key) || isSchema(value))
+        .map(([key, value]) => [key, strip(value)]),
+    );
+    const limits = typeof record.type === "string" ? limitsInWords(record) : [];
+    if (limits.length === 0) return kept;
+    const description =
+      typeof record.description === "string" ? [record.description] : [];
+    return { ...kept, description: [...description, ...limits].join(" ") };
   };
   return strip(z.toJSONSchema(schema, { io: "input" })) as Record<string, unknown>;
 }

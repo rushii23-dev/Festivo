@@ -7,6 +7,7 @@ import { buildPlanPrompt, buildRefinePrompt, planSnapshot } from "@/lib/ai/promp
 import { AiOutputError, collect, type AiProvider } from "@/lib/ai/provider";
 import { PlanDraftSchema, PlanPatchSchema, toProviderSchema } from "@/lib/ai/schemas";
 import { buildMockPlan } from "@/lib/fixtures/buildMockPlan";
+import { refinePlan } from "@/lib/plan/service";
 import { EventInputSchema } from "@/lib/schemas/eventInput";
 
 const TODAY = "2026-10-26";
@@ -44,10 +45,20 @@ describe("readAiConfig", () => {
   it("defaults to demo mode without a key", () => {
     expect(readAiConfig({})).toMatchObject({
       provider: "mock",
-      geminiModel: "gemini-flash-latest",
+      geminiModel: "gemini-2.5-flash",
     });
     expect(readAiConfig({ AI_PROVIDER: "gemini" }).provider).toBe("mock");
     expect(readAiConfig({ GEMINI_API_KEY: "your-gemini-api-key" }).provider).toBe("mock");
+  });
+
+  it("falls back to gemini-2.5-flash-lite unless turned off or the same model", () => {
+    expect(readAiConfig({}).geminiFallbackModel).toBe("gemini-2.5-flash-lite");
+    expect(
+      readAiConfig({ GEMINI_FALLBACK_MODEL: "" }).geminiFallbackModel,
+    ).toBeUndefined();
+    expect(
+      readAiConfig({ GEMINI_MODEL: "gemini-2.5-flash-lite" }).geminiFallbackModel,
+    ).toBeUndefined();
   });
 
   it("uses Gemini when a real key is set, unless mock is forced", () => {
@@ -130,6 +141,36 @@ describe("provider schema", () => {
     }
     // Zod still enforces them on the reply.
     expect(JSON.stringify(z.toJSONSchema(PlanDraftSchema))).toContain('"maxItems"');
+  });
+});
+
+describe("refining with a real model's mistakes", () => {
+  it("asks again when the model adds a past date, instead of failing the request", async () => {
+    const provider = scripted([
+      JSON.stringify({
+        explanation: "Cut the budget.",
+        totalBudget: 1_800_000,
+        date: "2020-01-01",
+      }),
+      JSON.stringify({ explanation: "Cut the budget.", totalBudget: 1_800_000 }),
+    ]);
+    const result = await refinePlan(plan, "Cut the budget by 10%", {
+      provider,
+      today: TODAY,
+    });
+    expect(provider.prompts).toHaveLength(2);
+    expect(provider.prompts[1]).toContain("set the date to 2020-01-01");
+    expect(result.plan.date).toBe(plan.date);
+    expect(result.plan.totalBudget).toBe(1_800_000);
+  });
+
+  it("tells the model every limit it can no longer see in the schema", () => {
+    const schema = JSON.stringify(toProviderSchema(PlanPatchSchema));
+    expect(schema).toContain("At most 300 characters.");
+    expect(schema).toContain("Only when the request moves the event");
+    expect(JSON.stringify(toProviderSchema(PlanDraftSchema))).toMatch(
+      /At least \d+ items\./,
+    );
   });
 });
 
