@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { buildMockPlan } from "@/lib/fixtures/buildMockPlan";
-import { DASHBOARD_TABS, budgetHealthLabel, tabFromHash } from "@/lib/plan/dashboard";
+import {
+  DASHBOARD_TABS,
+  budgetHealthLabel,
+  isDashboardTab,
+  tabFromHash,
+} from "@/lib/plan/dashboard";
 import {
   addIdeas,
   addTask,
@@ -269,6 +274,12 @@ describe("dashboard tabs", () => {
     expect(tabFromHash("")).toBe("overview");
     expect(tabFromHash("#nope")).toBe("overview");
     expect(DASHBOARD_TABS).toHaveLength(5);
+  });
+
+  it("recognises only the dashboard's own tab names", () => {
+    expect(DASHBOARD_TABS.every(isDashboardTab)).toBe(true);
+    expect(isDashboardTab("Budget")).toBe(false);
+    expect(isDashboardTab("settings")).toBe(false);
   });
 });
 

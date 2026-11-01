@@ -20,11 +20,13 @@ export const TAB_LABELS: Record<DashboardTab, string> = {
 };
 
 /** "#budget" → "budget"; anything unknown falls back to the overview. */
+export function isDashboardTab(value: string): value is DashboardTab {
+  return (DASHBOARD_TABS as readonly string[]).includes(value);
+}
+
 export function tabFromHash(hash: string): DashboardTab {
   const value = hash.replace(/^#/, "").toLowerCase();
-  return (DASHBOARD_TABS as readonly string[]).includes(value)
-    ? (value as DashboardTab)
-    : "overview";
+  return isDashboardTab(value) ? value : "overview";
 }
 
 export const IDEA_CATEGORY_LABELS: Record<IdeaCategory, string> = {

@@ -9,6 +9,7 @@ import { localToday } from "@/lib/http/client";
 import {
   DASHBOARD_TABS,
   TAB_LABELS,
+  isDashboardTab,
   tabFromHash,
   type DashboardTab,
 } from "@/lib/plan/dashboard";
@@ -95,7 +96,9 @@ function Dashboard({ plan }: { plan: Plan }) {
 
       <Tabs
         value={tab}
-        onValueChange={(value) => setTab(value as DashboardTab)}
+        onValueChange={(value) => {
+          if (isDashboardTab(value)) setTab(value);
+        }}
         className={`grid grid-cols-1 gap-10 ${shell}`}
       >
         <div className="relative -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 print:hidden">
