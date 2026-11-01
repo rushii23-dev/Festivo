@@ -4,7 +4,7 @@ import { CalendarPlus, Plus, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { useAnnounce } from "@/components/a11y/LiveRegion";
 import { Button } from "@/components/ui/button";
-import { Choice, Fieldset } from "@/components/ui/field";
+import { RadioGroup } from "@/components/ui/choice-group";
 import type { TaskInput } from "@/lib/plan/edit";
 import type { TimelineTask } from "@/lib/schemas/plan";
 import { groupByPhase, runSheet } from "@/lib/timeline/generate";
@@ -27,36 +27,27 @@ const toInput = (task: TimelineTask): TaskInput => ({
   description: task.description ?? "",
 });
 
-type View = "all" | "run-sheet";
+const VIEWS = ["all", "run-sheet"] as const;
+type View = (typeof VIEWS)[number];
+
+const VIEW_LABELS: Record<View, string> = {
+  all: "All tasks by phase",
+  "run-sheet": "Day-of run sheet",
+};
 
 /** Switches between every task by phase and the event day's run sheet. */
 function ViewChoice({ view, onChange }: { view: View; onChange: (view: View) => void }) {
   return (
-    <Fieldset
+    <RadioGroup
       id="timeline-view"
       name="timelineView"
       legend="Show"
       className="print:hidden"
-    >
-      <div className="flex flex-wrap gap-2">
-        <Choice
-          type="radio"
-          name="timeline-view"
-          value="all"
-          checked={view === "all"}
-          onChange={() => onChange("all")}
-          label="All tasks by phase"
-        />
-        <Choice
-          type="radio"
-          name="timeline-view"
-          value="run-sheet"
-          checked={view === "run-sheet"}
-          onChange={() => onChange("run-sheet")}
-          label="Day-of run sheet"
-        />
-      </div>
-    </Fieldset>
+      options={VIEWS}
+      labels={VIEW_LABELS}
+      value={view}
+      onChange={onChange}
+    />
   );
 }
 
