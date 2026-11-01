@@ -13,10 +13,9 @@ import { useState } from "react";
 import { useAnnounce } from "@/components/a11y/LiveRegion";
 import { Button } from "@/components/ui/button";
 import { costTierName, costTierSymbol } from "@/lib/budget/format";
-import { postJson } from "@/lib/http/client";
 import { fitsBudget } from "@/lib/ideas/fit";
 import { IDEA_CATEGORY_LABELS } from "@/lib/plan/dashboard";
-import { addIdeas, setIdeaDismissed, setIdeaSaved } from "@/lib/plan/edit";
+import { setIdeaDismissed, setIdeaSaved } from "@/lib/plan/edit";
 import {
   IDEA_CATEGORIES,
   type Idea,
@@ -27,6 +26,7 @@ import { countOf } from "@/lib/text/count";
 import type { PanelProps } from "./PlanDashboard";
 import { PanelHeader } from "./PanelHeader";
 import { StatusNote } from "./StatusNote";
+import { useMoreIdeas } from "./useMoreIdeas";
 
 function IdeaCard({
   idea,
@@ -130,37 +130,11 @@ function CategorySection({
   update: PanelProps["update"];
   showDismissed: boolean;
 }) {
-  const announce = useAnnounce();
-  const [loading, setLoading] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
+  const { loading, note, more } = useMoreIdeas(plan, category, update);
   const label = IDEA_CATEGORY_LABELS[category];
   const ideas = plan.ideas.filter(
     (idea) => idea.category === category && (showDismissed || !idea.dismissed),
   );
-
-  const more = async () => {
-    setLoading(true);
-    setNote(null);
-    const result = await postJson<{ ideas: Idea[] }>("/api/ideas", { plan, category });
-    setLoading(false);
-    if (!result.ok) {
-      setNote(result.message);
-      announce(result.message, "assertive");
-      return;
-    }
-    let added: Idea[] = [];
-    update((p) => {
-      const next = addIdeas(p, result.data.ideas);
-      added = next.added;
-      return next.plan;
-    });
-    const message =
-      added.length === 0
-        ? `No new ${label.toLowerCase()} ideas right now. Try again later or ask Refine with AI.`
-        : `Added ${countOf(added.length, `${label.toLowerCase()} idea`)}.`;
-    setNote(added.length === 0 ? message : null);
-    announce(message);
-  };
 
   return (
     <section aria-labelledby={`ideas-${category}`} className="grid gap-4">

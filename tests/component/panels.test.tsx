@@ -9,6 +9,7 @@ import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AnnouncerProvider } from "@/components/a11y/LiveRegion";
 import { postJson } from "@/lib/http/client";
+import { IdeasPanel } from "@/components/plan/IdeasPanel";
 import { OverviewPanel } from "@/components/plan/OverviewPanel";
 import { TimelinePanel } from "@/components/plan/TimelinePanel";
 import { buildMockPlan } from "@/lib/fixtures/buildMockPlan";
@@ -48,12 +49,12 @@ function renderWithPlan(
     latest = plan;
     return <>{panel({ plan, today, update: (edit) => setPlan((p) => edit(p)) })}</>;
   }
-  render(
+  const { unmount } = render(
     <AnnouncerProvider>
       <Harness />
     </AnnouncerProvider>,
   );
-  return { user: userEvent.setup(), latest: () => latest };
+  return { user: userEvent.setup(), latest: () => latest, unmount };
 }
 
 const firstTask = () => {
@@ -158,6 +159,27 @@ describe("overview panel", () => {
     });
     expect(screen.getByText(/Every task is ticked off/)).toBeInTheDocument();
     expect(screen.getByText(/more than planned\./)).toBeInTheDocument();
+  });
+});
+
+describe("ideas panel", () => {
+  it("cancels a More like this request when the panel closes", async () => {
+    let signal: AbortSignal | null | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>((_url, init) => {
+        signal = init?.signal;
+        return new Promise<Response>(() => {});
+      }),
+    );
+    const { user, unmount } = renderWithPlan((props) => <IdeasPanel {...props} />);
+    const [more] = screen.getAllByRole("button", { name: /^More like this for/ });
+    if (!more) throw new Error("The ideas panel has no More like this button.");
+    await user.click(more);
+    expect(more).toBeDisabled();
+    expect(signal?.aborted).toBe(false);
+    unmount();
+    expect(signal?.aborted).toBe(true);
   });
 });
 
