@@ -133,7 +133,8 @@ Verified by `tests/unit/headers.test.ts` and, against the production server,
 ### Errors say nothing useful to an attacker
 
 Clients get generic, friendly messages with a stable error code (`ERROR_MESSAGES` in
-`lib/plan/service.ts`). Provider errors, validation issues and stack traces go to server logs
+`lib/plan/events.ts`, mapped to HTTP statuses in one place by `failureResponse` in
+`lib/http/api.ts`). Provider errors, validation issues and stack traces go to server logs
 only. Tests assert that responses never contain upstream messages, stack traces or the key.
 
 ### Cost and abuse controls on the AI

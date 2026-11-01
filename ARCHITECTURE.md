@@ -41,7 +41,8 @@ flowchart LR
 ## Generating a plan
 
 1. The wizard validates each step with the same Zod schema the server uses
-   (`lib/wizard/draft.ts`) and keeps the draft in the store, so a reload loses nothing.
+   (`lib/wizard/validate.ts`) and keeps the draft (`lib/wizard/draft.ts`) in the store, so a
+   reload loses nothing.
 2. `POST /api/plan` (`app/api/plan/route.ts`) runs the guard: `Sec-Fetch-Site` and `Origin`,
    the per-client rate limit (a plan costs 2 tokens), a 16 KB streamed body cap, text cleaning,
    the strict schema, then a check that the date is not in the past in the visitor's time zone.
@@ -58,8 +59,11 @@ flowchart LR
    amounts re-normalised to the exact total with largest-remainder rounding, task dates computed
    and clamped between today and the event, IDs generated, unknown categories dropped and
    missing ones filled.
-7. The response is NDJSON: progress events, then one `plan` or `error` event. The browser saves
-   the plan and opens `/plan/[id]`.
+7. The response is NDJSON: progress events, then one `plan` or `error` event. The stream's
+   contract (sections, progress messages, error codes and the event schema) lives in one
+   isomorphic module, `lib/plan/events.ts`: the server types its events with it and the browser
+   validates every line against it, plan included, before saving the plan and opening
+   `/plan/[id]`.
 
 Refine and "more like this" follow the same path with one section only. Refine returns a
 **patch** limited by a strict allow-list schema; code applies it (`lib/plan/patch.ts`), computes
