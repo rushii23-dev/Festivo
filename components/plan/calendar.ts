@@ -1,6 +1,7 @@
 /**
- * Browser-only: the timeline as a downloaded .ics file. Kept apart from client.ts
- * so the calendar builder loads only with the screens that offer the download.
+ * Browser-only: the timeline as a downloaded .ics file. Kept apart from the API
+ * helpers in lib/http/client.ts so the calendar builder loads only with the
+ * screens that offer the download.
  */
 import type { Plan } from "@/lib/schemas/plan";
 import { buildIcs, icsFileName } from "@/lib/timeline/ics";
