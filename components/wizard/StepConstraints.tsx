@@ -1,23 +1,12 @@
-import {
-  Choice,
-  Field,
-  Fieldset,
-  controlClass,
-  describedBy,
-} from "@/components/ui/field";
+import { CheckboxGroup, RadioGroup } from "@/components/ui/choice-group";
+import { Field, controlClass, describedBy } from "@/components/ui/field";
 import {
   ACCESSIBILITY_NEEDS,
   DIETARY_NEEDS,
   SETTINGS,
   type AccessibilityNeed,
-  type DietaryNeed,
 } from "@/lib/schemas/common";
-import {
-  FREE_TEXT_MAX,
-  ONLINE_ACCESSIBILITY,
-  draftQuestions,
-  toggleValue,
-} from "@/lib/wizard/draft";
+import { FREE_TEXT_MAX, ONLINE_ACCESSIBILITY, draftQuestions } from "@/lib/wizard/draft";
 import {
   ACCESSIBILITY_LABELS,
   DIETARY_LABELS,
@@ -70,31 +59,19 @@ export function StepConstraints({ draft, errors, update }: StepProps) {
   return (
     <div className="grid gap-8">
       {inPerson ? (
-        <Fieldset
+        <CheckboxGroup
           id="dietary"
           name="dietary"
           legend="Dietary needs"
           hint="Optional. Pick all that apply."
-        >
-          <div className="flex flex-wrap gap-3">
-            {DIETARY_NEEDS.map((need) => (
-              <Choice
-                key={need}
-                type="checkbox"
-                name="dietary"
-                value={need}
-                label={DIETARY_LABELS[need]}
-                checked={draft.dietary.includes(need)}
-                onChange={() =>
-                  update({ dietary: toggleValue<DietaryNeed>(draft.dietary, need) })
-                }
-              />
-            ))}
-          </div>
-        </Fieldset>
+          options={DIETARY_NEEDS}
+          labels={DIETARY_LABELS}
+          selected={draft.dietary}
+          onChange={(dietary) => update({ dietary })}
+        />
       ) : null}
 
-      <Fieldset
+      <CheckboxGroup
         id="accessibility"
         name="accessibility"
         legend="Guest accessibility needs"
@@ -103,45 +80,22 @@ export function StepConstraints({ draft, errors, update }: StepProps) {
             ? "Optional. We’ll add these to venue and vendor questions."
             : "Optional. We’ll make sure the platform supports them."
         }
-      >
-        <div className="flex flex-wrap gap-3">
-          {needs.map((need) => (
-            <Choice
-              key={need}
-              type="checkbox"
-              name="accessibility"
-              value={need}
-              label={ACCESSIBILITY_LABELS[need]}
-              checked={draft.accessibility.includes(need)}
-              onChange={() =>
-                update({
-                  accessibility: toggleValue<AccessibilityNeed>(
-                    draft.accessibility,
-                    need,
-                  ),
-                })
-              }
-            />
-          ))}
-        </div>
-      </Fieldset>
+        options={needs}
+        labels={ACCESSIBILITY_LABELS}
+        selected={draft.accessibility}
+        onChange={(accessibility) => update({ accessibility })}
+      />
 
       {inPerson ? (
-        <Fieldset id="setting" name="setting" legend="Indoors or outdoors?">
-          <div className="flex flex-wrap gap-3">
-            {SETTINGS.map((setting) => (
-              <Choice
-                key={setting}
-                type="radio"
-                name="setting"
-                value={setting}
-                label={SETTING_LABELS[setting]}
-                checked={draft.setting === setting}
-                onChange={() => update({ setting })}
-              />
-            ))}
-          </div>
-        </Fieldset>
+        <RadioGroup
+          id="setting"
+          name="setting"
+          legend="Indoors or outdoors?"
+          options={SETTINGS}
+          labels={SETTING_LABELS}
+          value={draft.setting}
+          onChange={(setting) => update({ setting })}
+        />
       ) : null}
 
       <FreeText

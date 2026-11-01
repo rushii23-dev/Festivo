@@ -13,7 +13,7 @@ import {
   ACCESSIBILITY_LABELS,
   CEREMONY_LABELS,
   DIETARY_LABELS,
-  FORMAT_COPY,
+  FORMAT_LABELS,
   SETTING_LABELS,
   VIBE_LABELS,
 } from "@/lib/wizard/labels";
@@ -82,7 +82,7 @@ function BasicsReview({ draft, today, onEdit }: ReviewProps) {
       <Row term="Date">{describeDate(draft, today)}</Row>
       {questions.multiDay ? <Row term="Days">{draft.days || "1"}</Row> : null}
       {questions.formats.length > 1 ? (
-        <Row term="Format">{FORMAT_COPY[draft.format].label}</Row>
+        <Row term="Format">{FORMAT_LABELS[draft.format]}</Row>
       ) : null}
       <Row term="Place">{draft.location || "Not set"}</Row>
       <Row term="Guests">{draft.guestCount || "Not set"}</Row>

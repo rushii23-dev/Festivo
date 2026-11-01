@@ -281,8 +281,3 @@ export function upcomingMonths(today: string, count = 24, locale = "en-IN") {
 }
 
 export const FREE_TEXT_MAX = LIMITS.freeTextMax;
-
-/** Adds the value if absent, removes it if present (for checkbox groups). */
-export function toggleValue<T>(list: readonly T[], value: T): T[] {
-  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
-}

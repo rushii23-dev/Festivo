@@ -145,7 +145,7 @@ export function TextField({
   );
 }
 
-interface FieldsetProps {
+export interface FieldsetProps {
   id: string;
   name: string;
   legend: ReactNode;

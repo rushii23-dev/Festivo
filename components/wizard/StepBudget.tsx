@@ -1,8 +1,9 @@
+import { RadioGroup } from "@/components/ui/choice-group";
 import { Choice, Field, Fieldset, TextField, controlClass } from "@/components/ui/field";
 import { allocateBudget } from "@/lib/budget/allocate";
 import { BUDGET_CATEGORY_LABELS, categoriesFor } from "@/lib/budget/categories";
 import { currencySymbol, formatMoney, parseMoneyInput } from "@/lib/budget/format";
-import { CURRENCIES, type BudgetCategory, type Currency } from "@/lib/schemas/common";
+import { CURRENCIES, type BudgetCategory } from "@/lib/schemas/common";
 import { TICKET_CHOICES, draftKind, draftQuestions } from "@/lib/wizard/draft";
 import { CURRENCY_LABELS, PRIORITY_LABELS, TICKET_COPY } from "@/lib/wizard/labels";
 import type { StepProps } from "./types";
@@ -29,7 +30,10 @@ export function StepBudget(props: StepProps) {
           <select
             id="budget-currency"
             value={draft.currency}
-            onChange={(e) => update({ currency: e.target.value as Currency })}
+            onChange={(e) => {
+              const currency = CURRENCIES.find((c) => c === e.target.value);
+              if (currency) update({ currency });
+            }}
             className={controlClass}
           >
             {CURRENCIES.map((c) => (
@@ -49,25 +53,16 @@ export function StepBudget(props: StepProps) {
 /** Free or paid registration, with an optional cap and guest approval. */
 function TicketQuestions({ draft, errors, update }: StepProps) {
   return (
-    <Fieldset
+    <RadioGroup
       id="tickets"
       name="tickets"
       legend="Will guests register?"
       hint="Luma-style registration: free or paid, with a cap and approval if you want."
+      options={TICKET_CHOICES}
+      labels={TICKET_COPY}
+      value={draft.tickets}
+      onChange={(tickets) => update({ tickets })}
     >
-      <div className="flex flex-wrap gap-3">
-        {TICKET_CHOICES.map((choice) => (
-          <Choice
-            key={choice}
-            type="radio"
-            name="tickets"
-            value={choice}
-            label={TICKET_COPY[choice]}
-            checked={draft.tickets === choice}
-            onChange={() => update({ tickets: choice })}
-          />
-        ))}
-      </div>
       {draft.tickets !== "none" ? (
         <div className="stage-rise mt-3 grid items-start gap-6 @md:grid-cols-2">
           {draft.tickets === "paid" ? (
@@ -105,7 +100,7 @@ function TicketQuestions({ draft, errors, update }: StepProps) {
           </div>
         </div>
       ) : null}
-    </Fieldset>
+    </RadioGroup>
   );
 }
 

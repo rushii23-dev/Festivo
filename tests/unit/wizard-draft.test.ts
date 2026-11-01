@@ -8,7 +8,6 @@ import {
   draftQuestions,
   parseWholeNumber,
   toEventInput,
-  toggleValue,
   upcomingMonths,
   withGroup,
   withOccasion,
@@ -185,11 +184,9 @@ describe("whole-draft helpers", () => {
     });
   });
 
-  it("parses guest counts and toggles values", () => {
+  it("parses whole numbers typed with grouping commas", () => {
     expect(parseWholeNumber(" 1,200 ")).toBe(1200);
     expect(parseWholeNumber("12.5")).toBeNull();
-    expect(toggleValue(["a", "b"], "a")).toEqual(["b"]);
-    expect(toggleValue(["a"], "b")).toEqual(["a", "b"]);
   });
 
   it("lists upcoming months for the flexible picker", () => {

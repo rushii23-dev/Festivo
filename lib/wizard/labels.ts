@@ -8,7 +8,7 @@ import type {
   Setting,
   Vibe,
 } from "@/lib/schemas/common";
-import type { StepId } from "./draft";
+import type { StepId, WizardDraft } from "./draft";
 
 export const VIBE_LABELS: Record<Vibe, string> = {
   elegant: "Elegant",
@@ -57,19 +57,28 @@ export const ACCESSIBILITY_LABELS: Record<AccessibilityNeed, string> = {
   "live-captions": "Live captions",
 };
 
-export const FORMAT_COPY: Record<Format, { label: string; hint: string }> = {
-  "in-person": { label: "In person", hint: "Everyone meets at one place." },
-  online: {
-    label: "Online",
-    hint: "On Zoom, Meet or a stream: no venue, food or décor to plan.",
-  },
-  hybrid: {
-    label: "Hybrid",
-    hint: "A place to meet, with a stream for people joining from afar.",
-  },
+export const FORMAT_LABELS: Record<Format, string> = {
+  "in-person": "In person",
+  online: "Online",
+  hybrid: "Hybrid",
 };
 
-export const TICKET_COPY: Record<"none" | "free" | "paid", string> = {
+/** Shown under the format choice, for the format currently picked. */
+export const FORMAT_HINTS: Record<Format, string> = {
+  "in-person": "Everyone meets at one place.",
+  online: "On Zoom, Meet or a stream: no venue, food or décor to plan.",
+  hybrid: "A place to meet, with a stream for people joining from afar.",
+};
+
+export const DATE_KIND_LABELS: Record<WizardDraft["dateKind"], string> = {
+  fixed: "On a set date",
+  flexible: "My date is flexible",
+};
+
+/** Whether children will be there, as the radio values the wizard uses. */
+export const KIDS_LABELS = { yes: "Yes", no: "No, adults only" } as const;
+
+export const TICKET_COPY: Record<WizardDraft["tickets"], string> = {
   none: "No registration",
   free: "Free, with registration",
   paid: "Paid tickets",

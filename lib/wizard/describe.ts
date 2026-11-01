@@ -7,7 +7,7 @@ import { formatMoney, parseMoneyInput } from "@/lib/budget/format";
 import type { BudgetCategory } from "@/lib/schemas/common";
 import { formatLongDate } from "@/lib/timeline/dates";
 import { draftQuestions, upcomingMonths, type WizardDraft } from "./draft";
-import { FORMAT_COPY, PRIORITY_LABELS, TICKET_COPY } from "./labels";
+import { FORMAT_LABELS, PRIORITY_LABELS, TICKET_COPY } from "./labels";
 
 /** Work events and meetups count attendees; everything else counts guests. */
 export const countsAttendees = (draft: WizardDraft) =>
@@ -50,7 +50,7 @@ export function describeWhen(draft: WizardDraft, today: string): string | null {
 /** How people join (when the occasion offers a choice) and the place. */
 export function describeWhere(draft: WizardDraft): string | null {
   const parts = [
-    draftQuestions(draft).formats.length > 1 ? FORMAT_COPY[draft.format].label : "",
+    draftQuestions(draft).formats.length > 1 ? FORMAT_LABELS[draft.format] : "",
     draft.location.trim(),
   ].filter(Boolean);
   return listOr(parts, null);

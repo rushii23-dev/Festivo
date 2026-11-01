@@ -1,18 +1,17 @@
 import { useMemo } from "react";
-import {
-  Choice,
-  Field,
-  Fieldset,
-  TextField,
-  controlClass,
-  describedBy,
-} from "@/components/ui/field";
+import { RadioGroup } from "@/components/ui/choice-group";
+import { Field, TextField, controlClass, describedBy } from "@/components/ui/field";
 import { LIMITS } from "@/lib/schemas/eventInput";
 import { addDays } from "@/lib/timeline/dates";
 import { MAX_DAYS_AHEAD } from "@/lib/timeline/resolveDate";
 import { countsAttendees } from "@/lib/wizard/describe";
 import { draftQuestions, upcomingMonths } from "@/lib/wizard/draft";
-import { FORMAT_COPY } from "@/lib/wizard/labels";
+import {
+  DATE_KIND_LABELS,
+  FORMAT_HINTS,
+  FORMAT_LABELS,
+  KIDS_LABELS,
+} from "@/lib/wizard/labels";
 import type { StepProps } from "./types";
 
 const NAME_HINTS: Partial<Record<string, string>> = {
@@ -21,6 +20,9 @@ const NAME_HINTS: Partial<Record<string, string>> = {
   "book-club": "For example, Sunday Readers: March.",
   hackathon: "For example, Build for Pune 2027.",
 };
+
+const DATE_KINDS = ["fixed", "flexible"] as const;
+const KIDS_ANSWERS = ["yes", "no"] as const;
 
 /** Step 2: the name, when, how people join, where, how many, and occasion extras. */
 export function StepBasics(props: StepProps) {
@@ -111,26 +113,16 @@ function DateQuestions({ draft, errors, update, today }: StepProps) {
   const months = useMemo(() => upcomingMonths(today), [today]);
   return (
     <>
-      <Fieldset id="date-kind" name="dateKind" legend="When is it?" required>
-        <div className="flex flex-wrap gap-3">
-          <Choice
-            type="radio"
-            name="dateKind"
-            value="fixed"
-            label="On a set date"
-            checked={draft.dateKind === "fixed"}
-            onChange={() => update({ dateKind: "fixed" })}
-          />
-          <Choice
-            type="radio"
-            name="dateKind"
-            value="flexible"
-            label="My date is flexible"
-            checked={draft.dateKind === "flexible"}
-            onChange={() => update({ dateKind: "flexible" })}
-          />
-        </div>
-      </Fieldset>
+      <RadioGroup
+        id="date-kind"
+        name="dateKind"
+        legend="When is it?"
+        required
+        options={DATE_KINDS}
+        labels={DATE_KIND_LABELS}
+        value={draft.dateKind}
+        onChange={(dateKind) => update({ dateKind })}
+      />
 
       {draft.dateKind === "fixed" ? (
         <TextField
@@ -180,47 +172,32 @@ function DateQuestions({ draft, errors, update, today }: StepProps) {
 /** In person, online or hybrid, for occasions that can run more than one way. */
 function FormatQuestion({ draft, update }: StepProps) {
   return (
-    <Fieldset id="event-format" name="format" legend="How will people join?" required>
-      <div className="flex flex-wrap gap-3">
-        {draftQuestions(draft).formats.map((format) => (
-          <Choice
-            key={format}
-            type="radio"
-            name="format"
-            value={format}
-            label={FORMAT_COPY[format].label}
-            checked={draft.format === format}
-            onChange={() => update({ format })}
-          />
-        ))}
-      </div>
-      <p className="text-sm text-muted-foreground">{FORMAT_COPY[draft.format].hint}</p>
-    </Fieldset>
+    <RadioGroup
+      id="event-format"
+      name="format"
+      legend="How will people join?"
+      required
+      options={draftQuestions(draft).formats}
+      labels={FORMAT_LABELS}
+      value={draft.format}
+      onChange={(format) => update({ format })}
+    >
+      <p className="text-sm text-muted-foreground">{FORMAT_HINTS[draft.format]}</p>
+    </RadioGroup>
   );
 }
 
 /** Asked of family occasions, so the plan can add activities and food for children. */
 function KidsQuestion({ draft, update }: StepProps) {
   return (
-    <Fieldset id="event-kids" name="kids" legend="Will children be there?">
-      <div className="flex flex-wrap gap-3">
-        <Choice
-          type="radio"
-          name="kids"
-          value="yes"
-          label="Yes"
-          checked={draft.kids}
-          onChange={() => update({ kids: true })}
-        />
-        <Choice
-          type="radio"
-          name="kids"
-          value="no"
-          label="No, adults only"
-          checked={!draft.kids}
-          onChange={() => update({ kids: false })}
-        />
-      </div>
-    </Fieldset>
+    <RadioGroup
+      id="event-kids"
+      name="kids"
+      legend="Will children be there?"
+      options={KIDS_ANSWERS}
+      labels={KIDS_LABELS}
+      value={draft.kids ? "yes" : "no"}
+      onChange={(answer) => update({ kids: answer === "yes" })}
+    />
   );
 }
