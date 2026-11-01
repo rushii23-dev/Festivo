@@ -35,17 +35,20 @@ export function json(body: unknown, init: ResponseInit = {}): Response {
   });
 }
 
+interface ErrorOptions {
+  /** Field-level problems, so a form can point at each one. */
+  fields?: ApiErrorBody["error"]["fields"];
+  headers?: Record<string, string>;
+}
+
 export function errorResponse(
   status: number,
   code: string,
   message: string,
-  extra: Partial<ApiErrorBody["error"]> = {},
-  headers: Record<string, string> = {},
+  { fields, headers = {} }: ErrorOptions = {},
 ): Response {
-  return json({ error: { code, message, ...extra } } satisfies ApiErrorBody, {
-    status,
-    headers,
-  });
+  const error = { code, message, ...(fields ? { fields } : {}) };
+  return json({ error } satisfies ApiErrorBody, { status, headers });
 }
 
 /** HTTP status for each way a plan use-case can fail. */
@@ -102,8 +105,7 @@ export function checkRateLimit(request: Request, cost = 1): Response | null {
     429,
     "rate-limited",
     "You're going a little fast. Please wait a moment and try again.",
-    {},
-    { "Retry-After": String(decision.retryAfterSeconds) },
+    { headers: { "Retry-After": String(decision.retryAfterSeconds) } },
   );
 }
 
