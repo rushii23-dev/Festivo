@@ -27,7 +27,8 @@ export type FieldErrors = Partial<Record<DraftField, string>>;
 
 /** Records a field's first problem; `undefined` means the field is fine. */
 type SetError = (field: DraftField, message: string | undefined) => void;
-type StepValidator = (draft: WizardDraft, today: string, set: SetError) => void;
+/** `today` comes last so steps that never look at dates can leave it out. */
+type StepValidator = (draft: WizardDraft, set: SetError, today: string) => void;
 
 const shape = EventInputSchema.shape;
 
@@ -95,13 +96,13 @@ function checkNumber(draft: WizardDraft, field: NumberField, set: SetError) {
   set(field, value === null ? rule.invalid : firstMessage(rule.schema.safeParse(value)));
 }
 
-function validateType(draft: WizardDraft, _today: string, set: SetError) {
+function validateType(draft: WizardDraft, set: SetError) {
   if (draft.occasion) return;
   if (draft.group) set("occasion", "Choose the occasion you're planning.");
   else set("group", "Choose the kind of event you're planning.");
 }
 
-function validateDate(draft: WizardDraft, today: string, set: SetError) {
+function validateDate(draft: WizardDraft, set: SetError, today: string) {
   if (draft.dateKind !== "fixed") {
     if (draft.month)
       set("month", eventDateProblem(draftEventDate(draft), today) ?? undefined);
@@ -120,28 +121,28 @@ function validateDate(draft: WizardDraft, today: string, set: SetError) {
   );
 }
 
-function validateBasics(draft: WizardDraft, today: string, set: SetError) {
+function validateBasics(draft: WizardDraft, set: SetError, today: string) {
   const questions = draftQuestions(draft);
   set("name", firstMessage(shape.name.safeParse(draft.name)));
-  validateDate(draft, today, set);
+  validateDate(draft, set, today);
   if (questions.multiDay) checkNumber(draft, "days", set);
   set("location", firstMessage(shape.location.safeParse(draft.location)));
   checkNumber(draft, "guestCount", set);
   if (questions.age) checkNumber(draft, "ageTurning", set);
 }
 
-function validateBudget(draft: WizardDraft, _today: string, set: SetError) {
+function validateBudget(draft: WizardDraft, set: SetError) {
   checkNumber(draft, "budgetTotal", set);
   if (!draftQuestions(draft).tickets || draft.tickets === "none") return;
   if (draft.tickets === "paid") checkNumber(draft, "ticketPrice", set);
   checkNumber(draft, "capacity", set);
 }
 
-function validateVibe(draft: WizardDraft, _today: string, set: SetError) {
+function validateVibe(draft: WizardDraft, set: SetError) {
   set("vibes", firstMessage(shape.vibes.safeParse(draft.vibes)));
 }
 
-function validateConstraints(draft: WizardDraft, _today: string, set: SetError) {
+function validateConstraints(draft: WizardDraft, set: SetError) {
   const { mustHaves, mustAvoid } = ConstraintsSchema.shape;
   set("mustHaves", firstMessage(mustHaves.safeParse(draft.mustHaves)));
   set("mustAvoid", firstMessage(mustAvoid.safeParse(draft.mustAvoid)));
@@ -163,9 +164,10 @@ export function validateStep(
   today: string,
 ): FieldErrors {
   const errors: FieldErrors = {};
-  STEP_VALIDATORS[step](draft, today, (field, message) => {
+  const set: SetError = (field, message) => {
     if (message && !errors[field]) errors[field] = message;
-  });
+  };
+  STEP_VALIDATORS[step](draft, set, today);
   return errors;
 }
 
