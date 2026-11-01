@@ -14,7 +14,7 @@ import { Suspense, lazy, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Plan } from "@/lib/schemas/plan";
 import type { PanelProps } from "./PlanDashboard";
-import { RefineButton, ShareButton } from "./triggers";
+import { RefineButton, ShareButton } from "./HeroButtons";
 
 const BudgetPanel = lazy(() =>
   import("./BudgetPanel").then((module) => ({ default: module.BudgetPanel })),

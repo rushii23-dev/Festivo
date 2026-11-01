@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { describeChange, type PlanChange } from "@/lib/plan/diff";
 import type { Plan } from "@/lib/schemas/plan";
-import { RefineButton } from "./triggers";
+import { RefineButton } from "./HeroButtons";
 import { REFINE_INPUT_ID, REFINE_RESULT_ID, useRefine } from "./useRefine";
 
 const SUGGESTIONS = [

@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { planSummaryText } from "@/lib/plan/share";
 import type { Plan } from "@/lib/schemas/plan";
 import { downloadCalendar } from "./calendar";
-import { ShareButton } from "./triggers";
+import { ShareButton } from "./HeroButtons";
 
 const itemClass =
   "flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-left font-bold hover:bg-muted [&_svg]:size-5 [&_svg]:shrink-0 [&_svg]:text-event";
