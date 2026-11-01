@@ -2,6 +2,7 @@
 
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { useState, type SubmitEvent } from "react";
+import { focusByIdNextFrame } from "@/components/a11y/focus";
 import { useAnnounce } from "@/components/a11y/LiveRegion";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/field";
@@ -12,6 +13,7 @@ import {
   type ProfileErrors,
   type ProfileInput,
 } from "@/lib/profile/profile";
+import { attentionMessage } from "@/lib/text/count";
 import { ACCOUNT_PHOTO } from "./stagePhotos";
 import { Stage } from "./Stage";
 import { StageHeading } from "./StageHeading";
@@ -32,13 +34,8 @@ export function CreateAccount({ onCreate }: { onCreate: (profile: Profile) => vo
     const result = validateProfile(values);
     if (result.ok) return onCreate(result.profile);
     setErrors(result.errors);
-    const count = Object.keys(result.errors).length;
-    announce(
-      `${count} ${count === 1 ? "answer needs" : "answers need"} attention.`,
-      "assertive",
-    );
-    const first = result.errors.name ? "account-name" : "account-email";
-    requestAnimationFrame(() => document.getElementById(first)?.focus());
+    announce(attentionMessage(Object.keys(result.errors).length), "assertive");
+    focusByIdNextFrame(result.errors.name ? "account-name" : "account-email");
   };
 
   return (

@@ -3,6 +3,8 @@
  * plan never shifts by a day because of the server's or the user's time zone.
  */
 
+import { countOf } from "@/lib/text/count";
+
 const MS_PER_DAY = 86_400_000;
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -85,13 +87,6 @@ export interface Countdown {
 export function countdown(eventDate: string, today: string): Countdown {
   const days = diffDays(today, eventDate);
   if (days === 0) return { days, status: "today", label: "It's today!" };
-  if (days < 0) {
-    const ago = -days;
-    return { days, status: "past", label: `${ago} ${ago === 1 ? "day" : "days"} ago` };
-  }
-  return {
-    days,
-    status: "upcoming",
-    label: `${days} ${days === 1 ? "day" : "days"} to go`,
-  };
+  if (days < 0) return { days, status: "past", label: `${countOf(-days, "day")} ago` };
+  return { days, status: "upcoming", label: `${countOf(days, "day")} to go` };
 }

@@ -5,6 +5,7 @@ import { useAnnounce } from "@/components/a11y/LiveRegion";
 import { setTaskDone } from "@/lib/plan/edit";
 import { prefersReducedMotionNow } from "@/lib/prefs/store";
 import type { Plan, TimelineTask } from "@/lib/schemas/plan";
+import { countOf } from "@/lib/text/count";
 import type { UpdatePlan } from "./PlanDashboard";
 
 /**
@@ -23,7 +24,7 @@ export function useTaskToggle(plan: Plan, update: UpdatePlan) {
         announce(
           left === 0
             ? `Done: ${task.title}. That was the last task. Everything is ready.`
-            : `Done: ${task.title}. ${left} ${left === 1 ? "task" : "tasks"} to go.`,
+            : `Done: ${task.title}. ${countOf(left, "task")} to go.`,
         );
         if (!prefersReducedMotionNow()) {
           setCheering((c) => ({ ...c, [task.id]: (c[task.id] ?? 0) + 1 }));
