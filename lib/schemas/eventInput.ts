@@ -20,6 +20,12 @@ import {
 } from "./common";
 import { OCCASION_INFO } from "@/lib/events/occasions";
 
+/** Messages the wizard also shows before the schema runs, so both say the same. */
+export const INPUT_MESSAGES = {
+  ticketPrice: "Enter a ticket price.",
+  wholeAge: "Use a whole number, like 7.",
+} as const;
+
 export const LIMITS = {
   nameMax: 80,
   locationMax: 80,
@@ -71,7 +77,7 @@ export const TicketsSchema = z.strictObject({
   pricing: TicketPricingSchema,
   /** Price per ticket, in the budget's currency; only for paid tickets. */
   price: z
-    .number({ error: "Enter a ticket price." })
+    .number({ error: INPUT_MESSAGES.ticketPrice })
     .min(1, { error: "A paid ticket costs more than zero." })
     .max(LIMITS.budgetMax, { error: "That ticket price is too large." })
     .optional(),
@@ -89,7 +95,7 @@ export type Tickets = z.infer<typeof TicketsSchema>;
 /** Occasion-specific answers: each is asked only where it applies. */
 export const DetailsSchema = z.strictObject({
   ageTurning: z
-    .int({ error: "Use a whole number, like 7." })
+    .int({ error: INPUT_MESSAGES.wholeAge })
     .min(1, { error: "Use an age of 1 or more." })
     .max(LIMITS.ageMax, { error: `Use an age up to ${LIMITS.ageMax}.` })
     .optional(),
@@ -161,7 +167,7 @@ export const EventInputSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["tickets", "price"],
-        message: "Enter a ticket price.",
+        message: INPUT_MESSAGES.ticketPrice,
       });
   });
 

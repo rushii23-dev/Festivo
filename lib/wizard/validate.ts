@@ -10,6 +10,7 @@ import {
   ConstraintsSchema,
   DetailsSchema,
   EventInputSchema,
+  INPUT_MESSAGES,
   TicketsSchema,
 } from "@/lib/schemas/eventInput";
 import { eventDateProblem } from "@/lib/timeline/resolveDate";
@@ -61,7 +62,7 @@ const NUMBER_RULES = {
   },
   ageTurning: {
     parse: parseWholeNumber,
-    invalid: "Use a whole number, like 7.",
+    invalid: INPUT_MESSAGES.wholeAge,
     schema: DetailsSchema.shape.ageTurning,
   },
   budgetTotal: {
@@ -72,7 +73,7 @@ const NUMBER_RULES = {
   },
   ticketPrice: {
     parse: parseMoneyInput,
-    missing: "Enter a ticket price.",
+    missing: INPUT_MESSAGES.ticketPrice,
     invalid: "Use numbers only, like 499.",
     schema: TicketsSchema.shape.price,
   },
