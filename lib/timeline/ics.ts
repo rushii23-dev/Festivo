@@ -68,64 +68,86 @@ function vevent(lines: string[]): string[] {
   return ["BEGIN:VEVENT", ...lines, "END:VEVENT"];
 }
 
-export function buildIcs(options: IcsOptions): string {
-  const {
-    calendarName,
-    eventTitle,
-    eventDate,
-    location,
-    tasks,
-    now = new Date(),
-    includeDone = true,
-    uidDomain = "festivo.app",
-  } = options;
-  const stamp = utcStamp(now);
-  const locationLine = location ? [`LOCATION:${escapeIcsText(location)}`] : [];
+const CALENDAR_HEADER = [
+  "BEGIN:VCALENDAR",
+  "VERSION:2.0",
+  "PRODID:-//Festivo//Event Planner//EN",
+  "CALSCALE:GREGORIAN",
+  "METHOD:PUBLISH",
+];
 
-  const lines: string[] = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Festivo//Event Planner//EN",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
-    `X-WR-CALNAME:${escapeIcsText(calendarName)}`,
-    ...vevent([
-      `UID:event-${compactDate(eventDate)}@${uidDomain}`,
-      `DTSTAMP:${stamp}`,
-      `DTSTART;VALUE=DATE:${compactDate(eventDate)}`,
-      `DTEND;VALUE=DATE:${compactDate(addDays(eventDate, 1))}`,
-      `SUMMARY:${escapeIcsText(eventTitle)}`,
-      ...locationLine,
-      "TRANSP:OPAQUE",
-    ]),
+/** What every event in one file shares. */
+interface EventContext {
+  stamp: string;
+  uidDomain: string;
+  /** The LOCATION line, or nothing when the plan has no place. */
+  locationLine: string[];
+}
+
+/** An all-day event on `date`. */
+function allDay(date: string): string[] {
+  return [
+    `DTSTART;VALUE=DATE:${compactDate(date)}`,
+    `DTEND;VALUE=DATE:${compactDate(addDays(date, 1))}`,
   ];
+}
 
-  for (const task of tasks) {
-    if (!includeDone && task.done) continue;
-    const timing = task.time
-      ? [
-          `DTSTART:${compactDate(task.dueDate)}T${task.time.replace(":", "")}00`,
-          "DURATION:PT1H",
-        ]
-      : [
-          `DTSTART;VALUE=DATE:${compactDate(task.dueDate)}`,
-          `DTEND;VALUE=DATE:${compactDate(addDays(task.dueDate, 1))}`,
-        ];
-    lines.push(
-      ...vevent([
-        `UID:${task.id}@${uidDomain}`,
-        `DTSTAMP:${stamp}`,
-        ...timing,
-        `SUMMARY:${escapeIcsText(task.done ? `Done: ${task.title}` : task.title)}`,
-        ...(task.description ? [`DESCRIPTION:${escapeIcsText(task.description)}`] : []),
-        ...(task.phase === "Day of" ? locationLine : []),
-        `CATEGORIES:${escapeIcsText(task.phase)}`,
-        "TRANSP:TRANSPARENT",
-      ]),
-    );
-  }
+/** The celebration itself: an all-day, busy event. */
+function mainEvent(title: string, date: string, context: EventContext): string[] {
+  return vevent([
+    `UID:event-${compactDate(date)}@${context.uidDomain}`,
+    `DTSTAMP:${context.stamp}`,
+    ...allDay(date),
+    `SUMMARY:${escapeIcsText(title)}`,
+    ...context.locationLine,
+    "TRANSP:OPAQUE",
+  ]);
+}
 
-  lines.push("END:VCALENDAR");
+/** A task: all-day, or a one-hour slot at its start time. Day-of tasks get the place. */
+function taskEvent(task: TimelineTask, context: EventContext): string[] {
+  const timing = task.time
+    ? [
+        `DTSTART:${compactDate(task.dueDate)}T${task.time.replace(":", "")}00`,
+        "DURATION:PT1H",
+      ]
+    : allDay(task.dueDate);
+  return vevent([
+    `UID:${task.id}@${context.uidDomain}`,
+    `DTSTAMP:${context.stamp}`,
+    ...timing,
+    `SUMMARY:${escapeIcsText(task.done ? `Done: ${task.title}` : task.title)}`,
+    ...(task.description ? [`DESCRIPTION:${escapeIcsText(task.description)}`] : []),
+    ...(task.phase === "Day of" ? context.locationLine : []),
+    `CATEGORIES:${escapeIcsText(task.phase)}`,
+    "TRANSP:TRANSPARENT",
+  ]);
+}
+
+export function buildIcs({
+  calendarName,
+  eventTitle,
+  eventDate,
+  location,
+  tasks,
+  now = new Date(),
+  includeDone = true,
+  uidDomain = "festivo.app",
+}: IcsOptions): string {
+  const context: EventContext = {
+    stamp: utcStamp(now),
+    uidDomain,
+    locationLine: location ? [`LOCATION:${escapeIcsText(location)}`] : [],
+  };
+  const lines = [
+    ...CALENDAR_HEADER,
+    `X-WR-CALNAME:${escapeIcsText(calendarName)}`,
+    ...mainEvent(eventTitle, eventDate, context),
+    ...tasks
+      .filter((task) => includeDone || !task.done)
+      .flatMap((task) => taskEvent(task, context)),
+    "END:VCALENDAR",
+  ];
   return lines.map(foldLine).join(CRLF) + CRLF;
 }
 
