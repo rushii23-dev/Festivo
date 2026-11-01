@@ -27,33 +27,33 @@ export interface AiConfig {
   mockDelayMs: number;
 }
 
+/** The value `.env.example` ships with, which means "no key yet". */
+const PLACEHOLDER_KEY = "your-gemini-api-key";
+
+/** An empty or placeholder key counts as "not set". */
+const realKey = (key: string | undefined) =>
+  key && key !== PLACEHOLDER_KEY ? key : undefined;
+
 export function readAiConfig(
   env: Record<string, string | undefined> = process.env,
 ): AiConfig {
   const parsed = EnvSchema.parse({
     ...env,
-    // Treat empty or placeholder values as "not set".
-    GEMINI_API_KEY:
-      env.GEMINI_API_KEY && env.GEMINI_API_KEY !== "your-gemini-api-key"
-        ? env.GEMINI_API_KEY
-        : undefined,
+    GEMINI_API_KEY: realKey(env.GEMINI_API_KEY),
+    // An empty setting counts as "not set" too.
     AI_PROVIDER: env.AI_PROVIDER || undefined,
   });
-  // Without a key, always fall back to demo mode so the app still works.
-  const provider =
-    parsed.AI_PROVIDER === "gemini" && parsed.GEMINI_API_KEY
-      ? "gemini"
-      : parsed.AI_PROVIDER === undefined && parsed.GEMINI_API_KEY
-        ? "gemini"
-        : "mock";
+  const key = parsed.GEMINI_API_KEY;
+  const fallback = parsed.GEMINI_FALLBACK_MODEL;
   return {
-    provider,
-    ...(parsed.GEMINI_API_KEY ? { geminiApiKey: parsed.GEMINI_API_KEY } : {}),
+    // Gemini whenever there is a key, unless demo mode is asked for. Without a
+    // key, always fall back to demo mode so the app still works.
+    provider: key && parsed.AI_PROVIDER !== "mock" ? "gemini" : "mock",
+    ...(key ? { geminiApiKey: key } : {}),
     geminiModel: parsed.GEMINI_MODEL,
     geminiRetries: parsed.GEMINI_RETRIES,
-    ...(parsed.GEMINI_FALLBACK_MODEL &&
-    parsed.GEMINI_FALLBACK_MODEL !== parsed.GEMINI_MODEL
-      ? { geminiFallbackModel: parsed.GEMINI_FALLBACK_MODEL }
+    ...(fallback && fallback !== parsed.GEMINI_MODEL
+      ? { geminiFallbackModel: fallback }
       : {}),
     mockDelayMs: parsed.MOCK_STREAM_DELAY_MS,
   };
