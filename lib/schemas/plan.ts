@@ -15,6 +15,17 @@ import {
 } from "./common";
 import { DetailsSchema, LIMITS, TicketsSchema } from "./eventInput";
 
+/**
+ * How many of each list a saved plan holds. The schema enforces them, and
+ * dashboard edits and refine patches stop at them instead of failing it.
+ */
+export const PLAN_LIMITS = {
+  budgetLines: 15,
+  tasks: 60,
+  vendors: 20,
+  ideas: 40,
+} as const;
+
 export const TIMELINE_PHASES = [
   "12+ weeks",
   "8 weeks",
@@ -153,10 +164,10 @@ export const PlanSchema = z.strictObject({
   vibes: z.array(VibeSchema).max(LIMITS.vibesMax),
   currency: CurrencySchema,
   totalBudget: MoneySchema,
-  budget: z.array(BudgetItemSchema).min(1).max(15),
-  timeline: z.array(TimelineTaskSchema).max(60),
-  vendors: z.array(VendorSchema).max(20),
-  ideas: z.array(IdeaSchema).max(40),
+  budget: z.array(BudgetItemSchema).min(1).max(PLAN_LIMITS.budgetLines),
+  timeline: z.array(TimelineTaskSchema).max(PLAN_LIMITS.tasks),
+  vendors: z.array(VendorSchema).max(PLAN_LIMITS.vendors),
+  ideas: z.array(IdeaSchema).max(PLAN_LIMITS.ideas),
   summary: textField(800, "Summary"),
   createdAt: z.iso.datetime(),
 });

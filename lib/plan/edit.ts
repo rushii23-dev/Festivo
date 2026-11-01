@@ -8,6 +8,7 @@ import { rebalance } from "@/lib/budget/rebalance";
 import type { BudgetCategory } from "@/lib/schemas/common";
 import {
   IdeaSchema,
+  PLAN_LIMITS,
   TimelineTaskSchema,
   VendorSchema,
   type BudgetItem,
@@ -24,9 +25,6 @@ import { uniqueIdFactory, uniqueTitleFilter } from "./ids";
 
 export type EditResult =
   { ok: true; plan: Plan } | { ok: false; errors: Partial<Record<string, string>> };
-
-const MAX_IDEAS = 40;
-const MAX_TASKS = 60;
 
 function errorsFrom(issues: readonly { path: PropertyKey[]; message: string }[]) {
   const errors: Partial<Record<string, string>> = {};
@@ -149,8 +147,11 @@ export function setTaskDone(plan: Plan, taskId: string, done: boolean): Plan {
  * right side of the event, the same rules the generated timeline follows.
  */
 export function addTask(plan: Plan, input: TaskInput, today: string): EditResult {
-  if (plan.timeline.length >= MAX_TASKS) {
-    return { ok: false, errors: { form: `A plan can hold up to ${MAX_TASKS} tasks.` } };
+  if (plan.timeline.length >= PLAN_LIMITS.tasks) {
+    return {
+      ok: false,
+      errors: { form: `A plan can hold up to ${PLAN_LIMITS.tasks} tasks.` },
+    };
   }
   const fields = cleanTaskInput(input);
   const nextId = uniqueIdFactory(
@@ -290,7 +291,10 @@ export function addIdeas(
     fresh.push({ ...idea, id: nextId(idea.title) });
   }
 
-  const ideas = dropDismissed(plan.ideas, plan.ideas.length + fresh.length - MAX_IDEAS);
-  const added = fresh.slice(0, Math.max(0, MAX_IDEAS - ideas.length));
+  const ideas = dropDismissed(
+    plan.ideas,
+    plan.ideas.length + fresh.length - PLAN_LIMITS.ideas,
+  );
+  const added = fresh.slice(0, Math.max(0, PLAN_LIMITS.ideas - ideas.length));
   return { plan: { ...plan, ideas: [...ideas, ...added] }, added };
 }
