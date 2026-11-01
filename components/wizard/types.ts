@@ -1,4 +1,5 @@
-import type { FieldErrors, WizardDraft } from "@/lib/wizard/draft";
+import type { WizardDraft } from "@/lib/wizard/draft";
+import type { FieldErrors } from "@/lib/wizard/validate";
 
 export interface StepProps {
   draft: WizardDraft;

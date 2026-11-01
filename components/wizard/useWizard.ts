@@ -1,31 +1,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type SubmitEvent,
-} from "react";
+import { useCallback, useEffect, useRef, useState, type SubmitEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useAnnounce } from "@/components/a11y/LiveRegion";
 import { useHydratedStore } from "@/hooks/use-hydrated-store";
 import { usePlanGeneration, type GenerationState } from "@/hooks/use-plan-generation";
 import type { Plan } from "@/lib/schemas/plan";
 import { usePlanStore } from "@/lib/store/planStore";
-import { todayIso } from "@/lib/timeline/dates";
+import { localToday } from "@/lib/http/client";
+import { attentionMessage } from "@/lib/text/count";
 import {
   STEPS,
   STEP_FIELDS,
-  firstInvalidStep,
   toEventInput,
-  validateStep,
   type DraftField,
-  type FieldErrors,
   type WizardDraft,
 } from "@/lib/wizard/draft";
+import { firstInvalidStep, validateStep, type FieldErrors } from "@/lib/wizard/validate";
 
 type Announce = ReturnType<typeof useAnnounce>;
 
@@ -100,10 +92,7 @@ export function useWizard() {
     })),
   );
   const { draft, step, setStep, resetDraft, savePlan } = store;
-  const today = useMemo(
-    () => todayIso(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone),
-    [],
-  );
+  const [today] = useState(localToday);
   const { errors, setErrors, update } = useFieldErrors(store.setDraft);
 
   const onPlan = useCallback(
@@ -128,11 +117,7 @@ export function useWizard() {
   const showErrors = (found: FieldErrors) => {
     setErrors(found);
     const fields = STEP_FIELDS[current.id].filter((f) => found[f]);
-    const count = fields.length;
-    announce(
-      `${count} ${count === 1 ? "answer needs" : "answers need"} attention.`,
-      "assertive",
-    );
+    announce(attentionMessage(fields.length), "assertive");
     const first = fields[0];
     if (first) requestAnimationFrame(() => focusField(first));
   };

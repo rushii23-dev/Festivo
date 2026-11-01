@@ -6,16 +6,15 @@ import {
   STEP_FIELDS,
   draftEventDate,
   draftQuestions,
-  firstInvalidStep,
-  parseGuestCount,
+  parseWholeNumber,
   toEventInput,
   toggleValue,
   upcomingMonths,
-  validateStep,
   withGroup,
   withOccasion,
   type WizardDraft,
 } from "@/lib/wizard/draft";
+import { firstInvalidStep, validateStep } from "@/lib/wizard/validate";
 
 const TODAY = "2026-10-26";
 
@@ -187,8 +186,8 @@ describe("whole-draft helpers", () => {
   });
 
   it("parses guest counts and toggles values", () => {
-    expect(parseGuestCount(" 1,200 ")).toBe(1200);
-    expect(parseGuestCount("12.5")).toBeNull();
+    expect(parseWholeNumber(" 1,200 ")).toBe(1200);
+    expect(parseWholeNumber("12.5")).toBeNull();
     expect(toggleValue(["a", "b"], "a")).toEqual(["b"]);
     expect(toggleValue(["a"], "b")).toEqual(["a", "b"]);
   });
