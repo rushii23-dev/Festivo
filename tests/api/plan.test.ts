@@ -5,6 +5,7 @@ import { resetProvider } from "@/lib/ai/getProvider";
 import { collect, type StructuredTask } from "@/lib/ai/provider";
 import { planToDraft } from "@/lib/ai/mock";
 import { buildMockPlan } from "@/lib/fixtures/buildMockPlan";
+import { PlanEventSchema } from "@/lib/plan/events";
 import { clearPlanCaches } from "@/lib/plan/service";
 import { EventInputSchema } from "@/lib/schemas/eventInput";
 import { PlanSchema } from "@/lib/schemas/plan";
@@ -48,6 +49,7 @@ describe("POST /api/plan (mock provider)", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
 
     const events = await readEvents(response);
+    for (const event of events) expect(PlanEventSchema.parse(event)).toEqual(event);
     expect(
       events
         .filter((e) => e.type === "progress")

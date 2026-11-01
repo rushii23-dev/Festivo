@@ -295,6 +295,26 @@ describe("Wizard generation", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/plan/plan-abc"));
   });
 
+  it("refuses a stream line that breaks the event contract", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        ndjson([
+          { type: "progress", step: "budget", message: "Crunching your budget…" },
+          { type: "plan", plan: { ...plan, budget: "lots" }, cached: false },
+        ]),
+      ),
+    );
+    usePlanStore.setState({ draft: completeDraft, step: 5 });
+    const user = renderWizard();
+    await user.click(await screen.findByRole("button", { name: "Generate my plan" }));
+    expect(
+      await screen.findByText("The plan came back incomplete. Please try again."),
+    ).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+  });
+
   it("explains rate limiting from a 429 response", async () => {
     vi.stubGlobal(
       "fetch",

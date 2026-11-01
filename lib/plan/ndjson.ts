@@ -1,4 +1,25 @@
 /**
+ * Newline-delimited JSON (one value per line), the format of the plan stream.
+ * `toNdjson` writes it on the server; `readNdjson` reads it in the browser.
+ */
+
+const encoder = new TextEncoder();
+
+/** Serialises values as NDJSON, pulling the next one only when the reader is ready. */
+export function toNdjson<T>(values: AsyncGenerator<T>): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      const { value, done } = await values.next();
+      if (done) controller.close();
+      else controller.enqueue(encoder.encode(`${JSON.stringify(value)}\n`));
+    },
+    async cancel() {
+      await values.return(undefined);
+    },
+  });
+}
+
+/**
  * Reads a newline-delimited JSON stream, yielding one parsed value per line.
  * Handles lines split across network chunks and a final line with no newline.
  */

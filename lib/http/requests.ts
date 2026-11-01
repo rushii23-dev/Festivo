@@ -4,6 +4,9 @@ import { EventInputSchema } from "@/lib/schemas/eventInput";
 import { IdeaCategorySchema, PlanSchema } from "@/lib/schemas/plan";
 import { TimeZoneSchema } from "./api";
 
+/** Longest refine request, in characters. */
+export const INSTRUCTION_MAX = 300;
+
 export const PlanRequestSchema = z.strictObject({
   input: EventInputSchema,
   timeZone: TimeZoneSchema.optional(),
@@ -15,7 +18,7 @@ export const RefineRequestSchema = z.strictObject({
     .string()
     .trim()
     .min(1, { error: "Tell Festivo what to change." })
-    .max(300, { error: "Keep requests to 300 characters." }),
+    .max(INSTRUCTION_MAX, { error: `Keep requests to ${INSTRUCTION_MAX} characters.` }),
   timeZone: TimeZoneSchema.optional(),
 });
 

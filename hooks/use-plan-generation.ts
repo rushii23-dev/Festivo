@@ -1,131 +1,89 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  NETWORK_ERROR,
+  errorMessage,
+  readJson,
+  sendJson,
+  userTimeZone,
+} from "@/lib/http/client";
+import {
+  ERROR_MESSAGES,
+  PROGRESS_MESSAGES,
+  PlanEventSchema,
+  isPlanSection,
+  type PlanSection,
+} from "@/lib/plan/events";
 import { readNdjson } from "@/lib/plan/ndjson";
-import { PlanSchema, type Plan } from "@/lib/schemas/plan";
 import type { EventInput } from "@/lib/schemas/eventInput";
-
-/** The stages shown while a plan is generated, in order. */
-export const GENERATION_STAGES = [
-  "budget",
-  "timeline",
-  "vendors",
-  "ideas",
-  "summary",
-] as const;
-export type GenerationStage = (typeof GENERATION_STAGES)[number];
-
-export const STAGE_LABELS: Record<GenerationStage, string> = {
-  budget: "Budget",
-  timeline: "Timeline",
-  vendors: "Vendors",
-  ideas: "Ideas",
-  summary: "Summary",
-};
+import type { Plan } from "@/lib/schemas/plan";
 
 export type GenerationState =
   | { status: "idle" }
-  | { status: "generating"; message: string; reached: GenerationStage[] }
+  | { status: "generating"; message: string; reached: PlanSection[] }
   | { status: "error"; message: string; retryable: boolean }
   | { status: "done"; plan: Plan };
 
-const NETWORK_ERROR = "We couldn't reach Festivo. Check your connection and try again.";
 const NETWORK_FAILURE: GenerationState = {
   status: "error",
   message: NETWORK_ERROR,
   retryable: true,
 };
 
-interface ProgressLike {
-  type: "progress";
-  step: string;
-  message: string;
-}
-
-interface StreamEnd {
-  type?: string;
-  plan?: unknown;
-  message?: string;
-  retryable?: boolean;
-}
-
-function isProgress(value: unknown): value is ProgressLike {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    (value as { type?: unknown }).type === "progress" &&
-    typeof (value as { message?: unknown }).message === "string"
-  );
-}
-
-function requestPlan(input: EventInput, signal: AbortSignal) {
-  return fetch("/api/plan", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      input,
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    }),
-    signal,
-  });
-}
+/** A line that breaks the stream contract, such as a plan that fails validation. */
+const INCOMPLETE: GenerationState = {
+  status: "error",
+  message: ERROR_MESSAGES["invalid-output"],
+  retryable: true,
+};
 
 /** A refused request: the server's message, retryable when it was busy or failed. */
 async function refusal(response: Response): Promise<GenerationState> {
-  const body = (await response.json().catch(() => null)) as {
-    error?: { message?: string };
-  } | null;
   return {
     status: "error",
-    message: body?.error?.message ?? NETWORK_ERROR,
+    message: errorMessage(await readJson(response)),
     retryable: response.status === 429 || response.status >= 500,
   };
 }
 
-/** The state a final stream event leads to, or null for events that are not final. */
-function endState(event: StreamEnd): GenerationState | null {
-  if (event.type === "plan") {
-    const plan = PlanSchema.safeParse(event.plan);
-    return plan.success
-      ? { status: "done", plan: plan.data }
-      : {
-          status: "error",
-          message: "The plan came back incomplete. Please try again.",
-          retryable: true,
-        };
-  }
-  if (event.type === "error") {
-    return {
-      status: "error",
-      message: event.message ?? NETWORK_ERROR,
-      retryable: event.retryable ?? true,
-    };
-  }
-  return null;
-}
-
-/** Reports progress as stages arrive and resolves with the stream's final state. */
+/**
+ * Reports progress as sections arrive and resolves with the stream's final
+ * state. Every line is checked against the shared event schema, so the plan
+ * is validated again here before it is saved.
+ */
 async function followStream(
   body: ReadableStream<Uint8Array>,
   onProgress: (state: GenerationState) => void,
 ): Promise<GenerationState> {
-  const reached: GenerationStage[] = [];
-  for await (const event of readNdjson(body)) {
-    if (isProgress(event)) {
-      const stage = GENERATION_STAGES.find((s) => s === event.step);
-      if (stage && !reached.includes(stage)) reached.push(stage);
-      onProgress({ status: "generating", message: event.message, reached: [...reached] });
-      continue;
+  const reached: PlanSection[] = [];
+  for await (const line of readNdjson(body)) {
+    const parsed = PlanEventSchema.safeParse(line);
+    if (!parsed.success) return INCOMPLETE;
+    const event = parsed.data;
+    switch (event.type) {
+      case "progress":
+        if (isPlanSection(event.step) && !reached.includes(event.step)) {
+          reached.push(event.step);
+        }
+        onProgress({
+          status: "generating",
+          message: event.message,
+          reached: [...reached],
+        });
+        break;
+      case "plan":
+        return { status: "done", plan: event.plan };
+      case "error":
+        return { status: "error", message: event.message, retryable: event.retryable };
     }
-    const end = endState(event as StreamEnd);
-    if (end) return end;
   }
   return NETWORK_FAILURE;
 }
 
 /**
  * Starts a streamed generation via POST /api/plan and tracks its progress.
- * The final plan is validated again on the client before it is handed back.
+ * A new start, cancel or unmount aborts the request in flight.
  */
 export function usePlanGeneration(onPlan: (plan: Plan) => void) {
   const [state, setState] = useState<GenerationState>({ status: "idle" });
@@ -138,10 +96,14 @@ export function usePlanGeneration(onPlan: (plan: Plan) => void) {
       controller.current?.abort();
       const abort = new AbortController();
       controller.current = abort;
-      setState({ status: "generating", message: "Reading your answers…", reached: [] });
+      setState({ status: "generating", message: PROGRESS_MESSAGES.start, reached: [] });
 
       try {
-        const response = await requestPlan(input, abort.signal);
+        const response = await sendJson(
+          "/api/plan",
+          { input, timeZone: userTimeZone() },
+          abort.signal,
+        );
         const end =
           response.ok && response.body
             ? await followStream(response.body, setState)

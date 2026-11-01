@@ -17,11 +17,8 @@ import {
   SETTING_LABELS,
   VIBE_LABELS,
 } from "@/lib/wizard/labels";
-import {
-  GENERATION_STAGES,
-  STAGE_LABELS,
-  type GenerationState,
-} from "@/hooks/use-plan-generation";
+import type { GenerationState } from "@/hooks/use-plan-generation";
+import { PLAN_SECTIONS, SECTION_LABELS, type PlanSection } from "@/lib/plan/events";
 
 interface ReviewProps {
   draft: WizardDraft;
@@ -158,6 +155,31 @@ function NeedsReview({ draft, onEdit }: ReviewProps) {
   );
 }
 
+type SectionStatus = "done" | "working" | "waiting";
+
+const STATUS_TEXT: Record<SectionStatus, string> = {
+  done: ", done",
+  working: ", in progress",
+  waiting: ", waiting",
+};
+
+/** The section being written is the last one to arrive; before any arrives, the first. */
+function sectionStatus(
+  section: PlanSection,
+  reached: readonly PlanSection[],
+): SectionStatus {
+  const active = reached.at(-1) ?? PLAN_SECTIONS[0];
+  if (section === active) return "working";
+  return reached.includes(section) ? "done" : "waiting";
+}
+
+function StatusIcon({ status }: { status: SectionStatus }) {
+  if (status === "done") return <Check className="size-4" />;
+  if (status === "working")
+    return <LoaderCircle className="size-4 motion-ok:animate-spin" />;
+  return null;
+}
+
 /** Visual progress of the streamed generation. Screen readers get the same text via the live region. */
 export function GenerationProgress({
   state,
@@ -185,32 +207,25 @@ export function GenerationProgress({
   }
   if (state.status !== "generating") return null;
 
-  const current = GENERATION_STAGES.find((stage) => !state.reached.includes(stage));
-  const active = state.reached.at(-1);
   return (
     <div className="sticker grid gap-4 p-5" aria-busy="true">
       <p className="text-lg font-extrabold">{state.message}</p>
       <ol className="grid gap-2">
-        {GENERATION_STAGES.map((stage) => {
-          const done = state.reached.includes(stage) && stage !== active;
-          const working = stage === active || (!active && stage === current);
+        {PLAN_SECTIONS.map((section) => {
+          const status = sectionStatus(section, state.reached);
           return (
-            <li key={stage} className="flex items-center gap-3">
+            <li key={section} className="flex items-center gap-3">
               <span
                 aria-hidden="true"
                 className="flex size-7 items-center justify-center rounded-full border border-border"
               >
-                {done ? (
-                  <Check className="size-4" />
-                ) : working ? (
-                  <LoaderCircle className="size-4 motion-ok:animate-spin" />
-                ) : null}
+                <StatusIcon status={status} />
               </span>
-              <span className={done || working ? "font-bold" : "text-muted-foreground"}>
-                {STAGE_LABELS[stage]}
-                <span className="sr-only">
-                  {done ? ", done" : working ? ", in progress" : ", waiting"}
-                </span>
+              <span
+                className={status === "waiting" ? "text-muted-foreground" : "font-bold"}
+              >
+                {SECTION_LABELS[section]}
+                <span className="sr-only">{STATUS_TEXT[status]}</span>
               </span>
             </li>
           );

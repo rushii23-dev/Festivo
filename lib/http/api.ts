@@ -5,6 +5,7 @@
  */
 import "server-only";
 import { z } from "zod";
+import type { ErrorCode, ErrorEvent } from "@/lib/plan/events";
 import { clientKey, createRateLimiter } from "@/lib/security/rateLimit";
 
 export const NO_STORE = { "Cache-Control": "no-store" } as const;
@@ -45,6 +46,19 @@ export function errorResponse(
     status,
     headers,
   });
+}
+
+/** HTTP status for each way a plan use-case can fail. */
+const FAILURE_STATUS: Record<ErrorCode, number> = {
+  provider: 502,
+  "invalid-output": 502,
+  "invalid-request": 422,
+  internal: 500,
+};
+
+/** The response for a failed use-case, from its user-safe error event. */
+export function failureResponse({ code, message }: ErrorEvent): Response {
+  return errorResponse(FAILURE_STATUS[code], code, message);
 }
 
 export function validationError(

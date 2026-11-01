@@ -5,6 +5,7 @@
  */
 import "server-only";
 import { randomUUID } from "node:crypto";
+import { createChannel } from "@/lib/async/channel";
 import { LruCache, hashKey } from "@/lib/cache/lru";
 import { createSingleFlight } from "@/lib/cache/singleFlight";
 import { generateStructured } from "@/lib/ai/parse";
@@ -27,87 +28,58 @@ import type { Idea, IdeaCategory, Plan } from "@/lib/schemas/plan";
 import { diffDays } from "@/lib/timeline/dates";
 import { resolveEventDate } from "@/lib/timeline/resolveDate";
 import { diffPlans, type PlanChange } from "./diff";
+import {
+  ERROR_MESSAGES,
+  PLAN_SECTIONS,
+  PROGRESS_MESSAGES,
+  type ErrorCode,
+  type ErrorEvent,
+  type PlanEvent,
+  type PlanSection,
+  type ProgressStep,
+} from "./events";
 import { ideasFromDraft, planFromDraft } from "./fromDraft";
-import { uniqueIdFactory } from "./ids";
+import { uniqueIdFactory, uniqueTitleFilter } from "./ids";
 import { PatchError, applyPatch } from "./patch";
 
-export const PLAN_SECTIONS = [
-  "budget",
-  "timeline",
-  "vendors",
-  "ideas",
-  "summary",
-] as const;
-export type PlanSection = (typeof PLAN_SECTIONS)[number];
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
-export const PROGRESS_MESSAGES = {
-  start: "Reading your answers…",
-  budget: "Crunching your budget…",
-  timeline: "Drafting your timeline…",
-  vendors: "Lining up vendors…",
-  ideas: "Dreaming up ideas…",
-  summary: "Writing your summary…",
-  repair: "Tidying up a few details…",
-  finalize: "Checking every number…",
-} as const;
-export type ProgressStep = keyof typeof PROGRESS_MESSAGES;
+/** Output budgets per task: a whole plan, a patch to one, a handful of ideas. */
+const MAX_OUTPUT_TOKENS = { plan: 8192, refine: 4096, ideas: 1500 } as const;
 
-export type PlanEvent =
-  | { type: "progress"; step: ProgressStep; message: string }
-  | { type: "plan"; plan: Plan; cached: boolean }
-  | { type: "error"; code: ErrorCode; message: string; retryable: boolean };
+function errorEvent(
+  code: ErrorCode,
+  { message = ERROR_MESSAGES[code], retryable = true } = {},
+): ErrorEvent {
+  return { type: "error", code, message, retryable };
+}
 
-export type ErrorCode = "provider" | "invalid-output" | "invalid-request" | "internal";
-
-/** Generic, user-safe messages. Details go to server logs only. */
-export const ERROR_MESSAGES: Record<ErrorCode, string> = {
-  provider: "We couldn't reach the planning service. Please try again in a moment.",
-  "invalid-output": "The plan came back incomplete. Please try again.",
-  "invalid-request": "Some details need another look before we can plan this.",
-  internal: "Something went wrong on our side. Please try again.",
-};
-
-export function toErrorEvent(error: unknown): Extract<PlanEvent, { type: "error" }> {
+/**
+ * Maps any failure to a user-safe error event. Provider and internal details
+ * are logged here and never sent; only a refused edit explains itself, because
+ * its message was written for the planner.
+ */
+export function toErrorEvent(error: unknown): ErrorEvent {
   if (error instanceof AiProviderError) {
     console.error("[ai] provider error", {
       status: error.status,
       message: error.message,
     });
-    return {
-      type: "error",
-      code: "provider",
-      message: ERROR_MESSAGES.provider,
-      retryable: true,
-    };
+    return errorEvent("provider");
   }
   if (error instanceof AiOutputError) {
     console.error("[ai] invalid output after repair", { issues: error.issues });
-    return {
-      type: "error",
-      code: "invalid-output",
-      message: ERROR_MESSAGES["invalid-output"],
-      retryable: true,
-    };
+    return errorEvent("invalid-output");
   }
   if (error instanceof PatchError || error instanceof RangeError) {
-    return {
-      type: "error",
-      code: "invalid-request",
-      message: error.message,
-      retryable: false,
-    };
+    return errorEvent("invalid-request", { message: error.message, retryable: false });
   }
   console.error("[plan] unexpected error", error);
-  return {
-    type: "error",
-    code: "internal",
-    message: ERROR_MESSAGES.internal,
-    retryable: true,
-  };
+  return errorEvent("internal");
 }
 
-const planCache = new LruCache<Plan>({ maxEntries: 200, ttlMs: 60 * 60 * 1000 });
-const ideasCache = new LruCache<Idea[]>({ maxEntries: 500, ttlMs: 60 * 60 * 1000 });
+const planCache = new LruCache<Plan>({ maxEntries: 200, ttlMs: CACHE_TTL_MS });
+const ideasCache = new LruCache<Idea[]>({ maxEntries: 500, ttlMs: CACHE_TTL_MS });
 /** Identical requests that arrive while the first is still running share its AI call. */
 const planFlights = createSingleFlight<Plan>();
 const ideasFlights = createSingleFlight<Idea[]>();
@@ -120,41 +92,29 @@ export function clearPlanCaches(): void {
   ideasFlights.clear();
 }
 
-/** Minimal async queue so callbacks inside generation can feed a generator. */
-function createChannel<T>() {
-  const items: T[] = [];
-  let wake: (() => void) | null = null;
-  let closed = false;
-  return {
-    push(item: T) {
-      items.push(item);
-      wake?.();
-    },
-    close() {
-      closed = true;
-      wake?.();
-    },
-    async *drain(): AsyncGenerator<T> {
-      while (true) {
-        while (items.length > 0) yield items.shift() as T;
-        if (closed) return;
-        await new Promise<void>((resolve) => (wake = resolve));
-        wake = null;
-      }
-    },
-  };
-}
+/** Cache keys name the model, so switching models never serves another model's work. */
+const modelKey = (provider: AiProvider) => `${provider.name}:${provider.model}`;
+
+const progressEvent = (step: ProgressStep): PlanEvent => ({
+  type: "progress",
+  step,
+  message: PROGRESS_MESSAGES[step],
+});
 
 /** Which sections have started appearing in the partial JSON text. */
 export function sectionsSeen(text: string): PlanSection[] {
   return PLAN_SECTIONS.filter((section) => new RegExp(`"${section}"\\s*:`).test(text));
 }
 
-export interface ServiceOptions {
+/** What every AI call needs. */
+export interface AiCallOptions {
   provider: AiProvider;
+  signal?: AbortSignal;
+}
+
+export interface ServiceOptions extends AiCallOptions {
   today: string;
   now?: Date;
-  signal?: AbortSignal;
   newId?: () => string;
 }
 
@@ -166,34 +126,35 @@ export async function* streamPlan(
   input: EventInput,
   { provider, today, now = new Date(), signal, newId = randomUUID }: ServiceOptions,
 ): AsyncGenerator<PlanEvent> {
-  const progress = (step: ProgressStep): PlanEvent => ({
-    type: "progress",
-    step,
-    message: PROGRESS_MESSAGES[step],
-  });
-  yield progress("start");
+  yield progressEvent("start");
+
+  /** A plan someone else already paid for, under a new id so saved copies never collide. */
+  const reuse = (plan: Plan): PlanEvent[] => [
+    progressEvent("finalize"),
+    {
+      type: "plan",
+      plan: { ...plan, id: newId(), createdAt: now.toISOString() },
+      cached: true,
+    },
+  ];
 
   const { date: eventDate, flexible } = resolveEventDate(input.date, today);
-  const key = hashKey({
-    v: 1,
-    kind: "plan",
-    model: `${provider.name}:${provider.model}`,
-    input,
-    today,
-  });
+  const key = hashKey({ v: 1, kind: "plan", model: modelKey(provider), input, today });
   const hit = planCache.get(key);
   if (hit) {
-    yield progress("finalize");
-    yield {
-      type: "plan",
-      plan: { ...hit, id: newId(), createdAt: now.toISOString() },
-      cached: true,
-    };
+    yield* reuse(hit);
     return;
   }
 
   const channel = createChannel<PlanEvent>();
   const announced = new Set<PlanSection>();
+  const announceSections = (text: string) => {
+    for (const section of sectionsSeen(text)) {
+      if (announced.has(section)) continue;
+      announced.add(section);
+      channel.push(progressEvent(section));
+    }
+  };
 
   const generate = async (): Promise<Plan> => {
     const draft = await generateStructured({
@@ -211,19 +172,12 @@ export async function* streamPlan(
         }),
         schema: toProviderSchema(PlanDraftSchema),
         context: { kind: "plan", input, today },
-        maxOutputTokens: 8192,
+        maxOutputTokens: MAX_OUTPUT_TOKENS.plan,
       },
-      onText: (text) => {
-        for (const section of sectionsSeen(text)) {
-          if (!announced.has(section)) {
-            announced.add(section);
-            channel.push(progress(section));
-          }
-        }
-      },
-      onRepair: () => channel.push(progress("repair")),
+      onText: announceSections,
+      onRepair: () => channel.push(progressEvent("repair")),
     });
-    channel.push(progress("finalize"));
+    channel.push(progressEvent("finalize"));
     const plan = planFromDraft(draft, input, {
       id: newId(),
       today,
@@ -240,12 +194,7 @@ export async function* streamPlan(
     // The same plan is already being generated: wait for it rather than call the AI again.
     const plan = await flight.promise.catch(() => null);
     if (plan) {
-      yield progress("finalize");
-      yield {
-        type: "plan",
-        plan: { ...plan, id: newId(), createdAt: now.toISOString() },
-        cached: true,
-      };
+      yield* reuse(plan);
       return;
     }
     // That request failed or was cancelled; this one still gets its own attempt.
@@ -284,7 +233,7 @@ export async function refinePlan(
         prompt: buildRefinePrompt(plan, instruction, today, pastDate),
         schema: toProviderSchema(PlanPatchSchema),
         context: { kind: "refine", plan, instruction, today },
-        maxOutputTokens: 4096,
+        maxOutputTokens: MAX_OUTPUT_TOKENS.refine,
       },
     });
   let patch = await ask();
@@ -304,13 +253,13 @@ export async function refinePlan(
 export async function moreIdeas(
   plan: Plan,
   category: IdeaCategory,
-  { provider, signal }: ServiceOptions,
+  { provider, signal }: AiCallOptions,
 ): Promise<Idea[]> {
   const existing = plan.ideas.map((i) => i.title);
   const key = hashKey({
     v: 1,
     kind: "ideas",
-    model: `${provider.name}:${provider.model}`,
+    model: modelKey(provider),
     category,
     existing,
     eventType: plan.eventType,
@@ -332,16 +281,13 @@ export async function moreIdeas(
         prompt: buildIdeasPrompt(plan, category, existing, plan.vibes),
         schema: toProviderSchema(IdeasDraftSchema),
         context: { kind: "ideas", plan, category, excludeTitles: existing },
-        maxOutputTokens: 1500,
+        maxOutputTokens: MAX_OUTPUT_TOKENS.ideas,
       },
     });
-    const seen = new Set(existing.map((t) => t.toLowerCase()));
-    const fresh = draft.ideas.filter((idea) => {
-      const title = idea.title.toLowerCase();
-      if (idea.category !== category || seen.has(title)) return false;
-      seen.add(title);
-      return true;
-    });
+    const isNewTitle = uniqueTitleFilter(existing);
+    const fresh = draft.ideas.filter(
+      (idea) => idea.category === category && isNewTitle(idea.title),
+    );
     const ideas = ideasFromDraft(
       fresh,
       uniqueIdFactory(

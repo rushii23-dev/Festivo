@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { vi } from "vitest";
 import { resetProvider } from "@/lib/ai/getProvider";
-import type { PlanEvent } from "@/lib/plan/service";
+import type { PlanEvent } from "@/lib/plan/events";
 import type { EventInputDraft } from "@/lib/schemas/eventInput";
 import { addDays, todayIso } from "@/lib/timeline/dates";
 

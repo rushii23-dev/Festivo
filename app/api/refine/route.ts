@@ -5,26 +5,19 @@
  */
 import { getProvider } from "@/lib/ai/getProvider";
 import {
-  errorResponse,
+  failureResponse,
   guard,
   json,
   readJsonBody,
   validationError,
 } from "@/lib/http/api";
-import { BODY_LIMITS, RefineRequestSchema } from "@/lib/http/requests";
+import { BODY_LIMITS, INSTRUCTION_MAX, RefineRequestSchema } from "@/lib/http/requests";
 import { refinePlan, toErrorEvent } from "@/lib/plan/service";
-import { detectInjection } from "@/lib/security/promptGuard";
+import { reportInjection } from "@/lib/security/promptGuard";
 import { cleanText } from "@/lib/security/sanitize";
 import { todayIso } from "@/lib/timeline/dates";
 
 export const maxDuration = 60;
-
-const STATUS: Record<string, number> = {
-  provider: 502,
-  "invalid-output": 502,
-  "invalid-request": 422,
-  internal: 500,
-};
 
 export async function POST(request: Request): Promise<Response> {
   const blocked = guard(request);
@@ -36,11 +29,8 @@ export async function POST(request: Request): Promise<Response> {
   const parsed = RefineRequestSchema.safeParse(body.value);
   if (!parsed.success) return validationError(parsed.error);
   const { plan, timeZone } = parsed.data;
-  const instruction = cleanText(parsed.data.instruction, 300);
-
-  const flags = detectInjection(instruction);
-  if (flags.length > 0)
-    console.warn("[security] possible prompt injection in refine", { flags });
+  const instruction = cleanText(parsed.data.instruction, INSTRUCTION_MAX);
+  reportInjection("refine", instruction);
 
   try {
     const result = await refinePlan(plan, instruction, {
@@ -50,7 +40,6 @@ export async function POST(request: Request): Promise<Response> {
     });
     return json(result);
   } catch (error) {
-    const event = toErrorEvent(error);
-    return errorResponse(STATUS[event.code] ?? 500, event.code, event.message);
+    return failureResponse(toErrorEvent(error));
   }
 }

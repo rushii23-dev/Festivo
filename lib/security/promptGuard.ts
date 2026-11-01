@@ -44,3 +44,12 @@ const SUSPICIOUS: { id: string; pattern: RegExp }[] = [
 export function detectInjection(text: string): string[] {
   return SUSPICIOUS.filter(({ pattern }) => pattern.test(text)).map(({ id }) => id);
 }
+
+/** Logs a warning when `text` looks like an injection attempt; returns the flags found. */
+export function reportInjection(where: string, text: string): string[] {
+  const flags = detectInjection(text);
+  if (flags.length > 0) {
+    console.warn(`[security] possible prompt injection in ${where}`, { flags });
+  }
+  return flags;
+}

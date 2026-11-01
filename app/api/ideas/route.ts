@@ -4,7 +4,7 @@
  */
 import { getProvider } from "@/lib/ai/getProvider";
 import {
-  errorResponse,
+  failureResponse,
   guard,
   json,
   readJsonBody,
@@ -12,7 +12,6 @@ import {
 } from "@/lib/http/api";
 import { BODY_LIMITS, IdeasRequestSchema } from "@/lib/http/requests";
 import { moreIdeas, toErrorEvent } from "@/lib/plan/service";
-import { todayIso } from "@/lib/timeline/dates";
 
 export const maxDuration = 30;
 
@@ -25,20 +24,15 @@ export async function POST(request: Request): Promise<Response> {
 
   const parsed = IdeasRequestSchema.safeParse(body.value);
   if (!parsed.success) return validationError(parsed.error);
+  const { plan, category } = parsed.data;
 
   try {
-    const ideas = await moreIdeas(parsed.data.plan, parsed.data.category, {
+    const ideas = await moreIdeas(plan, category, {
       provider: getProvider(),
-      today: todayIso(),
       signal: request.signal,
     });
     return json({ ideas });
   } catch (error) {
-    const event = toErrorEvent(error);
-    return errorResponse(
-      event.code === "internal" ? 500 : 502,
-      event.code,
-      event.message,
-    );
+    return failureResponse(toErrorEvent(error));
   }
 }

@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildMockPlan } from "@/lib/fixtures/buildMockPlan";
-import { readNdjson } from "@/lib/plan/ndjson";
 import { EventInputSchema } from "@/lib/schemas/eventInput";
 import { createDebouncedStorage } from "@/lib/store/debouncedStorage";
 import {
@@ -140,41 +139,5 @@ describe("usePlanStore", () => {
     localStorage.setItem(STORE_KEY, raw);
     await usePlanStore.persist.rehydrate();
     expect(usePlanStore.getState().plans[plan.id]?.title).toBe("Maya turns 7");
-  });
-});
-
-describe("readNdjson", () => {
-  function streamOf(chunks: string[]) {
-    const encoder = new TextEncoder();
-    return new ReadableStream<Uint8Array>({
-      start(controller) {
-        for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
-        controller.close();
-      },
-    });
-  }
-
-  it("yields one value per line, across chunk boundaries", async () => {
-    const values: unknown[] = [];
-    for await (const v of readNdjson(
-      streamOf(['{"a":', "1}\n\n", '{"b":2}\n{"c"', ":3}"]),
-    )) {
-      values.push(v);
-    }
-    expect(values).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
-  });
-
-  it("handles multi-byte characters split between chunks", async () => {
-    const bytes = new TextEncoder().encode('{"t":"₹"}\n');
-    const stream = new ReadableStream<Uint8Array>({
-      start(controller) {
-        controller.enqueue(bytes.slice(0, 7));
-        controller.enqueue(bytes.slice(7));
-        controller.close();
-      },
-    });
-    const values: unknown[] = [];
-    for await (const v of readNdjson(stream)) values.push(v);
-    expect(values).toEqual([{ t: "₹" }]);
   });
 });

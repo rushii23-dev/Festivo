@@ -4,7 +4,16 @@ import { planToDraft } from "@/lib/ai/mock";
 import { buildMockPlan } from "@/lib/fixtures/buildMockPlan";
 import { describeChange, diffPlans } from "@/lib/plan/diff";
 import { budgetFromDraft, planFromDraft, vendorsFromDraft } from "@/lib/plan/fromDraft";
-import { slugify, uniqueIdFactory } from "@/lib/plan/ids";
+import {
+  ERROR_CODES,
+  ERROR_MESSAGES,
+  PLAN_SECTIONS,
+  PROGRESS_MESSAGES,
+  PROGRESS_STEPS,
+  PlanEventSchema,
+  isPlanSection,
+} from "@/lib/plan/events";
+import { slugify, uniqueIdFactory, uniqueTitleFilter } from "@/lib/plan/ids";
 import { PatchError, applyPatch } from "@/lib/plan/patch";
 import { sectionsSeen, toErrorEvent } from "@/lib/plan/service";
 import { AiOutputError, AiProviderError } from "@/lib/ai/provider";
@@ -48,6 +57,45 @@ describe("ids", () => {
       "idea-tea-3",
       "idea-cake",
     ]);
+  });
+
+  it("accepts each title once, ignoring case, and never one already taken", () => {
+    const isNew = uniqueTitleFilter(["Mehndi Night"]);
+    expect(["mehndi night", "Tea Bar", "TEA BAR", "Photo booth"].map(isNew)).toEqual([
+      false,
+      true,
+      false,
+      true,
+    ]);
+  });
+});
+
+describe("plan stream contract", () => {
+  it("announces every section, in order, between start and finalize", () => {
+    expect(PROGRESS_STEPS).toEqual(["start", ...PLAN_SECTIONS, "repair", "finalize"]);
+    for (const step of PROGRESS_STEPS) expect(PROGRESS_MESSAGES[step]).toMatch(/…$/);
+    expect(PROGRESS_STEPS.filter(isPlanSection)).toEqual([...PLAN_SECTIONS]);
+  });
+
+  it("has a user-safe message for every error code", () => {
+    for (const code of ERROR_CODES) expect(ERROR_MESSAGES[code]).toMatch(/\.$/);
+  });
+
+  it("accepts the events the server sends and rejects anything else", () => {
+    const ok = (event: unknown) => PlanEventSchema.safeParse(event).success;
+    expect(ok({ type: "progress", step: "budget", message: "Crunching…" })).toBe(true);
+    expect(ok({ type: "plan", plan, cached: false })).toBe(true);
+    expect(
+      ok({ type: "error", code: "provider", message: "Try again.", retryable: true }),
+    ).toBe(true);
+    expect(ok({ type: "progress", step: "fireworks", message: "?" })).toBe(false);
+    expect(ok({ type: "plan", plan: { ...plan, budget: "lots" }, cached: false })).toBe(
+      false,
+    );
+    expect(ok({ type: "error", code: "teapot", message: "x", retryable: true })).toBe(
+      false,
+    );
+    expect(ok({ type: "done" })).toBe(false);
   });
 });
 
