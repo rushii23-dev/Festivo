@@ -11,7 +11,10 @@ import { formatShortDate } from "@/lib/timeline/dates";
 import { nextTasks } from "@/lib/timeline/generate";
 import { bookingProgress } from "@/lib/vendors/catalog";
 import type { PanelProps } from "./PlanDashboard";
-import { Garland, PanelHeader, StatusNote, TaskCheck } from "./parts";
+import { Garland } from "./Garland";
+import { PanelHeader } from "./PanelHeader";
+import { StatusNote } from "./StatusNote";
+import { TaskCheck } from "./TaskCheck";
 import { useTaskToggle } from "./useTaskToggle";
 
 export const HEALTH_STYLE: Record<

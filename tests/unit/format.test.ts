@@ -3,6 +3,7 @@ import {
   costTierName,
   costTierSymbol,
   currencySymbol,
+  formatAmount,
   formatMoney,
   formatMoneyCompact,
   parseMoneyInput,
@@ -22,6 +23,14 @@ describe("formatMoney", () => {
   it("rounds to whole units", () => {
     expect(formatMoney(999.6, "USD")).toBe("$1,000");
     expect(formatMoney(0, "INR")).toBe("₹0");
+  });
+});
+
+describe("formatAmount", () => {
+  it("groups whole units for the currency, without a symbol", () => {
+    expect(formatAmount(1234567, "INR")).toBe("12,34,567");
+    expect(formatAmount(1234567.6, "USD")).toBe("1,234,568");
+    expect(formatAmount(0, "GBP")).toBe("0");
   });
 });
 

@@ -14,34 +14,54 @@ export const CURRENCY_LOCALES: Record<Currency, string> = {
 
 const cache = new Map<string, Intl.NumberFormat>();
 
-function formatter(currency: Currency, compact: boolean): Intl.NumberFormat {
-  const key = `${currency}:${compact}`;
+/** One formatter per currency and style, built on first use. */
+function cached(
+  currency: Currency,
+  style: "money" | "compact" | "plain",
+  options: Intl.NumberFormatOptions,
+): Intl.NumberFormat {
+  const key = `${currency}:${style}`;
   let fmt = cache.get(key);
   if (!fmt) {
-    fmt = new Intl.NumberFormat(CURRENCY_LOCALES[currency], {
-      style: "currency",
-      currency,
-      maximumFractionDigits: compact ? 1 : 0,
-      minimumFractionDigits: 0,
-      ...(compact ? { notation: "compact" as const } : {}),
-    });
+    fmt = new Intl.NumberFormat(CURRENCY_LOCALES[currency], options);
     cache.set(key, fmt);
   }
   return fmt;
 }
 
+const money = (currency: Currency) =>
+  cached(currency, "money", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  });
+
 /** "₹12,34,567", "$1,234,567". Rounds to whole units. */
 export function formatMoney(amount: number, currency: Currency): string {
-  return formatter(currency, false).format(Math.round(amount));
+  return money(currency).format(Math.round(amount));
 }
 
 /** "₹12.3L", "$1.2M": for chart labels and tight spaces. */
 export function formatMoneyCompact(amount: number, currency: Currency): string {
-  return formatter(currency, true).format(amount);
+  return cached(currency, "compact", {
+    style: "currency",
+    currency,
+    notation: "compact",
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 0,
+  }).format(amount);
+}
+
+/** "12,34,567" (INR) or "1,234,567": whole units grouped for the currency, no symbol. */
+export function formatAmount(amount: number, currency: Currency): string {
+  return cached(currency, "plain", { maximumFractionDigits: 0 }).format(
+    Math.round(amount),
+  );
 }
 
 export function currencySymbol(currency: Currency): string {
-  const part = formatter(currency, false)
+  const part = money(currency)
     .formatToParts(0)
     .find((p) => p.type === "currency");
   return part?.value ?? currency;

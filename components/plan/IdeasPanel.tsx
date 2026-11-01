@@ -22,9 +22,11 @@ import {
   type IdeaCategory,
   type Plan,
 } from "@/lib/schemas/plan";
-import { postJson } from "./client";
+import { countOf } from "@/lib/text/count";
 import type { PanelProps } from "./PlanDashboard";
-import { PanelHeader, StatusNote } from "./parts";
+import { postJson } from "./client";
+import { PanelHeader } from "./PanelHeader";
+import { StatusNote } from "./StatusNote";
 
 function IdeaCard({
   idea,
@@ -155,7 +157,7 @@ function CategorySection({
     const message =
       added.length === 0
         ? `No new ${label.toLowerCase()} ideas right now. Try again later or ask Refine with AI.`
-        : `Added ${added.length} ${label.toLowerCase()} ${added.length === 1 ? "idea" : "ideas"}.`;
+        : `Added ${countOf(added.length, `${label.toLowerCase()} idea`)}.`;
     setNote(added.length === 0 ? message : null);
     announce(message);
   };
@@ -220,8 +222,8 @@ export function IdeasPanel({ plan, update }: PanelProps) {
       </PanelHeader>
       {saved > 0 ? (
         <StatusNote tone="muted" icon={<BookmarkCheck />}>
-          {saved} saved {saved === 1 ? "idea" : "ideas"}. Saved ideas are included when
-          you copy your summary.
+          {countOf(saved, "saved idea")}. Saved ideas are included when you copy your
+          summary.
         </StatusNote>
       ) : null}
       {IDEA_CATEGORIES.map((category) => (

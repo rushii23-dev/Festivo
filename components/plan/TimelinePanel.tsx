@@ -10,7 +10,7 @@ import type { TimelineTask } from "@/lib/schemas/plan";
 import { groupByPhase, runSheet } from "@/lib/timeline/generate";
 import { downloadCalendar } from "./calendar";
 import type { PanelProps } from "./PlanDashboard";
-import { PanelHeader } from "./parts";
+import { PanelHeader } from "./PanelHeader";
 import { TaskForm } from "./TaskForm";
 import { PhaseList, RunSheet, TaskRow } from "./TimelineLists";
 import { useTaskToggle } from "./useTaskToggle";

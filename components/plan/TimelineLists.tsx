@@ -7,7 +7,8 @@ import { PHASE_HEADINGS } from "@/lib/plan/dashboard";
 import type { TimelineTask } from "@/lib/schemas/plan";
 import { parseIsoDate } from "@/lib/timeline/dates";
 import type { PhaseGroup } from "@/lib/timeline/generate";
-import { StatusNote, TaskCheck } from "./parts";
+import { StatusNote } from "./StatusNote";
+import { TaskCheck } from "./TaskCheck";
 import { editButtonId } from "./useTimelineEditing";
 
 const dueFormat = new Intl.DateTimeFormat("en-IN", {

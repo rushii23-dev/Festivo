@@ -9,7 +9,8 @@ import type { BudgetCategory } from "@/lib/schemas/common";
 import type { BudgetItem, Plan } from "@/lib/schemas/plan";
 import { chartColor } from "./BudgetDonut";
 import type { UpdatePlan } from "./PlanDashboard";
-import { MoneyInput, StatusNote } from "./parts";
+import { MoneyInput } from "./MoneyInput";
+import { StatusNote } from "./StatusNote";
 
 interface BudgetTableProps {
   plan: Plan;

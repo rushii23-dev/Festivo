@@ -19,7 +19,8 @@ import { BudgetDonut } from "./BudgetDonut";
 import { BudgetTable } from "./BudgetTable";
 import { HEALTH_STYLE } from "./OverviewPanel";
 import type { PanelProps } from "./PlanDashboard";
-import { PanelHeader, StatusNote } from "./parts";
+import { PanelHeader } from "./PanelHeader";
+import { StatusNote } from "./StatusNote";
 
 function Figure({ label, value, note }: { label: string; value: string; note?: string }) {
   return (

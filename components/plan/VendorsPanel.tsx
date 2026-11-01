@@ -13,7 +13,9 @@ import {
 } from "@/lib/schemas/plan";
 import { VENDOR_LABELS, bookingProgress, budgetCategoryFor } from "@/lib/vendors/catalog";
 import type { PanelProps } from "./PlanDashboard";
-import { Garland, MoneyInput, PanelHeader } from "./parts";
+import { Garland } from "./Garland";
+import { MoneyInput } from "./MoneyInput";
+import { PanelHeader } from "./PanelHeader";
 
 /** Five beads on a thread, filled up to the current status. Decorative. */
 function StatusBeads({ status }: { status: Vendor["status"] }) {
