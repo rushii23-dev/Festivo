@@ -1,4 +1,4 @@
-/** Readable, URL-safe IDs derived from titles, made unique within a list. */
+/** Readable, URL-safe IDs derived from titles, and titles kept unique within a list. */
 
 export function slugify(text: string, max = 40): string {
   const slug = text
@@ -21,5 +21,19 @@ export function uniqueIdFactory(prefix: string, taken: Iterable<string> = []) {
     for (let n = 2; used.has(id); n++) id = `${base}-${n}`;
     used.add(id);
     return id;
+  };
+}
+
+/**
+ * Returns a function that is true the first time it sees a title, ignoring
+ * case, and false for any title in `taken` or already seen.
+ */
+export function uniqueTitleFilter(taken: Iterable<string> = []) {
+  const seen = new Set(Array.from(taken, (title) => title.toLowerCase()));
+  return (title: string): boolean => {
+    const key = title.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   };
 }

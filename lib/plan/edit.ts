@@ -20,7 +20,7 @@ import {
 import { diffDays } from "@/lib/timeline/dates";
 import { normalizeTimeline, phaseForDaysBefore } from "@/lib/timeline/generate";
 import { applyVendorSpend, vendorSpendByCategory } from "@/lib/vendors/catalog";
-import { uniqueIdFactory } from "./ids";
+import { uniqueIdFactory, uniqueTitleFilter } from "./ids";
 
 export type EditResult =
   { ok: true; plan: Plan } | { ok: false; errors: Partial<Record<string, string>> };
@@ -207,19 +207,27 @@ export function restoreTask(plan: Plan, task: TimelineTask, today: string): Plan
 
 export type VendorEdit = Partial<Pick<Vendor, "status" | "quote" | "notes">>;
 
+/**
+ * Applies an edit to one vendor. A cleared quote and blank notes are removed
+ * rather than stored as undefined or "". An invalid edit leaves the vendor as it was.
+ */
+function editVendor(vendor: Vendor, edit: VendorEdit): Vendor {
+  const { quote, notes, ...rest } = { ...vendor, ...edit };
+  const parsed = VendorSchema.safeParse({
+    ...rest,
+    ...(quote === undefined ? {} : { quote }),
+    ...(notes?.trim() ? { notes } : {}),
+  });
+  return parsed.success ? parsed.data : vendor;
+}
+
 /** Updates status, quote or notes. Returns the plan unchanged if the edit is invalid. */
 export function updateVendor(plan: Plan, vendorId: string, edit: VendorEdit): Plan {
   return {
     ...plan,
-    vendors: plan.vendors.map((vendor) => {
-      if (vendor.id !== vendorId) return vendor;
-      const next: Record<string, unknown> = { ...vendor, ...edit };
-      // Optional fields are removed rather than stored as undefined or "".
-      if (next.quote === undefined) delete next.quote;
-      if (typeof next.notes !== "string" || next.notes.trim() === "") delete next.notes;
-      const parsed = VendorSchema.safeParse(next);
-      return parsed.success ? parsed.data : vendor;
-    }),
+    vendors: plan.vendors.map((vendor) =>
+      vendor.id === vendorId ? editVendor(vendor, edit) : vendor,
+    ),
   };
 }
 
@@ -249,6 +257,17 @@ export function setIdeaDismissed(plan: Plan, ideaId: string, dismissed: boolean)
   return setIdeaFlag(plan, ideaId, "dismissed", dismissed);
 }
 
+/** Removes up to `count` dismissed ideas, oldest first, keeping everything else in order. */
+function dropDismissed(ideas: readonly Idea[], count: number): Idea[] {
+  const kept: Idea[] = [];
+  let toDrop = count;
+  for (const idea of ideas) {
+    if (idea.dismissed && toDrop > 0) toDrop -= 1;
+    else kept.push(idea);
+  }
+  return kept;
+}
+
 /**
  * Appends new ideas, skipping invalid ones and any with a title already in the
  * plan. When the plan is full, dismissed ideas make room first.
@@ -257,7 +276,7 @@ export function addIdeas(
   plan: Plan,
   incoming: readonly Idea[],
 ): { plan: Plan; added: Idea[] } {
-  const titles = new Set(plan.ideas.map((i) => i.title.toLowerCase()));
+  const isNewTitle = uniqueTitleFilter(plan.ideas.map((i) => i.title));
   const nextId = uniqueIdFactory(
     "idea",
     plan.ideas.map((i) => i.id),
@@ -265,19 +284,13 @@ export function addIdeas(
   const fresh: Idea[] = [];
   for (const raw of incoming) {
     const parsed = IdeaSchema.safeParse(raw);
-    if (!parsed.success || titles.has(parsed.data.title.toLowerCase())) continue;
-    titles.add(parsed.data.title.toLowerCase());
-    const { saved: _s, dismissed: _d, ...idea } = parsed.data;
+    if (!parsed.success || !isNewTitle(parsed.data.title)) continue;
+    // Incoming ideas start unsaved and visible, whatever the sender claimed.
+    const { saved: _saved, dismissed: _dismissed, ...idea } = parsed.data;
     fresh.push({ ...idea, id: nextId(idea.title) });
   }
 
-  let ideas = [...plan.ideas];
-  const overflow = ideas.length + fresh.length - MAX_IDEAS;
-  if (overflow > 0) {
-    let toDrop = overflow;
-    ideas = ideas.filter((idea) => !(idea.dismissed && toDrop-- > 0));
-  }
-  const room = Math.max(0, MAX_IDEAS - ideas.length);
-  const added = fresh.slice(0, room);
+  const ideas = dropDismissed(plan.ideas, plan.ideas.length + fresh.length - MAX_IDEAS);
+  const added = fresh.slice(0, Math.max(0, MAX_IDEAS - ideas.length));
   return { plan: { ...plan, ideas: [...ideas, ...added] }, added };
 }
