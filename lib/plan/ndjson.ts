@@ -19,6 +19,21 @@ export function toNdjson<T>(values: AsyncGenerator<T>): ReadableStream<Uint8Arra
   });
 }
 
+/** The stream's bytes as text, with characters split across chunks put back together. */
+async function* decodeText(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+): AsyncGenerator<string> {
+  const decoder = new TextDecoder();
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) {
+      yield decoder.decode();
+      return;
+    }
+    yield decoder.decode(value, { stream: true });
+  }
+}
+
 /**
  * Reads a newline-delimited JSON stream, yielding one parsed value per line.
  * Handles lines split across network chunks and a final line with no newline.
@@ -27,22 +42,14 @@ export async function* readNdjson(
   stream: ReadableStream<Uint8Array>,
 ): AsyncGenerator<unknown> {
   const reader = stream.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
+  let partial = "";
   try {
-    while (true) {
-      const { value, done } = await reader.read();
-      buffer += done ? decoder.decode() : decoder.decode(value, { stream: true });
-      let newline = buffer.indexOf("\n");
-      while (newline !== -1) {
-        const line = buffer.slice(0, newline).trim();
-        buffer = buffer.slice(newline + 1);
-        if (line) yield JSON.parse(line);
-        newline = buffer.indexOf("\n");
-      }
-      if (done) break;
+    for await (const text of decodeText(reader)) {
+      const lines = (partial + text).split("\n");
+      partial = lines.pop() ?? "";
+      for (const line of lines.filter((l) => l.trim())) yield JSON.parse(line);
     }
-    if (buffer.trim()) yield JSON.parse(buffer);
+    if (partial.trim()) yield JSON.parse(partial);
   } finally {
     reader.releaseLock();
   }
