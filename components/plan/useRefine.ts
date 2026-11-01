@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { focusById, focusByIdNextFrame } from "@/components/a11y/focus";
 import { useAnnounce } from "@/components/a11y/LiveRegion";
+import { postJson, userTimeZone, type ApiResult } from "@/lib/http/client";
 import type { PlanChange } from "@/lib/plan/diff";
 import { PlanSchema, type Plan } from "@/lib/schemas/plan";
 import { usePlanStore } from "@/lib/store/planStore";
-import { postJson, userTimeZone, type ApiResult } from "./client";
+import { countOf } from "@/lib/text/count";
 
 export const REFINE_INPUT_ID = "refine-instruction";
 export const REFINE_RESULT_ID = "refine-result";
@@ -29,9 +31,6 @@ export type RefineState =
   | Preview
   | { status: "error"; message: string };
 
-const focusLater = (id: string) =>
-  requestAnimationFrame(() => document.getElementById(id)?.focus());
-
 /** The suggestion to preview, or an error when the reply is unusable or for another plan. */
 function readReply(
   result: ApiResult<RefineResponse>,
@@ -51,8 +50,7 @@ function readReply(
 
 function previewMessage({ explanation, changes }: Preview) {
   if (changes.length === 0) return `${explanation} Nothing in the plan would change.`;
-  const count = `${changes.length} ${changes.length === 1 ? "change" : "changes"}`;
-  return `${explanation} ${count} to review.`;
+  return `${explanation} ${countOf(changes.length, "change")} to review.`;
 }
 
 /**
@@ -71,7 +69,7 @@ export function useRefine(plan: Plan, close: () => void) {
     const text = instruction.trim();
     if (!text) {
       setInputError("Tell Festivo what to change, for example “make it cheaper”.");
-      document.getElementById(REFINE_INPUT_ID)?.focus();
+      focusById(REFINE_INPUT_ID);
       return;
     }
     setInputError(null);
@@ -98,7 +96,7 @@ export function useRefine(plan: Plan, close: () => void) {
       return;
     }
     announce(previewMessage(next));
-    focusLater(REFINE_RESULT_ID);
+    focusByIdNextFrame(REFINE_RESULT_ID);
   };
 
   return {
@@ -109,7 +107,7 @@ export function useRefine(plan: Plan, close: () => void) {
     /** Fills in a suggestion and returns focus to the text box. */
     suggest: (text: string) => {
       setInstruction(text);
-      document.getElementById(REFINE_INPUT_ID)?.focus();
+      focusById(REFINE_INPUT_ID);
     },
     setInstruction,
     accept: () => {
@@ -123,7 +121,7 @@ export function useRefine(plan: Plan, close: () => void) {
     reject: () => {
       announce("Changes discarded. Your plan is unchanged.");
       setState({ status: "idle" });
-      focusLater(REFINE_INPUT_ID);
+      focusByIdNextFrame(REFINE_INPUT_ID);
     },
     reset: () => {
       abort.current?.abort();

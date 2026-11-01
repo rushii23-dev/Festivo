@@ -8,7 +8,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AnnouncerProvider } from "@/components/a11y/LiveRegion";
-import { postJson } from "@/components/plan/client";
+import { postJson } from "@/lib/http/client";
 import { OverviewPanel } from "@/components/plan/OverviewPanel";
 import { TimelinePanel } from "@/components/plan/TimelinePanel";
 import { buildMockPlan } from "@/lib/fixtures/buildMockPlan";

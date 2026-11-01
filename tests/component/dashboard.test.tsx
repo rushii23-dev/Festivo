@@ -5,11 +5,12 @@ import { AnnouncerProvider } from "@/components/a11y/LiveRegion";
 import { PlanDashboard } from "@/components/plan/PlanDashboard";
 import { scaleBudget } from "@/lib/budget/rebalance";
 import { buildMockPlan } from "@/lib/fixtures/buildMockPlan";
+import { localToday } from "@/lib/http/client";
 import { diffPlans } from "@/lib/plan/diff";
 import { EventInputSchema } from "@/lib/schemas/eventInput";
 import type { Plan } from "@/lib/schemas/plan";
 import { STORE_KEY, usePlanStore } from "@/lib/store/planStore";
-import { addDays, todayIso } from "@/lib/timeline/dates";
+import { addDays } from "@/lib/timeline/dates";
 import { DEFAULT_DRAFT } from "@/lib/wizard/draft";
 
 // The "plan not found" view links back to the planner with the arch button.
@@ -33,7 +34,7 @@ beforeAll(async () => {
   ]);
 });
 
-const today = todayIso(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone);
+const today = localToday();
 const plan = buildMockPlan(
   EventInputSchema.parse({
     eventType: "birthday",

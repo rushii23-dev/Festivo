@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useAnnounce } from "@/components/a11y/LiveRegion";
 import { Button } from "@/components/ui/button";
 import { costTierName, costTierSymbol } from "@/lib/budget/format";
+import { postJson } from "@/lib/http/client";
 import { fitsBudget } from "@/lib/ideas/fit";
 import { IDEA_CATEGORY_LABELS } from "@/lib/plan/dashboard";
 import { addIdeas, setIdeaDismissed, setIdeaSaved } from "@/lib/plan/edit";
@@ -24,7 +25,6 @@ import {
 } from "@/lib/schemas/plan";
 import { countOf } from "@/lib/text/count";
 import type { PanelProps } from "./PlanDashboard";
-import { postJson } from "./client";
 import { PanelHeader } from "./PanelHeader";
 import { StatusNote } from "./StatusNote";
 

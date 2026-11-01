@@ -5,6 +5,7 @@ import { ArchButton } from "@/components/landing/ArchButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useHydratedStore } from "@/hooks/use-hydrated-store";
+import { localToday } from "@/lib/http/client";
 import {
   DASHBOARD_TABS,
   TAB_LABELS,
@@ -13,8 +14,6 @@ import {
 } from "@/lib/plan/dashboard";
 import type { Plan } from "@/lib/schemas/plan";
 import { usePlanStore } from "@/lib/store/planStore";
-import { todayIso } from "@/lib/timeline/dates";
-import { userTimeZone } from "./client";
 import { DeferredPanel, DeferredRefineSheet, DeferredShareMenu } from "./deferred";
 import { OverviewPanel } from "./OverviewPanel";
 import { PlanHero } from "./PlanHero";
@@ -73,7 +72,7 @@ function useHashTab(): [DashboardTab, (tab: DashboardTab) => void] {
 
 function Dashboard({ plan }: { plan: Plan }) {
   const updatePlan = usePlanStore((s) => s.updatePlan);
-  const [today] = useState(() => todayIso(new Date(), userTimeZone()));
+  const [today] = useState(localToday);
   const [tab, setTab] = useHashTab();
   const update = useCallback<UpdatePlan>(
     (edit) => updatePlan(plan.id, edit),
