@@ -17,8 +17,9 @@ import { slugify, uniqueIdFactory, uniqueTitleFilter } from "@/lib/plan/ids";
 import { PatchError, applyPatch } from "@/lib/plan/patch";
 import { sectionsSeen, toErrorEvent } from "@/lib/plan/service";
 import { AiOutputError, AiProviderError } from "@/lib/ai/provider";
+import type { DraftIdea } from "@/lib/ai/schemas";
 import { EventInputSchema } from "@/lib/schemas/eventInput";
-import { PlanSchema } from "@/lib/schemas/plan";
+import { PLAN_LIMITS, PlanSchema } from "@/lib/schemas/plan";
 import { DEFAULT_QUESTIONS } from "@/lib/vendors/catalog";
 
 const TODAY = "2026-10-26";
@@ -257,6 +258,45 @@ describe("applyPatch", () => {
     expect(() =>
       applyPatch(plan, { explanation: "x", date: "2026-01-01" }, TODAY),
     ).toThrow(PatchError);
+  });
+
+  it("adds tasks only into the room a full plan has left", () => {
+    const template = fixture(plan.timeline.find((t) => t.phase === "1 month"));
+    const nearlyFull = {
+      ...plan,
+      timeline: Array.from({ length: PLAN_LIMITS.tasks - 2 }, (_, i) => ({
+        ...template,
+        id: `task-filler-${i}`,
+      })),
+    };
+    const addTasks = Array.from({ length: 5 }, (_, i) => ({
+      title: `Extra task ${i}`,
+      description: "",
+      daysBefore: 10,
+    }));
+    const next = applyPatch(nearlyFull, { explanation: "x", addTasks }, TODAY);
+    expect(next.timeline).toHaveLength(PLAN_LIMITS.tasks);
+    expect(next.timeline.filter((t) => t.title.startsWith("Extra task"))).toHaveLength(2);
+  });
+
+  it("adds an idea title once, even when the patch repeats it", () => {
+    const idea: DraftIdea = {
+      category: "food",
+      title: "Chaat bar",
+      description: "x",
+      costTier: 1,
+    };
+    const next = applyPatch(
+      plan,
+      {
+        explanation: "x",
+        addIdeas: [idea, { ...idea, title: "CHAAT BAR" }],
+      },
+      TODAY,
+    );
+    expect(next.ideas.filter((i) => i.title.toLowerCase() === "chaat bar")).toHaveLength(
+      1,
+    );
   });
 });
 
